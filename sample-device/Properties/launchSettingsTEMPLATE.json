@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "sample-device": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "cs": "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;SharedAccessKey=<SasKey>"
+      }
+    }
+  }
+}
