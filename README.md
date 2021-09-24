@@ -13,7 +13,7 @@ Minimalistic device client to interact with Azure IoT Hub
 When connected to a MQTTBroker enabled hub, this library allows to pub/sub to topics defined in the hub topic-space.
 
 ```cs
- client.OnMessageReceived += (s, e) =>
+client.OnMessageReceived += (s, e) =>
 {
     string payload = (e.ApplicationMessage.Topic);
 };
@@ -36,13 +36,13 @@ az iot hub topic-space create -n {iothub_name} --tsn subscriber_ts --tst LowFano
 Connect With SaS
 
 ```cs
- var cs = Environment.GetEnvironmentVariable("cs");
+var cs = Environment.GetEnvironmentVariable("cs");
 var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
 ```
 Connect with X509
 
 ```cs
- var client = await HubMqttClient.CreateWithClientCertsAsync(
+var client = await HubMqttClient.CreateWithClientCertsAsync(
             "<hubname>.azure-devices.net",
             "<pathTo.pfx>", "<PFX Pwd>");
 ```
@@ -50,7 +50,7 @@ Connect with X509
 Send Telemetry
 
 ```cs
- await client.SendTelemetryAsync(new { temperature = 1 });
+await client.SendTelemetryAsync(new { temperature = 1 });
 ```
 
 Read Twin
@@ -63,7 +63,7 @@ await client.RequestTwinAsync(s => Console.WriteLine("Twin: " + s));
 Update Twin (Reported Properties)
 
 ```cs
- await client.UpdateTwinAsync(
+await client.UpdateTwinAsync(
                 new { tool = "from Rido.IoTHubClient" }, 
                 v => Console.WriteLine("Twin PATCHED version: " + v));
 ```
@@ -71,8 +71,8 @@ Update Twin (Reported Properties)
 Respond to Twin updates (Desired Properties)
 
 ```cs
- client.OnPropertyReceived += async (s, e) => 
- {
+client.OnPropertyReceived += async (s, e) => 
+{
     Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
     await Task.Delay(500);
     await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = "put value here" } }, 
