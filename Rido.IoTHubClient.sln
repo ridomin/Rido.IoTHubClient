@@ -5,7 +5,12 @@ VisualStudioVersion = 17.0.31723.522
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rido.IoTHubClient", "Rido.IoTHubClient\Rido.IoTHubClient.csproj", "{6D8B2D57-C4B5-4912-9192-054E84EA019C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sample-device", "sample-device\sample-device.csproj", "{D867FDA0-5E2B-4918-97E0-8E4D524D5CE7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sample-device", "sample-device\sample-device.csproj", "{D867FDA0-5E2B-4918-97E0-8E4D524D5CE7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{91B09131-F83F-4EC0-B41E-CD46DD96471A}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
