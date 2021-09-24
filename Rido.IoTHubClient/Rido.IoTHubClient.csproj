@@ -3,6 +3,12 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net5.0</TargetFramework>
+    <Version>0.0.1-pre</Version>
+    <Authors>ridomin</Authors>
+    <Description>A minimal IoTHub client to work with latest Broker features</Description>
+    <PackageProjectUrl>https://github.com/ridomin/Rido.IoTHubClient</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ridomin/Rido.IoTHubClient</RepositoryUrl>
+    <PackageTags>mqtt; azure-iot</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
