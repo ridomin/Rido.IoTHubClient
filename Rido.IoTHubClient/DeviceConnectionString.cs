@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace Rido.IoTHubClient
 {
-    class DeviceConnectionString
+    public class DeviceConnectionString
     {
         public string HostName { get; set; }
         public string DeviceId { get; set; }
