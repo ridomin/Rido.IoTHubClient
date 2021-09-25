@@ -20,7 +20,9 @@ namespace sample_device
 
             client.OnMessageReceived += (s, e) =>
             {
-                string payload = (e.ApplicationMessage.Topic);
+                string contents = $"{e.ApplicationMessage.Topic} {e.ApplicationMessage.Payload.Length} Bytes";
+                Console.WriteLine("Custom Topic Message:" + contents);
+
             };
 
             await client.SubscribeAsync("vehicles/#");

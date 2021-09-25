@@ -194,7 +194,7 @@ namespace Rido.IoTHubClient
                         {
                             Topic = e.ApplicationMessage.Topic,
                             Rid = rid.ToString(),
-                            PropertyMessageJson = msg,
+                            PropertyMessageJson = TwinProperties.RemoveVersion(msg),
                             Version = twinVersion
                         });
                     }
@@ -241,7 +241,7 @@ namespace Rido.IoTHubClient
             });
         }
 
-      
+
 
         public async Task SubscribeAsync(string topic)
         {
