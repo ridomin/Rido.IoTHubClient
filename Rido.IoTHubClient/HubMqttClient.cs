@@ -80,9 +80,9 @@ namespace Rido.IoTHubClient
         }
 
 
-        public async Task CommandResponseAsync(string rid, string cmdName, object payload, string status) =>
+        public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
             await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
-        public async Task CommandResponseAsync(string rid, string cmdName, string payload, string status) =>
+        public async Task CommandResponseAsync(string rid, string cmdName, string status, string payload) =>
             await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
 
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd)

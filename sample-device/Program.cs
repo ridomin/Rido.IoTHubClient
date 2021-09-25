@@ -11,12 +11,12 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            //var client = await HubMqttClient.CreateWithClientCertsAsync(
-            //                     "broker.azure-devices.net",
-            //                     "../../../../.certs/device01.pfx", "1234");
+            var client = await HubMqttClient.CreateWithClientCertsAsync(
+                                 "broker.azure-devices.net",
+                                 "../../../../.certs/devx1.pfx", "1234");
 
-            var cs = Environment.GetEnvironmentVariable("cs");
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
+            //var cs = Environment.GetEnvironmentVariable("cs");
+            //var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
 
             client.OnMessageReceived += (s, e) =>
             {
@@ -33,7 +33,7 @@ namespace sample_device
             {
                 Console.WriteLine($"Processing Command {e.CommandName}");
                 await Task.Delay(500);
-                await client.CommandResponseAsync(e.Rid, e.CommandName, new { myResponse = "ok" }, "200");
+                await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
             };
 
             client.OnPropertyReceived += async (s, e) => {

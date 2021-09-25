@@ -8,6 +8,22 @@ Minimalistic device client to interact with Azure IoT Hub
 - Telemetry, Properties and Commands using the new topics
 - Pub/Sub to broker
 
+## Connect to V2 Hubs
+
+Connect With SaS
+
+```cs
+var cs = Environment.GetEnvironmentVariable("cs");
+var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
+```
+Connect with X509
+
+```cs
+var client = await HubMqttClient.CreateWithClientCertsAsync(
+            "<hubname>.azure-devices.net",
+            "<pathTo.pfx>", "<PFX Pwd>");
+```
+
 ## Custom Topics Usage
 
 When connected to a MQTTBroker enabled hub, this library allows to pub/sub to topics defined in the hub topic-space.
@@ -32,20 +48,6 @@ az iot hub topic-space create -n {iothub_name} --tsn subscriber_ts --tst LowFano
 ```
 
 ## Reserved Topics Usage
-
-Connect With SaS
-
-```cs
-var cs = Environment.GetEnvironmentVariable("cs");
-var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
-```
-Connect with X509
-
-```cs
-var client = await HubMqttClient.CreateWithClientCertsAsync(
-            "<hubname>.azure-devices.net",
-            "<pathTo.pfx>", "<PFX Pwd>");
-```
 
 Send Telemetry
 
