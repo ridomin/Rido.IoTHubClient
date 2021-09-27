@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rido.IoTHubClient.Tests", "Rido.IoTHubClient.Tests\Rido.IoTHubClient.Tests.csproj", "{E1F5F59F-8ECE-4B5D-BF34-31226ABAA17D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "v1client", "v1client\v1client.csproj", "{687A5BE0-002A-4AC3-83BA-20BA3D382497}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{E1F5F59F-8ECE-4B5D-BF34-31226ABAA17D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1F5F59F-8ECE-4B5D-BF34-31226ABAA17D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1F5F59F-8ECE-4B5D-BF34-31226ABAA17D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{687A5BE0-002A-4AC3-83BA-20BA3D382497}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{687A5BE0-002A-4AC3-83BA-20BA3D382497}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{687A5BE0-002A-4AC3-83BA-20BA3D382497}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{687A5BE0-002A-4AC3-83BA-20BA3D382497}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

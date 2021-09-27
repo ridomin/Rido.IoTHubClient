@@ -3,12 +3,10 @@ using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
-using MQTTnet.Diagnostics;
 using MQTTnet.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -47,7 +45,7 @@ namespace Rido.IoTHubClient
         // Dictionary<int, Func<string, string>> callbacks = new Dictionary<int, Func<string,string>>();
         static Action<string> cb;
         static Action<int> patch_cb;
-        private int lastRid = 112;
+        private int lastRid = 1;
         public HubMqttClient(IMqttClient c, string clientId)
         {
             MqttClient = c;
@@ -60,7 +58,7 @@ namespace Rido.IoTHubClient
 
         public async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
         {
-            var puback = await PublishAsync($"$iothub/twin/GET/?rid={lastRid++}", string.Empty);
+            var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
             //callbacks.Add(lastRid, GetTwinCallback);
             cb = GetTwinCallback;
             return puback;
@@ -69,23 +67,23 @@ namespace Rido.IoTHubClient
 
         public async Task<MqttClientPublishResult> UpdateTwinAsync(object payload, Action<int> patchTwinCallback)
         {
-            var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?rid={lastRid++}", payload);
+            var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
             patch_cb = patchTwinCallback;
             return puback;
         }
 
         public async Task<MqttClientPublishResult> UpdateTwinAsync(string payload, Action<int> patchTwinCallback)
         {
-            var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?rid={lastRid++}", payload);
+            var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
             patch_cb = patchTwinCallback;
             return puback;
         }
 
 
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-            await PublishAsync($"$iothub/methods/res/?rid={rid}&rc={status}", payload);
+            await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
         public async Task CommandResponseAsync(string rid, string cmdName, string status, string payload) =>
-            await PublishAsync($"$iothub/methods/res/?rid={rid}&rc={status}", payload);
+            await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
 
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd)
         {
@@ -136,16 +134,16 @@ namespace Rido.IoTHubClient
             IMqttClient mqttClient = mqttFactory.CreateMqttClient();
             var hub = new HubMqttClient(mqttClient, dcs.DeviceId);
 
-            MqttNetGlobalLogger.LogMessagePublished += (s, e) =>
-            {
-                var trace = $">> [{e.TraceMessage.Timestamp:O}] [{e.TraceMessage.ThreadId}] [{e.TraceMessage.Source}] [{e.TraceMessage.Level}]: {e.TraceMessage.Message}";
-                if (e.TraceMessage.Exception != null)
-                {
-                    trace += Environment.NewLine + e.TraceMessage.Exception.ToString();
-                }
+            //MqttNetGlobalLogger.LogMessagePublished += (s, e) =>
+            //{
+            //    var trace = $">> [{e.TraceMessage.Timestamp:O}] [{e.TraceMessage.ThreadId}] [{e.TraceMessage.Source}] [{e.TraceMessage.Level}]: {e.TraceMessage.Message}";
+            //    if (e.TraceMessage.Exception != null)
+            //    {
+            //        trace += Environment.NewLine + e.TraceMessage.Exception.ToString();
+            //    }
 
-                Console.WriteLine(trace);
-            };
+            //    Console.WriteLine(trace);
+            //};
 
 
             var userName = dcs.GetUserName(expiryString);
@@ -160,13 +158,9 @@ namespace Rido.IoTHubClient
              .WithTls(new MqttClientOptionsBuilderTlsParameters
              {
                  UseTls = true,
-                 IgnoreCertificateChainErrors = true,
-                 IgnoreCertificateRevocationErrors = true,
-                 AllowUntrustedCertificates = true,
                  CertificateValidationHandler = (x) => { return true; },
                  SslProtocol = SslProtocols.Tls12
              })
-             .WithCleanSession(true)
              .Build();
 
             ConfigureReservedTopics(hub);
@@ -187,7 +181,7 @@ namespace Rido.IoTHubClient
                 {
                     // parse qs to extract the rid
                     var qs = HttpUtility.ParseQueryString(segments[segments.Length - 1]);
-                    rid = Convert.ToInt32(qs["rid"]);
+                    rid = Convert.ToInt32(qs["$rid"]);
                     twinVersion = Convert.ToInt32(qs["v"]);
                 }
 

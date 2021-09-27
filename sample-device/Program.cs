@@ -40,18 +40,18 @@ namespace sample_device
                 Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 await Task.Delay(500);
                 // todo parse property
-                await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = "put value here" } }, v => Console.WriteLine("PATCHED ACK: " + v));
+                await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = TwinProperties.RemoveVersion(e.PropertyMessageJson) } }, v => Console.WriteLine("PATCHED ACK: " + v));
             };
 
             await Task.Delay(500);
-            //await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 1" + s));
-            await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount }, v => Console.WriteLine("Twin PATCHED version: " + v));
+            await client.SendTelemetryAsync(new { temperature = 1 });
+            await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 1" + s));
+            //await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount }, v => Console.WriteLine("Twin PATCHED version: " + v));
             //await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 2" + s));
-            //await client.SendTelemetryAsync(new { temperature = 1 });
             while (true)
             {
                 //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
-                //await client.SendTelemetryAsync(new { temperature = 1 });
+                await client.SendTelemetryAsync(new { temperature = 1 });
                 await Task.Delay(5000);
             }
         }
