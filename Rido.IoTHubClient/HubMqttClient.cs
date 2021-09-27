@@ -95,13 +95,13 @@ namespace Rido.IoTHubClient
             var mqttClient = factory.CreateMqttClient();
             var hub = new HubMqttClient(mqttClient, cid);
 
-            var username = $"av=2021-06-30-preview&h={hostname}&did={cid}&am=X509&dtmi=dtmi:aa:b;1";
-            //var username = $"{hostname}.azure-devices.net/{cid}/?api-version=2020-09-30&DeviceClientType=RidoTests&x509=true";
+            //var username = $"av=2021-06-30-preview&h={hostname}&did={cid}&am=X509&dtmi=dtmi:aa:b;1";
+            var username = $"{hostname}.azure-devices.net/{cid}/?api-version=2020-09-30&x509=true";
             Console.WriteLine(username);
             Console.WriteLine($"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})");
 
             var options = new MqttClientOptionsBuilder()
-                .WithClientId(cid)
+                //.WithClientId(cid)
                 .WithTcpServer(hostname, 8883)
                 .WithTls(new MqttClientOptionsBuilderTlsParameters
                 {

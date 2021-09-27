@@ -11,12 +11,12 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            //var client = await HubMqttClient.CreateWithClientCertsAsync(
-            //                     "broker.azure-devices.net",
-            //                     "../../../../.certs/devx1.pfx", "1234");
+            var client = await HubMqttClient.CreateWithClientCertsAsync(
+                                 "broker.azure-devices.net",
+                                 "../../../../.certs/devx1.pfx", "1234");
 
-            var cs = Environment.GetEnvironmentVariable("cs");
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
+            //var cs = Environment.GetEnvironmentVariable("cs");
+            //var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
 
             client.OnMessageReceived += (s, e) =>
             {
