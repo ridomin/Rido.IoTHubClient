@@ -39,7 +39,7 @@ namespace Rido.IoTHubClient
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
         }
 
-        public string GetUserName(string expiryString)
+        public string GetUserName2(string expiryString)
         {
             string username = $"av=2021-06-30-preview&" +
                    $"h={this.HostName}&" +
@@ -50,7 +50,31 @@ namespace Rido.IoTHubClient
             return username;
         }
 
-        public byte[] BuildSasToken(string expiryString)
+        public string GetUserName(string expiryString)
+        {
+            string username = $"{this.HostName}/" +
+                   $"{this.DeviceId}/" +
+                   $"?api-version=2020-05-31-preview";
+
+            Console.WriteLine(username);
+            return username;
+        }
+
+        public string BuildSasToken(string expiryString)
+        {
+            SharedAccessSignatureBuilder sas = new SharedAccessSignatureBuilder()
+            {
+                Key = this.SharedAccessKey,
+                TimeToLive = TimeSpan.FromSeconds(60),
+                Target = $"{this.HostName}/devices/{this.DeviceId}"
+            };
+
+            var result = sas.ToSignature();
+            Console.WriteLine(result);
+            return result;
+        }
+
+        public byte[] BuildSasToken2(string expiryString)
         {
             var algorithm = new HMACSHA256(Convert.FromBase64String(this.SharedAccessKey));
             string toSign = $"{this.HostName}\n{this.DeviceId}\n\n\n{expiryString}\n";

@@ -3,10 +3,12 @@ using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
+using MQTTnet.Diagnostics;
 using MQTTnet.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -45,7 +47,7 @@ namespace Rido.IoTHubClient
         // Dictionary<int, Func<string, string>> callbacks = new Dictionary<int, Func<string,string>>();
         static Action<string> cb;
         static Action<int> patch_cb;
-        private int lastRid = 1;
+        private int lastRid = 112;
         public HubMqttClient(IMqttClient c, string clientId)
         {
             MqttClient = c;
@@ -53,12 +55,12 @@ namespace Rido.IoTHubClient
 
         }
 
-        public async Task SendTelemetryAsync(object payload) => await PublishAsync("$az/iot/telemetry", payload);
-        public async Task SendTelemetryAsync(string payload) => await PublishAsync("$az/iot/telemetry", payload);
+        public async Task SendTelemetryAsync(object payload) => await PublishAsync($"devices/{this.ClientId}/messages/events/", payload);
+        public async Task SendTelemetryAsync(string payload) => await PublishAsync($"devices/{this.ClientId}/messages/events/", payload);
 
         public async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
         {
-            var puback = await PublishAsync($"$az/iot/twin/get/?rid={lastRid++}", string.Empty);
+            var puback = await PublishAsync($"$iothub/twin/GET/?rid={lastRid++}", string.Empty);
             //callbacks.Add(lastRid, GetTwinCallback);
             cb = GetTwinCallback;
             return puback;
@@ -67,23 +69,23 @@ namespace Rido.IoTHubClient
 
         public async Task<MqttClientPublishResult> UpdateTwinAsync(object payload, Action<int> patchTwinCallback)
         {
-            var puback = await PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
+            var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?rid={lastRid++}", payload);
             patch_cb = patchTwinCallback;
             return puback;
         }
 
         public async Task<MqttClientPublishResult> UpdateTwinAsync(string payload, Action<int> patchTwinCallback)
         {
-            var puback = await PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
+            var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?rid={lastRid++}", payload);
             patch_cb = patchTwinCallback;
             return puback;
         }
 
 
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-            await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
+            await PublishAsync($"$iothub/methods/res/?rid={rid}&rc={status}", payload);
         public async Task CommandResponseAsync(string rid, string cmdName, string status, string payload) =>
-            await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
+            await PublishAsync($"$iothub/methods/res/?rid={rid}&rc={status}", payload);
 
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd)
         {
@@ -134,13 +136,27 @@ namespace Rido.IoTHubClient
             IMqttClient mqttClient = mqttFactory.CreateMqttClient();
             var hub = new HubMqttClient(mqttClient, dcs.DeviceId);
 
+            MqttNetGlobalLogger.LogMessagePublished += (s, e) =>
+            {
+                var trace = $">> [{e.TraceMessage.Timestamp:O}] [{e.TraceMessage.ThreadId}] [{e.TraceMessage.Source}] [{e.TraceMessage.Level}]: {e.TraceMessage.Message}";
+                if (e.TraceMessage.Exception != null)
+                {
+                    trace += Environment.NewLine + e.TraceMessage.Exception.ToString();
+                }
+
+                Console.WriteLine(trace);
+            };
+
+
             var userName = dcs.GetUserName(expiryString);
+            var password = dcs.BuildSasToken(expiryString);
             Console.WriteLine(userName);
+            Console.WriteLine(password);
 
             var options = new MqttClientOptionsBuilder()
              .WithClientId(dcs.DeviceId)
              .WithTcpServer(dcs.HostName, 8883)
-             .WithCredentials(userName, dcs.BuildSasToken(expiryString))
+             .WithCredentials(userName, password)
              .WithTls(new MqttClientOptionsBuilderTlsParameters
              {
                  UseTls = true,
@@ -181,14 +197,14 @@ namespace Rido.IoTHubClient
                 }
 
 
-                if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin"))
+                if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin"))
                 {
                     Console.WriteLine($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
-                    if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/get/response"))
+                    if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res"))
                     {
                         cb(msg);
                     }
-                    else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/events/desired-changed"))
+                    else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                     {
                         hub.OnPropertyReceived?.Invoke(hub, new PropertyEventArgs()
                         {
@@ -198,12 +214,12 @@ namespace Rido.IoTHubClient
                             Version = twinVersion
                         });
                     }
-                    else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/patch/response/"))
+                    else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
                     {
                         patch_cb(twinVersion);
                     }
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/methods"))
+                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
                 {
                     var cmdName = segments[3];
                     Console.WriteLine($"<- {e.ApplicationMessage.Topic} {cmdName} {e.ApplicationMessage.Payload.Length} Bytes");
@@ -226,10 +242,9 @@ namespace Rido.IoTHubClient
             {
                 Console.WriteLine("### CONNECTED WITH SERVER ###");
                 var subres = await hub.MqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
-                                                        .WithTopicFilter("$az/iot/methods/+/+", MqttQualityOfServiceLevel.AtLeastOnce)
-                                                        .WithTopicFilter("$az/iot/twin/get/response/+", MqttQualityOfServiceLevel.AtLeastOnce)
-                                                        .WithTopicFilter("$az/iot/twin/patch/response/+", MqttQualityOfServiceLevel.AtLeastOnce)
-                                                        .WithTopicFilter("$az/iot/twin/events/desired-changed/+", MqttQualityOfServiceLevel.AtLeastOnce)
+                                                        .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
                                                         .Build());
                 subres.Items.ToList().ForEach(x => Console.WriteLine($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             });
@@ -259,6 +274,7 @@ namespace Rido.IoTHubClient
         {
             var message = new MqttApplicationMessageBuilder()
                             .WithTopic(topic)
+                            .WithAtMostOnceQoS()
                             .WithPayload(payload)
                             .Build();
 

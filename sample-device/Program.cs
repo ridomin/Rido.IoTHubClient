@@ -11,12 +11,12 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            var client = await HubMqttClient.CreateWithClientCertsAsync(
-                                 "broker.azure-devices.net",
-                                 "../../../../.certs/devx1.pfx", "1234");
+            //var client = await HubMqttClient.CreateWithClientCertsAsync(
+            //                     "broker.azure-devices.net",
+            //                     "../../../../.certs/devx1.pfx", "1234");
 
-            //var cs = Environment.GetEnvironmentVariable("cs");
-            //var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
+            var cs = Environment.GetEnvironmentVariable("cs");
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
 
             client.OnMessageReceived += (s, e) =>
             {
@@ -25,9 +25,9 @@ namespace sample_device
 
             };
 
-            await client.SubscribeAsync("vehicles/#");
-            await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
-                                     new { lat = 23.32323, lon = 54.45454 });
+            //await client.SubscribeAsync("vehicles/#");
+            //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
+            //                         new { lat = 23.32323, lon = 54.45454 });
 
             client.OnCommandReceived += async (s, e) =>
             {
@@ -43,15 +43,15 @@ namespace sample_device
                 await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = "put value here" } }, v => Console.WriteLine("PATCHED ACK: " + v));
             };
 
-            await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 1" + s));
-            await client.UpdateTwinAsync(new { tool = "from mqttnet " + System.Environment.TickCount }, v => Console.WriteLine("Twin PATCHED version: " + v));
             await Task.Delay(500);
-            await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 2" + s));
-
+            //await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 1" + s));
+            await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount }, v => Console.WriteLine("Twin PATCHED version: " + v));
+            //await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 2" + s));
+            //await client.SendTelemetryAsync(new { temperature = 1 });
             while (true)
             {
                 //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
-                await client.SendTelemetryAsync(new { temperature = 1 });
+                //await client.SendTelemetryAsync(new { temperature = 1 });
                 await Task.Delay(5000);
             }
         }
