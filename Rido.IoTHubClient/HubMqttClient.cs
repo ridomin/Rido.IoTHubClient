@@ -3,6 +3,7 @@ using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
+using MQTTnet.Diagnostics;
 using MQTTnet.Protocol;
 using System;
 using System.Collections.Generic;
@@ -101,18 +102,18 @@ namespace Rido.IoTHubClient
             Console.WriteLine($"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})");
 
             var options = new MqttClientOptionsBuilder()
-                //.WithClientId(cid)
+                .WithClientId(cid)
                 .WithTcpServer(hostname, 8883)
+                .WithCredentials(new MqttClientCredentials()
+                {
+                    Username = username,
+                    Password = Encoding.UTF8.GetBytes("")
+                })
                 .WithTls(new MqttClientOptionsBuilderTlsParameters
                 {
                     UseTls = true,
                     SslProtocol = SslProtocols.Tls12,
                     Certificates = certs
-                })
-                .WithCredentials(new MqttClientCredentials()
-                {
-                    Username = username,
-                    Password = Encoding.UTF8.GetBytes("")
                 })
                 .Build();
 
@@ -134,16 +135,7 @@ namespace Rido.IoTHubClient
             IMqttClient mqttClient = mqttFactory.CreateMqttClient();
             var hub = new HubMqttClient(mqttClient, dcs.DeviceId);
 
-            //MqttNetGlobalLogger.LogMessagePublished += (s, e) =>
-            //{
-            //    var trace = $">> [{e.TraceMessage.Timestamp:O}] [{e.TraceMessage.ThreadId}] [{e.TraceMessage.Source}] [{e.TraceMessage.Level}]: {e.TraceMessage.Message}";
-            //    if (e.TraceMessage.Exception != null)
-            //    {
-            //        trace += Environment.NewLine + e.TraceMessage.Exception.ToString();
-            //    }
-
-            //    Console.WriteLine(trace);
-            //};
+           
 
 
             var userName = dcs.GetUserName(expiryString);
@@ -170,6 +162,18 @@ namespace Rido.IoTHubClient
 
         private static void ConfigureReservedTopics(HubMqttClient hub)
         {
+
+            //MqttNetGlobalLogger.LogMessagePublished += (s, e) =>
+            //{
+            //    var trace = $">> [{e.TraceMessage.Timestamp:O}] [{e.TraceMessage.ThreadId}] [{e.TraceMessage.Source}] [{e.TraceMessage.Level}]: {e.TraceMessage.Message}";
+            //    if (e.TraceMessage.Exception != null)
+            //    {
+            //        trace += Environment.NewLine + e.TraceMessage.Exception.ToString();
+            //    }
+
+            //    Console.WriteLine(trace);
+            //};
+
             hub.MqttClient.UseApplicationMessageReceivedHandler(e =>
             {
                 string msg = string.Empty;
