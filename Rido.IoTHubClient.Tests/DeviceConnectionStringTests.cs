@@ -38,7 +38,7 @@ namespace Rido.IoTHubClient.Tests
             var expiryString = expiry.ToUnixTimeMilliseconds().ToString();
             string cs = "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;SharedAccessKey=MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=";
             DeviceConnectionString dcs = new DeviceConnectionString(cs);
-            var password = Convert.ToBase64String(dcs.BuildSasToken(expiryString));
+            var password = dcs.BuildSasToken(expiryString);
             Assert.Equal("NlC6BFxNoRyN1UGa2hLQMV/NbLlTbCEXamJawDBUcnw=", password);
         }
     }

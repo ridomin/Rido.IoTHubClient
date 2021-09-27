@@ -40,7 +40,9 @@ namespace sample_device
                 Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 await Task.Delay(500);
                 // todo parse property
-                await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = TwinProperties.RemoveVersion(e.PropertyMessageJson) } }, v => Console.WriteLine("PATCHED ACK: " + v));
+                var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
+                await client.UpdateTwinAsync(ack, 
+                    v => Console.WriteLine("PATCHED ACK: " + v));
             };
 
             await Task.Delay(500);

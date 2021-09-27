@@ -182,7 +182,7 @@ namespace Rido.IoTHubClient
                     // parse qs to extract the rid
                     var qs = HttpUtility.ParseQueryString(segments[segments.Length - 1]);
                     rid = Convert.ToInt32(qs["$rid"]);
-                    twinVersion = Convert.ToInt32(qs["v"]);
+                    twinVersion = Convert.ToInt32(qs["$version"]);
                 }
 
                 if (e.ApplicationMessage.Payload != null)
