@@ -39,8 +39,8 @@ namespace sample_device
             client.OnPropertyReceived += async (s, e) => {
                 Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 await Task.Delay(500);
-                // todo parse property
-                await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = "put value here" } }, v => Console.WriteLine("PATCHED ACK: " + v));
+                await client.UpdateTwinAsync(TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200), 
+                                                v => Console.WriteLine("PATCHED ACK: " + v));
             };
 
             await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 1" + s));
