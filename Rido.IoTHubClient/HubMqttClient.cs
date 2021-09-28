@@ -17,22 +17,6 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class CommandEventArgs : EventArgs
-    {
-        public string Rid { get; set; }
-        public string CommandName { get; set; }
-        public string CommandRequestMessageJson { get; set; }
-        public string Topic { get; set; }
-    }
-
-    public class PropertyEventArgs : EventArgs
-    {
-        public string Rid { get; set; }
-        public string PropertyMessageJson { get; set; }
-        public string Topic { get; set; }
-        public int Version { get; set; }
-    }
-
     public class HubMqttClient
     {
         public event EventHandler<CommandEventArgs> OnCommandReceived;
@@ -50,42 +34,10 @@ namespace Rido.IoTHubClient
         {
             MqttClient = c;
             ClientId = clientId;
-
         }
 
-        public async Task SendTelemetryAsync(object payload) => await PublishAsync("$az/iot/telemetry", payload);
-        public async Task SendTelemetryAsync(string payload) => await PublishAsync("$az/iot/telemetry", payload);
-
-        public async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
-        {
-            var puback = await PublishAsync($"$az/iot/twin/get/?rid={lastRid++}", string.Empty);
-            //callbacks.Add(lastRid, GetTwinCallback);
-            cb = GetTwinCallback;
-            return puback;
-        }
-
-
-        public async Task<MqttClientPublishResult> UpdateTwinAsync(object payload, Action<int> patchTwinCallback)
-        {
-            var puback = await PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
-            patch_cb = patchTwinCallback;
-            return puback;
-        }
-
-        public async Task<MqttClientPublishResult> UpdateTwinAsync(string payload, Action<int> patchTwinCallback)
-        {
-            var puback = await PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
-            patch_cb = patchTwinCallback;
-            return puback;
-        }
-
-
-        public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-            await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
-        public async Task CommandResponseAsync(string rid, string cmdName, string status, string payload) =>
-            await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
-
-        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd)
+      
+        public static async Task<HubMqttClient> CreateWithClientCertAsync(string hostname, string certPath, string certPwd)
         {
             using var cert = new X509Certificate2(certPath, certPwd);
             var cid = cert.Subject.Substring(3);
@@ -111,8 +63,7 @@ namespace Rido.IoTHubClient
                 })
                 .WithCredentials(new MqttClientCredentials()
                 {
-                    Username = username,
-                    Password = Encoding.UTF8.GetBytes("")
+                    Username = username
                 })
                 .Build();
 
@@ -135,19 +86,16 @@ namespace Rido.IoTHubClient
             var hub = new HubMqttClient(mqttClient, dcs.DeviceId);
 
             var userName = dcs.GetUserName(expiryString);
+            var password = dcs.BuildSasToken(expiryString);
             Console.WriteLine(userName);
 
             var options = new MqttClientOptionsBuilder()
              .WithClientId(dcs.DeviceId)
              .WithTcpServer(dcs.HostName, 8883)
-             .WithCredentials(userName, dcs.BuildSasToken(expiryString))
+             .WithCredentials(userName, password)
              .WithTls(new MqttClientOptionsBuilderTlsParameters
              {
                  UseTls = true,
-                 IgnoreCertificateChainErrors = true,
-                 IgnoreCertificateRevocationErrors = true,
-                 AllowUntrustedCertificates = true,
-                 CertificateValidationHandler = (x) => { return true; },
                  SslProtocol = SslProtocols.Tls12
              })
              .WithCleanSession(true)
@@ -241,33 +189,52 @@ namespace Rido.IoTHubClient
             });
         }
 
+        public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload) => await PublishAsync("$az/iot/telemetry", payload);
+
+        public async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
+        {
+            var puback = await MqttClient.PublishAsync($"$az/iot/twin/get/?rid={lastRid++}");
+            //callbacks.Add(lastRid, GetTwinCallback);
+            cb = GetTwinCallback;
+            if (puback.ReasonCode != MqttClientPublishReasonCode.Success)
+            {
+                Console.WriteLine(puback.ReasonCode);
+            }
+            return puback;
+        }
+
+        public async Task<MqttClientPublishResult> UpdateTwinAsync(object payload, Action<int> patchTwinCallback)
+        {
+            var puback = await PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
+            patch_cb = patchTwinCallback;
+            return puback;
+        }
+
+        public async Task<MqttClientPublishResult> CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
+            await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
 
 
-        public async Task SubscribeAsync(string topic)
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string topic)
         {
             var suback = await MqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder().WithTopicFilter(topic).Build());
             suback.Items.ToList().ForEach(x => Console.WriteLine($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+            return suback;
         }
 
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
             string jsonPayload = JsonSerializer.Serialize(payload);
-            return await PublishAsync(topic, jsonPayload);
-        }
-
-        public async Task<MqttClientPublishResult> PublishAsync(string topic, string payload)
-        {
             var message = new MqttApplicationMessageBuilder()
-                            .WithTopic(topic)
-                            .WithPayload(payload)
-                            .Build();
+                             .WithTopic(topic)
+                             .WithPayload(jsonPayload)
+                             .Build();
 
             var pubRes = await MqttClient.PublishAsync(message, CancellationToken.None);
             if (pubRes.ReasonCode != MqttClientPublishReasonCode.Success)
             {
                 Console.WriteLine(pubRes.ReasonCode + pubRes.ReasonString);
             }
-            Console.WriteLine($"-> {topic} {message.Payload?.Length} Bytes");
+            Console.WriteLine($"-> {topic} {message.Payload?.Length} Bytes {pubRes.ReasonCode}");
             return pubRes;
         }
     }

@@ -11,12 +11,12 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            var client = await HubMqttClient.CreateWithClientCertsAsync(
-                                 "broker.azure-devices.net",
-                                 "../../../../.certs/devx1.pfx", "1234");
+            //var client = await HubMqttClient.CreateWithClientCertAsync(
+            //                     "broker.azure-devices.net",
+            //                     "../../../../.certs/devx1.pfx", "1234");
 
-            //var cs = Environment.GetEnvironmentVariable("cs");
-            //var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
+            var cs = Environment.GetEnvironmentVariable("cs");
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
 
             client.OnMessageReceived += (s, e) =>
             {
@@ -26,7 +26,7 @@ namespace sample_device
             };
 
             await client.SubscribeAsync("vehicles/#");
-            await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
+            var puback = await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
                                      new { lat = 23.32323, lon = 54.45454 });
 
             client.OnCommandReceived += async (s, e) =>
@@ -51,7 +51,7 @@ namespace sample_device
             while (true)
             {
                 //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
-                await client.SendTelemetryAsync(new { temperature = 1 });
+                var pubacktel = await client.SendTelemetryAsync(new { temperature = 1 });
                 await Task.Delay(5000);
             }
         }
