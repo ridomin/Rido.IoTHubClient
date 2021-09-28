@@ -17,7 +17,7 @@ namespace sample_device
 
             var cs = Environment.GetEnvironmentVariable("cs");
             var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
-
+            
             client.OnMessageReceived += (s, e) =>
             {
                 string contents = $"{e.ApplicationMessage.Topic} {e.ApplicationMessage.Payload.Length} Bytes";

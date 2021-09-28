@@ -23,16 +23,17 @@ namespace Rido.IoTHubClient
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
         public event EventHandler<MqttApplicationMessageReceivedEventArgs> OnMessageReceived;
 
-        public IMqttClient MqttClient;
+        IMqttClient MqttClient;
         public string ClientId { get; set; }
 
         // Dictionary<int, Func<string, string>> callbacks = new Dictionary<int, Func<string,string>>();
         static Action<string> cb;
         static Action<int> patch_cb;
         private int lastRid = 1;
-        public HubMqttClient(IMqttClient c, string clientId)
+        public HubMqttClient(string clientId)
         {
-            MqttClient = c;
+            var factory = new MqttFactory();
+            MqttClient = factory.CreateMqttClient();
             ClientId = clientId;
         }
 
@@ -43,9 +44,7 @@ namespace Rido.IoTHubClient
             var cid = cert.Subject.Substring(3);
             List<X509Certificate> certs = new List<X509Certificate> { cert };
 
-            var factory = new MqttFactory();
-            var mqttClient = factory.CreateMqttClient();
-            var hub = new HubMqttClient(mqttClient, cid);
+            var hub = new HubMqttClient(cid);
 
             var username = $"av=2021-06-30-preview&h={hostname}&did={cid}&am=X509&dtmi=dtmi:aa:b;1";
             //var username = $"{hostname}.azure-devices.net/{cid}/?api-version=2020-09-30&DeviceClientType=RidoTests&x509=true";
@@ -69,7 +68,7 @@ namespace Rido.IoTHubClient
 
             ConfigureReservedTopics(hub);
 
-            await mqttClient.ConnectAsync(options, CancellationToken.None);
+            await hub.MqttClient.ConnectAsync(options, CancellationToken.None);
 
             return hub;
         }
@@ -81,9 +80,7 @@ namespace Rido.IoTHubClient
 
             DeviceConnectionString dcs = new DeviceConnectionString(connectionString);
 
-            var mqttFactory = new MqttFactory();
-            IMqttClient mqttClient = mqttFactory.CreateMqttClient();
-            var hub = new HubMqttClient(mqttClient, dcs.DeviceId);
+            var hub = new HubMqttClient(dcs.DeviceId);
 
             var userName = dcs.GetUserName(expiryString);
             var password = dcs.BuildSasToken(expiryString);
@@ -102,7 +99,7 @@ namespace Rido.IoTHubClient
              .Build();
 
             ConfigureReservedTopics(hub);
-            await mqttClient.ConnectAsync(options, CancellationToken.None);
+            await hub.MqttClient.ConnectAsync(options, CancellationToken.None);
             return hub;
         }
 
