@@ -12,7 +12,7 @@ namespace sample_device
         public static async Task Main(string[] args)
         {
             var client = await HubMqttClient.CreateWithClientCertsAsync(
-                                 "rido.azure-devices.net",
+                                 "broker.azure-devices.net",
                                  "../../../../.certs/devx1.pfx", "1234");
 
             //var cs = Environment.GetEnvironmentVariable("cs");
