@@ -220,7 +220,15 @@ namespace Rido.IoTHubClient
 
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
-            string jsonPayload = JsonSerializer.Serialize(payload);
+            string jsonPayload;
+            if (payload is string)
+            {
+                jsonPayload = (string)payload;
+            }
+            else
+            {
+                jsonPayload = JsonSerializer.Serialize(payload);
+            }
             var message = new MqttApplicationMessageBuilder()
                              .WithTopic(topic)
                              .WithPayload(jsonPayload)
