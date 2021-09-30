@@ -50,6 +50,7 @@ namespace sample_device
                 var pubacktel = await client.SendTelemetryAsync(new { temperature = 1 });
                 await Task.Delay(5000);
             }
+            // disconnect
         }
     }
 }

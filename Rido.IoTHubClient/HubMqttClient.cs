@@ -1,5 +1,6 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
@@ -184,6 +185,11 @@ namespace Rido.IoTHubClient
                 Console.WriteLine("## DISCONNECT ##");
                 Console.WriteLine($"** {e.ClientWasConnected} {e.Reason}");
             });
+        }
+
+        public async Task Disconnect()
+        {
+            await MqttClient.DisconnectAsync();
         }
 
         public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload) => await PublishAsync("$az/iot/telemetry", payload);
