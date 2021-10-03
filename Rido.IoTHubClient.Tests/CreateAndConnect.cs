@@ -6,7 +6,7 @@ using Azure.Identity;
 using Rido.IoTHubClient;
 using Xunit.Abstractions;
 using System.Text.Json;
-namespace integration
+namespace Rido.IoTHubClient.Tests
 {
     public class CreateAndConnect
     {
