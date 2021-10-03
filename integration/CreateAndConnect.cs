@@ -19,7 +19,7 @@ namespace integration
         }
 
         static string hubName = "rido-freetier.azure-devices.net";
-        static string deviceId = "testdevice2";
+        static string deviceId = "testdevice3";
         [Fact]
         public async Task CreateDevice()
         {
@@ -40,14 +40,31 @@ namespace integration
             var suback = await client.RequestTwinAsync(s => output.WriteLine(s));
             Assert.NotNull(suback);
             var tick = Environment.TickCount;
-            var puback = await client.UpdateTwinAsync(new {myProp = tick}, async s =>
+            var puback = await client.UpdateTwinAsync(new {myProp = tick},  s =>
             {
                 output.WriteLine("PATCHED:" + s.ToString());
             }); 
             await Task.Delay(2000);
             var twin = await rm.GetTwinAsync(deviceId);
-            Assert.True(twin.ToJson().Contains(tick.ToString()));
+            Assert.Contains(tick.ToString(),twin.ToJson());
             output.WriteLine(twin.ToJson());
+
+            bool propertyReceived = false;
+            client.OnPropertyReceived += async (s, e) => {
+                output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
+                await Task.Delay(500);
+                
+                var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
+                await client.UpdateTwinAsync(ack, 
+                    v => Console.WriteLine("PATCHED ACK: " + v));
+                propertyReceived = true;
+            };
+
+            twin.Properties.Desired["myDProp"] = "some value";
+            await rm.UpdateTwinAsync(deviceId, twin, twin.ETag);
+
+            await Task.Delay(3000);
+            Assert.True(propertyReceived);
         }
     }
 }
