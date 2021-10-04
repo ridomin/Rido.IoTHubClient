@@ -13,7 +13,7 @@ namespace sample_device
         {
             var dps = new DpsClient();
             var res = await dps.ProvisionWithSas("0ne003DA5FB", "dev02", "eM45qszQFHH10v4pHRFFFtju4njfU5yq3DdYEgpTXWM=");
-            
+            Console.ReadLine();
             Console.WriteLine(res);
 
             //var client = await HubMqttClient.CreateWithClientCertsAsync(
