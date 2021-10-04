@@ -58,9 +58,10 @@ namespace Rido.IoTHubClient
 
                 }
             });
-            await MqttClient.PublishAsync(
+            var puback = await MqttClient.PublishAsync(
                 "$dps/registrations/PUT/iotdps-register/?$rid=13", 
                 "{ \"registrationId\" : \"" + registrationId +"\"}");
+            Console.WriteLine(puback.ReasonCode);
             await Task.Delay(5000);
             return await Task.FromResult("");
         }
@@ -74,12 +75,12 @@ namespace Rido.IoTHubClient
             return Convert.ToString(seconds, CultureInfo.InvariantCulture);
         }
 
-        private string CreateSasToken(string target, string sasKey, TimeSpan ttl)
+        private string CreateSasToken(string resource, string sasKey, TimeSpan ttl)
         {
             var expiry = BuildExpiresOn(ttl);
-            //string audience = WebUtility.UrlEncode(target);
-            var sig = Sign($"{target}\n{expiry}", sasKey);
-            return $"SharedAccessSignature sr={target}&sig={sig}&se={expiry}&skn=registration";
+           //string audience = WebUtility.UrlEncode(resource);
+            var sig = WebUtility.UrlEncode(Sign($"{resource}\n{expiry}", sasKey));
+            return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}"; // &skn=registration";
         }
 
         protected string Sign(string requestString, string key)
