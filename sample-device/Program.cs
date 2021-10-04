@@ -12,7 +12,7 @@ namespace sample_device
         public static async Task Main(string[] args)
         {
             var dps = new DpsClient();
-            var res = await dps.ProvisionWithSas("0ne00263D29", "myDevice", "vqK+3Cp+fQrMjBuhqEcZWhwJkzTfftV/NJqnJ6gT2Tg=");
+            var res = await dps.ProvisionWithSas("0ne003DA5FB", "dev02", "eM45qszQFHH10v4pHRFFFtju4njfU5yq3DdYEgpTXWM=");
             
             Console.WriteLine(res);
 
