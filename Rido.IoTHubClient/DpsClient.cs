@@ -44,26 +44,22 @@ namespace Rido.IoTHubClient
 
             await MqttClient.ConnectAsync(options);
             await MqttClient.SubscribeAsync("$dps/registrations/res/#");
+            string msg = string.Empty;
             MqttClient.UseApplicationMessageReceivedHandler(e =>
             {
-                string msg = string.Empty;
                 Console.WriteLine(e.ApplicationMessage.Topic);
                 if (e.ApplicationMessage.Payload != null)
                 {
                     msg = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                     Console.WriteLine(msg);
                 }
-                if (e.ApplicationMessage.Topic.StartsWith("$dps/registrations/res/"))
-                {
-
-                }
             });
             var puback = await MqttClient.PublishAsync(
                 "$dps/registrations/PUT/iotdps-register/?$rid=13", 
                 "{ \"registrationId\" : \"" + registrationId +"\"}");
             Console.WriteLine(puback.ReasonCode);
-            await Task.Delay(5000);
-            return await Task.FromResult("");
+            Console.ReadLine();
+            return await Task.FromResult<string>(msg);
         }
 
         private string BuildExpiresOn(TimeSpan timeToLive)
@@ -78,7 +74,6 @@ namespace Rido.IoTHubClient
         private string CreateSasToken(string resource, string sasKey, TimeSpan ttl)
         {
             var expiry = BuildExpiresOn(ttl);
-           //string audience = WebUtility.UrlEncode(resource);
             var sig = WebUtility.UrlEncode(Sign($"{resource}\n{expiry}", sasKey));
             return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}"; // &skn=registration";
         }
