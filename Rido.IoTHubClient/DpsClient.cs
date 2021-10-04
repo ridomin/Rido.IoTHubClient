@@ -58,7 +58,9 @@ namespace Rido.IoTHubClient
 
                 }
             });
-            await MqttClient.PublishAsync("$dps/registrations/PUT/iotdps-register/?$rid=1");
+            await MqttClient.PublishAsync(
+                "$dps/registrations/PUT/iotdps-register/?$rid=13", 
+                "{ \"registrationId\" : \"" + registrationId +"\"}");
             await Task.Delay(5000);
             return await Task.FromResult("");
         }
