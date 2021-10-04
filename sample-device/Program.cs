@@ -11,12 +11,17 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            var client = await HubMqttClient.CreateWithClientCertsAsync(
-                                 "rido.azure-devices.net",
-                                 "../../../../.certs/devx1.pfx", "1234");
+            var dps = new DpsClient();
+            var res = await dps.ProvisionWithSas("0ne00263D29", "myDevice", "vqK+3Cp+fQrMjBuhqEcZWhwJkzTfftV/NJqnJ6gT2Tg=");
+            
+            Console.WriteLine(res);
 
-            //var cs = Environment.GetEnvironmentVariable("cs");
-            //var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
+            //var client = await HubMqttClient.CreateWithClientCertsAsync(
+            //                     "rido.azure-devices.net",
+            //                     "../../../../.certs/devx1.pfx", "1234");
+
+            var cs = Environment.GetEnvironmentVariable("cs");
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
 
             client.OnMessageReceived += (s, e) =>
             {
