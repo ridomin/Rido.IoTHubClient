@@ -11,10 +11,28 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            var dps = new DpsClient();
-            var res = await dps.ProvisionWithSas("0ne003DA5FB", "rido03", "bWb2FfOGlAKIbXuy3RlYtVOwZ9v/eGg5cTEqHUPQSyM=");
-            //var res = await dps.ProvisionWithSas("0ne00263D29", "oneplus", "5RXlwjKPkjuFC4/+/zDJ4YgsihMvB6AgqQo8NGsaI0Q=");
-            Console.WriteLine(res.registrationState.assignedHub);
+
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+
+            clock.Restart();
+            var xres = await DpsClient.ProvisionWithCertAsync("0ne001F8884", "../../../../.certs/devx1.pfx", "1234");
+            Console.WriteLine($"{clock.ElapsedMilliseconds} ms {xres.registrationState.assignedHub}");
+            Console.WriteLine("---------------");
+
+            var res = await DpsClient.ProvisionWithSasAsync("0ne003DA5FB", "rido03", "bWb2FfOGlAKIbXuy3RlYtVOwZ9v/eGg5cTEqHUPQSyM=");
+            Console.WriteLine($"{clock.ElapsedMilliseconds} ms {res.registrationState.assignedHub}");
+            Console.WriteLine("---------------");
+
+            clock.Restart();
+            var res2 = await DpsClient.ProvisionWithSasAsync("0ne001F8884", "oneplus", "5RXlwjKPkjuFC4/+/zDJ4YgsihMvB6AgqQo8NGsaI0Q=");
+            Console.WriteLine($"{clock.ElapsedMilliseconds} ms {res2.registrationState.assignedHub}");
+            Console.WriteLine("---------------");
+
+            clock.Restart();
+            var res3 = await DpsClient.ProvisionWithSasAsync("0ne00263D29", "ridoDevice", "qBHP8s0A8wmMZz+rJ7sJEd3Ceb/iUn9XxCll7ZpNEz4=");
+            Console.WriteLine($"{clock.ElapsedMilliseconds} ms {res3.registrationState.assignedHub}");
+            Console.WriteLine("---------------");
+
 
             Console.ReadLine();
 
