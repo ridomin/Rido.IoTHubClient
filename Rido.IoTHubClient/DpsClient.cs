@@ -9,10 +9,29 @@ using System.Net;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
+
+    public class RegistrationState
+    {
+        public string registrationId { get; set; }
+        public  string assignedHub { get; set; }
+        public string deviceId { get; set; }
+        public string subStatus { get; set; }
+    }
+
+    public class DpsStatus
+    {
+
+        public string operationId { get; set; }
+        public string status { get; set; }
+        public RegistrationState registrationState { get; set; }
+
+    }
+
     public class DpsClient
     {
         public IMqttClient MqttClient;
@@ -23,13 +42,16 @@ namespace Rido.IoTHubClient
             MqttClient = factory.CreateMqttClient();
 
         }
-        public async Task<string> ProvisionWithSas(string idScope, string registrationId, string sasKey)
+        public async Task<DpsStatus> ProvisionWithSas(string idScope, string registrationId, string sasKey)
         {
+
+            var tcs = new TaskCompletionSource<DpsStatus>();
+            
             var resource = $"{idScope}/registrations/{registrationId}";
             var username = $"{resource}/api-version=2019-03-31";
             var password = CreateSasToken(resource, sasKey, TimeSpan.FromMinutes(5));
-            Console.WriteLine(username);
-            Console.WriteLine(password);
+//            Console.WriteLine(username);
+//            Console.WriteLine(password);
             var options = new MqttClientOptionsBuilder()
                 .WithClientId(registrationId)
                 .WithTcpServer("global.azure-devices-provisioning.net", 8883)
@@ -44,22 +66,43 @@ namespace Rido.IoTHubClient
 
             await MqttClient.ConnectAsync(options);
             await MqttClient.SubscribeAsync("$dps/registrations/res/#");
+            int rid = 1;
             string msg = string.Empty;
-            MqttClient.UseApplicationMessageReceivedHandler(e =>
+            MqttClient.UseApplicationMessageReceivedHandler(async e =>
             {
                 Console.WriteLine(e.ApplicationMessage.Topic);
+                
                 if (e.ApplicationMessage.Payload != null)
                 {
                     msg = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-                    Console.WriteLine(msg);
+                    //Console.WriteLine(msg);
+                    //tcs.TrySetException(new ApplicationException(msg));
+                }
+                
+                if (e.ApplicationMessage.Topic.StartsWith($"$dps/registrations/res/2"))
+                {
+                    var dpsRes = JsonSerializer.Deserialize<DpsStatus>(msg);
+
+                    if (dpsRes.status == "assigning")
+                    {
+    //                  Console.WriteLine(dpsRes.registrationState.assignedHub);
+                  //      Console.WriteLine(dpsRes.status);
+                        await Task.Delay(1000);
+                        await MqttClient.PublishAsync($"$dps/registrations/GET/iotdps-get-operationstatus/?$rid={rid}&operationId={dpsRes.operationId}");
+                    } 
+                    else
+                    {
+                        tcs.TrySetResult(dpsRes);
+                    }
                 }
             });
             var puback = await MqttClient.PublishAsync(
-                "$dps/registrations/PUT/iotdps-register/?$rid=13", 
+                $"$dps/registrations/PUT/iotdps-register/?$rid={rid}", 
                 "{ \"registrationId\" : \"" + registrationId +"\"}");
-            Console.WriteLine(puback.ReasonCode);
-            Console.ReadLine();
-            return await Task.FromResult<string>(msg);
+  //          Console.WriteLine(puback.ReasonCode);
+
+            return tcs.Task.Result;
+            
         }
 
         private string BuildExpiresOn(TimeSpan timeToLive)
