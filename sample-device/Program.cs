@@ -12,9 +12,11 @@ namespace sample_device
         public static async Task Main(string[] args)
         {
             var dps = new DpsClient();
-            var res = await dps.ProvisionWithSas("0ne003DA5FB", "dev02", "eM45qszQFHH10v4pHRFFFtju4njfU5yq3DdYEgpTXWM=");
+            var res = await dps.ProvisionWithSas("0ne003DA5FB", "rido03", "bWb2FfOGlAKIbXuy3RlYtVOwZ9v/eGg5cTEqHUPQSyM=");
+            //var res = await dps.ProvisionWithSas("0ne00263D29", "oneplus", "5RXlwjKPkjuFC4/+/zDJ4YgsihMvB6AgqQo8NGsaI0Q=");
+            Console.WriteLine(res.registrationState.assignedHub);
+
             Console.ReadLine();
-            Console.WriteLine(res);
 
             //var client = await HubMqttClient.CreateWithClientCertsAsync(
             //                     "rido.azure-devices.net",
