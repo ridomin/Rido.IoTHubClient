@@ -37,13 +37,14 @@ namespace Rido.IoTHubClient.Tests
 
             var client = await HubMqttClient.CreateFromConnectionStringAsync(connectionString);
             
-            var suback = await client.RequestTwinAsync(s => output.WriteLine(s));
-            Assert.NotNull(suback);
+            var t = await client.GetTwinAsync();
+            output.WriteLine(t);
+            
             var tick = Environment.TickCount;
-            var puback = await client.UpdateTwinAsync(new {myProp = tick},  s =>
-            {
-                output.WriteLine("PATCHED:" + s.ToString());
-            }); 
+            var p = await client.UpdateTwinAsync(new { myProp = tick });
+            
+            output.WriteLine("PATCHED:" + p.ToString());
+            
             await Task.Delay(2000);
             var twin = await rm.GetTwinAsync(deviceId);
             Assert.Contains(tick.ToString(),twin.ToJson());
@@ -55,8 +56,8 @@ namespace Rido.IoTHubClient.Tests
                 await Task.Delay(500);
                 
                 var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
-                await client.UpdateTwinAsync(ack, 
-                    v => Console.WriteLine("PATCHED ACK: " + v));
+                var v = await client.UpdateTwinAsync(ack);
+                Console.WriteLine("PATCHED ACK: " + v);
                 propertyReceived = true;
             };
 

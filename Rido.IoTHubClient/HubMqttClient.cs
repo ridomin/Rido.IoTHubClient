@@ -44,7 +44,7 @@ namespace Rido.IoTHubClient
         public string ClientId { get; set; }
 
         // Dictionary<int, Func<string, string>> callbacks = new Dictionary<int, Func<string,string>>();
-        static Action<string> cb;
+        static Action<string> twin_cb;
         static Action<int> patch_cb;
         private int lastRid = 1;
         public HubMqttClient(IMqttClient c, string clientId)
@@ -55,37 +55,45 @@ namespace Rido.IoTHubClient
         }
 
         public async Task SendTelemetryAsync(object payload) => await PublishAsync($"devices/{this.ClientId}/messages/events/", payload);
-        public async Task SendTelemetryAsync(string payload) => await PublishAsync($"devices/{this.ClientId}/messages/events/", payload);
 
-        public async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
+        public async Task<string> GetTwinAsync()
+        {
+            var tcs = new TaskCompletionSource<string>();
+            var puback = await RequestTwinAsync(s =>
+           {
+               tcs.TrySetResult(s);
+           });
+            return tcs.Task.Result;
+        }
+
+        async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
         {
             var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
             //callbacks.Add(lastRid, GetTwinCallback);
-            cb = GetTwinCallback;
+            twin_cb = GetTwinCallback;
             return puback;
         }
 
+        public async Task<int> UpdateTwinAsync(object payload)
+        {
+            var tcs = new TaskCompletionSource<int>();
+            var puback = await RequestUpdateTwinAsync(payload, i =>
+            {
+                tcs.TrySetResult(i);
+            });
+            return tcs.Task.Result;
+        }
 
-        public async Task<MqttClientPublishResult> UpdateTwinAsync(object payload, Action<int> patchTwinCallback)
+        async Task<MqttClientPublishResult> RequestUpdateTwinAsync(object payload, Action<int> patchTwinCallback)
         {
             var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
             patch_cb = patchTwinCallback;
             return puback;
         }
-
-        public async Task<MqttClientPublishResult> UpdateTwinAsync(string payload, Action<int> patchTwinCallback)
-        {
-            var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
-            patch_cb = patchTwinCallback;
-            return puback;
-        }
-
 
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
             await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
-        public async Task CommandResponseAsync(string rid, string cmdName, string status, string payload) =>
-            await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
-
+        
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd)
         {
             using var cert = new X509Certificate2(certPath, certPwd);
@@ -199,7 +207,7 @@ namespace Rido.IoTHubClient
                     Console.WriteLine($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
                     if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res"))
                     {
-                        cb(msg);
+                        twin_cb(msg);
                     }
                     else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                     {
@@ -263,7 +271,15 @@ namespace Rido.IoTHubClient
 
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
-            string jsonPayload = JsonSerializer.Serialize(payload);
+            string jsonPayload = string.Empty;
+            if (payload is string)
+            {
+                jsonPayload = payload as string;
+            }
+            else
+            {
+                jsonPayload = JsonSerializer.Serialize(payload);
+            }
             return await PublishAsync(topic, jsonPayload);
         }
 

@@ -11,9 +11,9 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            var client = await HubMqttClient.CreateWithClientCertsAsync(
-                                 "rido.azure-devices.net",
-                                 "../../../../.certs/devx1.pfx", "1234");
+            //var client = await HubMqttClient.CreateWithClientCertsAsync(
+            //                     "rido.azure-devices.net",
+            //                     "../../../../.certs/devx1.pfx", "1234");
 
             var cs = Environment.GetEnvironmentVariable("cs");
             var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
@@ -41,13 +41,14 @@ namespace sample_device
                 await Task.Delay(500);
                 // todo parse property
                 var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
-                await client.UpdateTwinAsync(ack, 
-                    v => Console.WriteLine("PATCHED ACK: " + v));
+                var v = await client.UpdateTwinAsync(ack);
+                Console.WriteLine("PATCHED ACK: " + v);
             };
 
             await Task.Delay(500);
             await client.SendTelemetryAsync(new { temperature = 1 });
-            await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 1" + s));
+            var t = await client.GetTwinAsync();
+            Console.WriteLine("Twin REPLY 1" + t);
             //await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount }, v => Console.WriteLine("Twin PATCHED version: " + v));
             //await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 2" + s));
             while (true)
