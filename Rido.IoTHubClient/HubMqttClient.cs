@@ -211,6 +211,8 @@ namespace Rido.IoTHubClient
         }
 
         public async Task SendTelemetryAsync(object payload) => await PublishAsync($"devices/{this.ClientId}/messages/events/", payload);
+        public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
+          await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
 
         public async Task<string> GetTwinAsync()
         {
@@ -220,14 +222,6 @@ namespace Rido.IoTHubClient
                 tcs.TrySetResult(s);
             });
             return tcs.Task.Result;
-        }
-
-        async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
-        {
-            var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
-            //callbacks.Add(lastRid, GetTwinCallback);
-            twin_cb = GetTwinCallback;
-            return puback;
         }
 
         public async Task<int> UpdateTwinAsync(object payload)
@@ -240,16 +234,19 @@ namespace Rido.IoTHubClient
             return tcs.Task.Result;
         }
 
+        async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
+        {
+            var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            //callbacks.Add(lastRid, GetTwinCallback);
+            twin_cb = GetTwinCallback;
+            return puback;
+        }
         async Task<MqttClientPublishResult> RequestUpdateTwinAsync(object payload, Action<int> patchTwinCallback)
         {
             var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
             patch_cb = patchTwinCallback;
             return puback;
         }
-
-        public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-            await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
-
 
         async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {

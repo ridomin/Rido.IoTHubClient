@@ -26,11 +26,9 @@ namespace Rido.IoTHubClient
 
     public class DpsStatus
     {
-
         public string operationId { get; set; }
         public string status { get; set; }
         public RegistrationState registrationState { get; set; }
-
     }
 
     public class DpsClient
@@ -41,7 +39,6 @@ namespace Rido.IoTHubClient
         {
             var factory = new MqttFactory();
             _mqttClient = factory.CreateMqttClient();
-
         }
 
         public static async Task<DpsStatus> ProvisionWithCertAsync(string idScope, string pfxPath, string pfxPwd)
