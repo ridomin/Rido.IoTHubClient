@@ -58,16 +58,15 @@ await client.SendTelemetryAsync(new { temperature = 1 });
 Read Twin
 
 ```cs
-await client.RequestTwinAsync(s => Console.WriteLine("Twin: " + s));
+var twin = await client.GetTwinAsync();
 ```
 
 
 Update Twin (Reported Properties)
 
 ```cs
-await client.UpdateTwinAsync(
-                new { tool = "from Rido.IoTHubClient" }, 
-                v => Console.WriteLine("Twin PATCHED version: " + v));
+var version = await client.UpdateTwinAsync(new { tool = "from Rido.IoTHubClient" }); 
+Console.WriteLine("Twin PATCHED version: " + version));
 ```
 
 Respond to Twin updates (Desired Properties)
