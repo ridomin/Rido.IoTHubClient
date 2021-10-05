@@ -11,24 +11,10 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            //var client = await HubMqttClient.CreateWithClientCertsAsync(
-            //                     "rido.azure-devices.net",
-            //                     "../../../../.certs/devx1.pfx", "1234");
+            var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
+            //var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
 
-            var cs = Environment.GetEnvironmentVariable("cs");
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
-
-            client.OnMessageReceived += (s, e) =>
-            {
-                string contents = $"{e.ApplicationMessage.Topic} {e.ApplicationMessage.Payload.Length} Bytes";
-                Console.WriteLine("Custom Topic Message:" + contents);
-
-            };
-
-            //await client.SubscribeAsync("vehicles/#");
-            //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
-            //                         new { lat = 23.32323, lon = 54.45454 });
-
+            
             client.OnCommandReceived += async (s, e) =>
             {
                 Console.WriteLine($"Processing Command {e.CommandName}");
@@ -47,10 +33,13 @@ namespace sample_device
 
             await Task.Delay(500);
             await client.SendTelemetryAsync(new { temperature = 1 });
+
             var t = await client.GetTwinAsync();
             Console.WriteLine("Twin REPLY 1" + t);
-            //await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount }, v => Console.WriteLine("Twin PATCHED version: " + v));
-            //await client.RequestTwinAsync(s => Console.WriteLine("Twin REPLY 2" + s));
+            
+            var v = await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount });
+            Console.WriteLine("Twin PATCHED version: " + v);
+            
             while (true)
             {
                 //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });

@@ -13,6 +13,10 @@ namespace Rido.IoTHubClient
         public string DeviceId { get; set; }
         public string SharedAccessKey { get; set; }
 
+        public DeviceConnectionString()
+        {
+
+        }
         public DeviceConnectionString(string cs)
         {
             ParseConnectionString(cs);
