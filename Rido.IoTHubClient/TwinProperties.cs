@@ -10,8 +10,6 @@ namespace Rido.IoTHubClient
 {
     public class TwinProperties
     {
-
-
         public static string BuildAck(string propsJson, int version, int status, string description = "")
         {
             using MemoryStream ms = new MemoryStream();

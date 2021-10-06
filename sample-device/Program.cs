@@ -51,7 +51,7 @@ namespace sample_device
             {
                 //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
                 await client.SendTelemetryAsync(new { temperature = 1 });
-                await Task.Delay(10000);
+                await Task.Delay(1000);
             }
         }
     }

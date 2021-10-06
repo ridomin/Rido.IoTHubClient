@@ -44,6 +44,7 @@ namespace Rido.IoTHubClient
         static Action<string> twin_cb;
         static Action<int> patch_cb;
         int lastRid = 1;
+        bool reconnecting = false;
 
         HubMqttClient(string clientId)
         {
@@ -75,17 +76,35 @@ namespace Rido.IoTHubClient
             var hub = new HubMqttClient(dcs.DeviceId);
             ConfigureReservedTopics(hub);
             await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
-            timerTokenRenew = new Timer(hub.Reconnect, null, 2000, TimeSpan.FromMinutes(1).Milliseconds);
+            timerTokenRenew = new Timer(hub.Reconnect, null, 30000, 0);
             return hub;
         }
+
+        async Task Close()
+        {
+            var unsuback = await mqttClient.UnsubscribeAsync(new string[]
+            {
+                "$iothub/methods/POST/#",
+                "$iothub/twin/res/#",
+                "$iothub/twin/PATCH/properties/desired/#"
+            });
+            unsuback.Items.ToList().ForEach(i => Console.WriteLine($"- {i.TopicFilter} {i.ReasonCode}"));
+            await mqttClient.DisconnectAsync();
+        }
+
         void Reconnect(object state)
         {
-            Console.WriteLine("*** REFRESHING TOKEN *** ");
-            timerTokenRenew.Dispose();
-            this.mqttClient.DisconnectAsync().Wait();
-            var dcs = HubMqttClient.deviceConnectionString;
-            _ = mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
-            //timerTokenRenew = new Timer(Reconnect, null, 2000, TimeSpan.FromMinutes(1).Milliseconds);
+            lock (this)
+            {
+                reconnecting = true;
+                Console.WriteLine("*** REFRESHING TOKEN *** ");
+                timerTokenRenew.Dispose();
+                Close().Wait();
+                var dcs = HubMqttClient.deviceConnectionString;
+                mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey).Wait();
+                reconnecting = false;
+                timerTokenRenew = new Timer(Reconnect, null, 30000, 0);
+            }
         }
 
         static void ConfigureReservedTopics(HubMqttClient hub)
@@ -210,13 +229,10 @@ namespace Rido.IoTHubClient
         const int maxRetries = 5;
         async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
-
-            int i = 0;
-            while (!mqttClient.IsConnected && i < maxRetries)
+            while (!mqttClient.IsConnected && reconnecting)
             {
-                Console.WriteLine("waiting 1s to publish " + i);
+                Console.WriteLine("waiting 1s to publish ");
                 await Task.Delay(1000);
-                i++;
             }
 
             string jsonPayload;
@@ -233,13 +249,32 @@ namespace Rido.IoTHubClient
                               .WithPayload(jsonPayload)
                               .Build();
 
-            var pubRes = await mqttClient.PublishAsync(message, CancellationToken.None);
-            if (pubRes.ReasonCode != MqttClientPublishReasonCode.Success)
+            MqttClientPublishResult pubRes;
+            if (mqttClient.IsConnected && !reconnecting)
             {
-                Console.WriteLine(pubRes.ReasonCode + pubRes.ReasonString);
+                try
+                {
+                    pubRes = await mqttClient.PublishAsync(message, CancellationToken.None);
+                    if (pubRes.ReasonCode != MqttClientPublishReasonCode.Success)
+                    {
+                        Console.WriteLine(pubRes.ReasonCode + pubRes.ReasonString);
+                    }
+                    Console.WriteLine($"-> {topic} {message.Payload?.Length} Bytes {pubRes.ReasonCode}");
+                    return pubRes;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Connected?: {mqttClient.IsConnected} Reconnecting?:{reconnecting}");
+                    Console.WriteLine(" !!!!!  Failed one message " + ex);
+                    return null;
+                }
             }
-            Console.WriteLine($"-> {topic} {message.Payload?.Length} Bytes {pubRes.ReasonCode}");
-            return pubRes;
+            else
+            {
+                Console.WriteLine(" !!!!!  Missing one message ");
+                await Task.Delay(100);
+                return null;
+            }
         }
     }
 }
