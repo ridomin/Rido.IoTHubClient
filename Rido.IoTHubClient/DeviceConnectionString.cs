@@ -54,30 +54,6 @@ namespace Rido.IoTHubClient
             return username;
         }
 
-        public string GetUserName(string expiryString)
-        {
-            string username = $"{this.HostName}/" +
-                   $"{this.DeviceId}/" +
-                   $"?api-version=2020-05-31-preview";
-
-            Console.WriteLine(username);
-            return username;
-        }
-
-        public string BuildSasToken(string expiryString)
-        {
-            SharedAccessSignatureBuilder sas = new SharedAccessSignatureBuilder()
-            {
-                Key = this.SharedAccessKey,
-                TimeToLive = TimeSpan.FromSeconds(60),
-                Target = $"{this.HostName}/devices/{this.DeviceId}"
-            };
-
-            var result = sas.ToSignature();
-            Console.WriteLine(result);
-            return result;
-        }
-
         public byte[] BuildSasToken2(string expiryString)
         {
             var algorithm = new HMACSHA256(Convert.FromBase64String(this.SharedAccessKey));

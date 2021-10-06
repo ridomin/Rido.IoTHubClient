@@ -88,7 +88,7 @@ namespace Rido.IoTHubClient
 
             var resource = $"{idScope}/registrations/{registrationId}";
             var username = $"{resource}/api-version=2019-03-31";
-            var password = CreateSasToken(resource, sasKey, TimeSpan.FromMinutes(5));
+            var password = SasAuth.CreateSasToken(resource, sasKey, 5);
 
             var options = new MqttClientOptionsBuilder()
                 .WithClientId(registrationId)
@@ -135,7 +135,7 @@ namespace Rido.IoTHubClient
                     var dpsRes = JsonSerializer.Deserialize<DpsStatus>(msg);
                     if (dpsRes.status == "assigning")
                     {
-                        await Task.Delay(333);
+                        await Task.Delay(800);
                         var pollTopic = $"$dps/registrations/GET/iotdps-get-operationstatus/?$rid={rid}&operationId={dpsRes.operationId}";
                         var puback = await _mqttClient.PublishAsync(pollTopic);
                         Console.WriteLine($"-> {pollTopic} {puback.ReasonCode}");
@@ -154,29 +154,5 @@ namespace Rido.IoTHubClient
                 "{ \"registrationId\" : \"" + registrationId + "\"}");
             Console.WriteLine($"-> {putTopic} {puback.ReasonCode}");
         }
-
-        static string BuildExpiresOn(TimeSpan timeToLive)
-        {
-            DateTime EpochTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            DateTime expiresOn = DateTime.UtcNow.Add(timeToLive);
-            TimeSpan secondsFromBaseTime = expiresOn.Subtract(EpochTime);
-            long seconds = Convert.ToInt64(secondsFromBaseTime.TotalSeconds, CultureInfo.InvariantCulture);
-            return Convert.ToString(seconds, CultureInfo.InvariantCulture);
-        }
-
-        static string CreateSasToken(string resource, string sasKey, TimeSpan ttl)
-        {
-            var expiry = BuildExpiresOn(ttl);
-            var sig = WebUtility.UrlEncode(Sign($"{resource}\n{expiry}", sasKey));
-            return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}"; // &skn=registration";
-        }
-
-        static string Sign(string requestString, string key)
-        {
-            using var algorithm = new HMACSHA256(Convert.FromBase64String(key));
-            return Convert.ToBase64String(algorithm.ComputeHash(Encoding.UTF8.GetBytes(requestString)));
-        }
-
-       
     }
 }

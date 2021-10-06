@@ -1,14 +1,11 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
-using MQTTnet.Client.Options;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics;
 using MQTTnet.Protocol;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
@@ -36,15 +33,17 @@ namespace Rido.IoTHubClient
 
     public class HubMqttClient
     {
+        public string ClientId { get; set; }
         public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
 
-        private IMqttClient mqttClient;
-        public string ClientId { get; set; }
+        IMqttClient mqttClient;
+        static Timer timerTokenRenew;
+        static DeviceConnectionString deviceConnectionString;
 
         static Action<string> twin_cb;
         static Action<int> patch_cb;
-        private int lastRid = 1;
+        int lastRid = 1;
 
         HubMqttClient(string clientId)
         {
@@ -55,30 +54,12 @@ namespace Rido.IoTHubClient
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd)
         {
             using var cert = new X509Certificate2(certPath, certPwd);
+            Console.WriteLine($"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})");
             var cid = cert.Subject.Substring(3);
             
             var hub = new HubMqttClient(cid);
             ConfigureReservedTopics(hub);
-            
-            var username = $"{hostname}/{cid}/?api-version=2020-09-30&DeviceClientType=RidoTests";
-            Console.WriteLine($"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})");
-
-            await hub.mqttClient.ConnectAsync(
-                new MqttClientOptionsBuilder()
-                    .WithClientId(cid)
-                    .WithTcpServer(hostname, 8883)
-                    .WithCredentials(new MqttClientCredentials()
-                    {
-                        Username = username
-                    })
-                    .WithTls(new MqttClientOptionsBuilderTlsParameters
-                    {
-                        UseTls = true,
-                        SslProtocol = SslProtocols.Tls12,
-                        Certificates = new List<X509Certificate> { cert }
-                    })
-                    .Build(), 
-                CancellationToken.None);
+            await hub.mqttClient.ConnectWithX509Async(hostname, cert);
             return hub;
         }
 
@@ -90,25 +71,21 @@ namespace Rido.IoTHubClient
 
         private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
-            DateTimeOffset expiry = DateTimeOffset.UtcNow.AddMinutes(60);
-            var expiryString = expiry.ToUnixTimeMilliseconds().ToString();
-
+            deviceConnectionString = dcs;
             var hub = new HubMqttClient(dcs.DeviceId);
             ConfigureReservedTopics(hub);
-            
-            await hub.mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
-                 .WithClientId(dcs.DeviceId)
-                 .WithTcpServer(dcs.HostName, 8883)
-                 .WithCredentials(dcs.GetUserName(expiryString), dcs.BuildSasToken(expiryString))
-                 .WithTls(new MqttClientOptionsBuilderTlsParameters
-                 {
-                     UseTls = true,
-                     CertificateValidationHandler = (x) => { return true; },
-                     SslProtocol = SslProtocols.Tls12
-                 })
-                 .Build(), 
-                 CancellationToken.None);
+            await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
+            timerTokenRenew = new Timer(hub.Reconnect, null, 2000, TimeSpan.FromMinutes(1).Milliseconds);
             return hub;
+        }
+        void Reconnect(object state)
+        {
+            Console.WriteLine("*** REFRESHING TOKEN *** ");
+            timerTokenRenew.Dispose();
+            this.mqttClient.DisconnectAsync().Wait();
+            var dcs = HubMqttClient.deviceConnectionString;
+            _ = mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
+            //timerTokenRenew = new Timer(Reconnect, null, 2000, TimeSpan.FromMinutes(1).Milliseconds);
         }
 
         static void ConfigureReservedTopics(HubMqttClient hub)
@@ -195,7 +172,6 @@ namespace Rido.IoTHubClient
                 Console.WriteLine($"** {e.ClientWasConnected} {e.Reason}");
             });
         }
-
         public async Task SendTelemetryAsync(object payload) => await PublishAsync($"devices/{this.ClientId}/messages/events/", payload);
         
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
@@ -231,8 +207,18 @@ namespace Rido.IoTHubClient
             return tcs.Task.Result;
         }
 
+        const int maxRetries = 5;
         async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
+
+            int i = 0;
+            while (!mqttClient.IsConnected && i < maxRetries)
+            {
+                Console.WriteLine("waiting 1s to publish " + i);
+                await Task.Delay(1000);
+                i++;
+            }
+
             string jsonPayload;
             if (payload is string)
             {
