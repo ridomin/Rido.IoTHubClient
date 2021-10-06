@@ -11,9 +11,9 @@ namespace Rido.IoTHubClient
 {
     public static class IMqttClientExtensions
     {
-        public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey)
+        public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, int minutes)
         {
-            (string username, string password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, sasKey, 2);
+            (string username, string password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, sasKey, minutes);
             return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
                  .WithClientId(deviceId)
                  .WithTcpServer(hostName, 8883)
@@ -21,7 +21,6 @@ namespace Rido.IoTHubClient
                  .WithTls(new MqttClientOptionsBuilderTlsParameters
                  {
                      UseTls = true,
-                     CertificateValidationHandler = (x) => { return true; },
                      SslProtocol = SslProtocols.Tls12
                  })
                  .Build());

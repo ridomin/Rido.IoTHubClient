@@ -33,6 +33,8 @@ namespace Rido.IoTHubClient
 
     public class HubMqttClient
     {
+        const int refreshTokenInterval = 3540000; //59 mins
+
         public string ClientId { get; set; }
         public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
@@ -51,7 +53,6 @@ namespace Rido.IoTHubClient
             mqttClient = new MqttFactory().CreateMqttClient();
             ClientId = clientId;
         }
-              
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd)
         {
             using var cert = new X509Certificate2(certPath, certPwd);
@@ -75,8 +76,8 @@ namespace Rido.IoTHubClient
             deviceConnectionString = dcs;
             var hub = new HubMqttClient(dcs.DeviceId);
             ConfigureReservedTopics(hub);
-            await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
-            timerTokenRenew = new Timer(hub.Reconnect, null, 30000, 0);
+            await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60);
+            timerTokenRenew = new Timer(hub.Reconnect, null, refreshTokenInterval, 0);
             return hub;
         }
 
@@ -101,9 +102,9 @@ namespace Rido.IoTHubClient
                 timerTokenRenew.Dispose();
                 Close().Wait();
                 var dcs = HubMqttClient.deviceConnectionString;
-                mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey).Wait();
+                mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60).Wait();
                 reconnecting = false;
-                timerTokenRenew = new Timer(Reconnect, null, 30000, 0);
+                timerTokenRenew = new Timer(Reconnect, null, refreshTokenInterval, 0);
             }
         }
 
@@ -225,14 +226,12 @@ namespace Rido.IoTHubClient
             }
             return tcs.Task.Result;
         }
-
-        const int maxRetries = 5;
         async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
             while (!mqttClient.IsConnected && reconnecting)
             {
-                Console.WriteLine("waiting 1s to publish ");
-                await Task.Delay(1000);
+                Console.WriteLine("waiting 10 ms to publish ");
+                await Task.Delay(10);
             }
 
             string jsonPayload;
