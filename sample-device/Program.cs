@@ -11,12 +11,12 @@ namespace sample_device
     {
         public static async Task Main(string[] args)
         {
-            var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne00385995", "d1", "");
-            Console.WriteLine(dpsRes.registrationState.assignedHub);
+            //var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne00385995", "d1", "");
+            //Console.WriteLine(dpsRes.registrationState.assignedHub);
+            //var client = await HubMqttClient.CreateAsync(dpsRes.registrationState.assignedHub, dpsRes.registrationState.deviceId, "DgjlqrS5fvABGhUzifabFT3gJOM4iNTC7zLDz05I3qQ=");
 
-            //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
+            var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
             //var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
-            var client = await HubMqttClient.CreateAsync(dpsRes.registrationState.assignedHub, dpsRes.registrationState.deviceId, "DgjlqrS5fvABGhUzifabFT3gJOM4iNTC7zLDz05I3qQ=");
 
 
             client.OnCommandReceived += async (s, e) =>

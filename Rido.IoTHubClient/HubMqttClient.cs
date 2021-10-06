@@ -48,8 +48,7 @@ namespace Rido.IoTHubClient
 
         HubMqttClient(string clientId)
         {
-            var factory = new MqttFactory();
-            mqttClient = factory.CreateMqttClient();
+            mqttClient = new MqttFactory().CreateMqttClient();
             ClientId = clientId;
         }
               
@@ -57,46 +56,37 @@ namespace Rido.IoTHubClient
         {
             using var cert = new X509Certificate2(certPath, certPwd);
             var cid = cert.Subject.Substring(3);
-            List<X509Certificate> certs = new List<X509Certificate> { cert };
-           
+            
             var hub = new HubMqttClient(cid);
+            ConfigureReservedTopics(hub);
             
             var username = $"{hostname}/{cid}/?api-version=2020-09-30&DeviceClientType=RidoTests";
             Console.WriteLine($"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})");
 
-            var options = new MqttClientOptionsBuilder()
-                .WithClientId(cid)
-                .WithTcpServer(hostname, 8883)
-                .WithCredentials(new MqttClientCredentials()
-                {
-                    Username = username
-                })
-                .WithTls(new MqttClientOptionsBuilderTlsParameters
-                {
-                    UseTls = true,
-                    SslProtocol = SslProtocols.Tls12,
-                    Certificates = certs
-                })
-                .Build();
-
-            ConfigureReservedTopics(hub);
-
-            await hub.mqttClient.ConnectAsync(options, CancellationToken.None);
-
+            await hub.mqttClient.ConnectAsync(
+                new MqttClientOptionsBuilder()
+                    .WithClientId(cid)
+                    .WithTcpServer(hostname, 8883)
+                    .WithCredentials(new MqttClientCredentials()
+                    {
+                        Username = username
+                    })
+                    .WithTls(new MqttClientOptionsBuilderTlsParameters
+                    {
+                        UseTls = true,
+                        SslProtocol = SslProtocols.Tls12,
+                        Certificates = new List<X509Certificate> { cert }
+                    })
+                    .Build(), 
+                CancellationToken.None);
             return hub;
         }
 
-        public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString)
-        {
-            DeviceConnectionString dcs = new DeviceConnectionString(connectionString);
-            return await CreateFromDCSAsync(dcs);
-        }
+        public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString) => 
+            await CreateFromDCSAsync(new DeviceConnectionString(connectionString));
 
-        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey)
-        {
-            DeviceConnectionString dcs = new DeviceConnectionString() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey};
-            return await CreateFromDCSAsync(dcs);
-        }
+        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey) =>
+            await CreateFromDCSAsync(new DeviceConnectionString() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey });
 
         private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
@@ -104,24 +94,20 @@ namespace Rido.IoTHubClient
             var expiryString = expiry.ToUnixTimeMilliseconds().ToString();
 
             var hub = new HubMqttClient(dcs.DeviceId);
-
-            var userName = dcs.GetUserName(expiryString);
-            var password = dcs.BuildSasToken(expiryString);
-
-            var options = new MqttClientOptionsBuilder()
-             .WithClientId(dcs.DeviceId)
-             .WithTcpServer(dcs.HostName, 8883)
-             .WithCredentials(userName, password)
-             .WithTls(new MqttClientOptionsBuilderTlsParameters
-             {
-                 UseTls = true,
-                 CertificateValidationHandler = (x) => { return true; },
-                 SslProtocol = SslProtocols.Tls12
-             })
-             .Build();
-
             ConfigureReservedTopics(hub);
-            await hub.mqttClient.ConnectAsync(options, CancellationToken.None);
+            
+            await hub.mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
+                 .WithClientId(dcs.DeviceId)
+                 .WithTcpServer(dcs.HostName, 8883)
+                 .WithCredentials(dcs.GetUserName(expiryString), dcs.BuildSasToken(expiryString))
+                 .WithTls(new MqttClientOptionsBuilderTlsParameters
+                 {
+                     UseTls = true,
+                     CertificateValidationHandler = (x) => { return true; },
+                     SslProtocol = SslProtocols.Tls12
+                 })
+                 .Build(), 
+                 CancellationToken.None);
             return hub;
         }
 
@@ -211,41 +197,38 @@ namespace Rido.IoTHubClient
         }
 
         public async Task SendTelemetryAsync(object payload) => await PublishAsync($"devices/{this.ClientId}/messages/events/", payload);
+        
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
           await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
 
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>();
-            var puback = await RequestTwinAsync(s =>
+            var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
-                tcs.TrySetResult(s);
-            });
+                twin_cb = s => tcs.TrySetResult(s);
+            }
+            else
+            {
+                twin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin GET: {s}"));
+            }
             return tcs.Task.Result;
         }
 
         public async Task<int> UpdateTwinAsync(object payload)
         {
             var tcs = new TaskCompletionSource<int>();
-            var puback = await RequestUpdateTwinAsync(payload, i =>
-            {
-                tcs.TrySetResult(i);
-            });
-            return tcs.Task.Result;
-        }
-
-        async Task<MqttClientPublishResult> RequestTwinAsync(Action<string> GetTwinCallback)
-        {
-            var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
-            //callbacks.Add(lastRid, GetTwinCallback);
-            twin_cb = GetTwinCallback;
-            return puback;
-        }
-        async Task<MqttClientPublishResult> RequestUpdateTwinAsync(object payload, Action<int> patchTwinCallback)
-        {
             var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
-            patch_cb = patchTwinCallback;
-            return puback;
+            if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
+            {
+                patch_cb = s => tcs.TrySetResult(s);
+            }
+            else
+            {
+                patch_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
+            }
+            return tcs.Task.Result;
         }
 
         async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
