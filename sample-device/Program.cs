@@ -18,10 +18,13 @@ namespace sample_device
             //var t1 = await client1.GetTwinAsync();
             //Console.WriteLine("Twin1 REPLY 1" + t1);
 
+            
+            Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
+            Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-            var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
-            //var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
             Console.WriteLine();
             Console.WriteLine(client.DeviceConnectionString);
             Console.WriteLine();
@@ -51,13 +54,19 @@ namespace sample_device
             var v = await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount });
             Console.WriteLine("Twin PATCHED version: " + v);
             
-            while (true)
+            while (client.IsConnected)
             {
                 //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
                 await client.SendTelemetryAsync(new { temperature = 1 });
-                await Task.Delay(1000);
+                await Task.Delay(5000);
                 Console.Write("t");
             }
+
+            await client.SendTelemetryAsync(new { temperature = 1 });
+
+
+            Console.WriteLine("End");
+
         }
     }
 }

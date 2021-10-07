@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -9,16 +10,14 @@ namespace Rido.IoTHubClient
     {
         public string HostName { get; set; }
         public string DeviceId { get; set; }
-        public string SharedAccessKey { get; set; }
+        public string SharedAccessKey { get;  set; }
+        public string Auth { get; set; } = "SAS";
+        public string CertPath { get; private set; }
+        public string CertPassword { get; private set; }
 
-        public DeviceConnectionString()
-        {
 
-        }
-        public DeviceConnectionString(string cs)
-        {
-            ParseConnectionString(cs);
-        }
+        public DeviceConnectionString(){}
+        public DeviceConnectionString(string cs) => ParseConnectionString(cs);
 
         private void ParseConnectionString(string cs)
         {
@@ -26,11 +25,7 @@ namespace Rido.IoTHubClient
             {
                 if (!dict.TryGetValue(propertyName, out string value))
                 {
-                    Console.WriteLine($"The connection string is missing the property: {propertyName}");
-                }
-                else
-                {
-                    // Console.WriteLine($"Connection Property Found: {propertyName}={value}");
+                    Trace.TraceWarning($"The connection string is missing the property: {propertyName}");
                 }
                 return value;
             }
@@ -39,11 +34,12 @@ namespace Rido.IoTHubClient
             this.HostName = GetConnectionStringValue(map, nameof(this.HostName));
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
+            this.Auth = GetConnectionStringValue(map,nameof(this.Auth));
         }
 
         public override string ToString()
         {
-            return $"HostName={HostName};DeviceId={DeviceId};SharedAccessKey={SharedAccessKey}";
+            return $"HostName={HostName};DeviceId={DeviceId};SharedAccessKey={SharedAccessKey};Auth={Auth}";
         }
 
         public string GetUserName2(string expiryString)
