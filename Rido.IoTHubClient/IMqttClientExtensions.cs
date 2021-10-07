@@ -69,7 +69,7 @@ namespace Rido.IoTHubClient
                    .WithTcpServer(hostName, 8883)
                    .WithCredentials(new MqttClientCredentials()
                    {
-                       Username = SasAuth.GetUserName(hostName, cert.Subject.Substring(3))
+                       Username = SasAuthV2.GetUserName(hostName, cert.Subject.Substring(3))
                    })
                    .WithTls(new MqttClientOptionsBuilderTlsParameters
                    {

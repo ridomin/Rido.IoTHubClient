@@ -18,7 +18,10 @@ namespace sample_device
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-            var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            //var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            var client = await HubBrokerMqttClient.CreateWithClientCertsAsync(
+                                 "broker.azure-devices.net",
+                                 "../../../../.certs/devx1.pfx", "1234");
 
             var t = await client.GetTwinAsync();
             Console.WriteLine("Twin REPLY 1" + t);
