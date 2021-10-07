@@ -1,9 +1,11 @@
-﻿using Rido.IoTHubClient;
+﻿using MQTTnet.Client.Subscribing;
+using Rido.IoTHubClient;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace sample_device
@@ -11,6 +13,30 @@ namespace sample_device
     public class Program
     {
         public static async Task Main(string[] args)
+        {
+            Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
+            Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
+            Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
+
+            var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+
+            var t = await client.GetTwinAsync();
+            Console.WriteLine("Twin REPLY 1" + t);
+            
+            await client.mqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder().WithTopicFilter("vehicles/#").Build(), CancellationToken.None);
+            client.OnMessageReceived += (s, e) =>
+            {
+                string contents = $"{e.ApplicationMessage.Topic} {e.ApplicationMessage.Payload.Length} Bytes";
+                Console.WriteLine("Custom Topic Message:" + contents);
+            };
+            while (true)
+            {
+                await client.PublishAsync($"vehicles/{client.DeviceConnectionString.DeviceId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
+                var pubacktel = await client.SendTelemetryAsync(new { temperature = 1 });
+                await Task.Delay(5000);
+            }
+        }
+        static async Task MainV1(string[] args)
         {
             //var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne00385995", "paad", "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
             //Console.WriteLine(dpsRes.registrationState.assignedHub);
