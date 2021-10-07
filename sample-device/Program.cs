@@ -1,6 +1,7 @@
 ﻿using Rido.IoTHubClient;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,10 +18,13 @@ namespace sample_device
             //var t1 = await client1.GetTwinAsync();
             //Console.WriteLine("Twin1 REPLY 1" + t1);
 
+            Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
 
-            //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
-
+            var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
+            //var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            Console.WriteLine();
+            Console.WriteLine(client.DeviceConnectionString);
+            Console.WriteLine();
 
             client.OnCommandReceived += async (s, e) =>
             {
@@ -52,6 +56,7 @@ namespace sample_device
                 //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
                 await client.SendTelemetryAsync(new { temperature = 1 });
                 await Task.Delay(1000);
+                Console.Write("t");
             }
         }
     }
