@@ -93,3 +93,12 @@ client.OnCommandReceived += async (s, e) =>
 
 ```
 
+# Tracing
+
+This library uses `System.Diagnostics.Tracing`
+
+```cs
+Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
+Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
+Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
+```
