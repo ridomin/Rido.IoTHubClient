@@ -71,7 +71,7 @@ namespace Rido.IoTHubClient
             using var cert = new X509Certificate2(certPath, certPwd);
             Trace.TraceInformation($"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})");
             var cid = cert.Subject.Substring(3);
-            
+
             var hub = new HubMqttClient();
             hub.cert = new X509Certificate2(certPath, certPwd);
             ConfigureReservedTopics(hub);
@@ -80,7 +80,7 @@ namespace Rido.IoTHubClient
             return hub;
         }
 
-        public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString) => 
+        public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
             await CreateFromDCSAsync(new DeviceConnectionString(connectionString));
 
         public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey) =>
@@ -88,7 +88,6 @@ namespace Rido.IoTHubClient
 
         private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
-            
             var hub = new HubMqttClient();
             hub.DeviceConnectionString = dcs;
             ConfigureReservedTopics(hub);
@@ -126,6 +125,22 @@ namespace Rido.IoTHubClient
 
         static void ConfigureReservedTopics(HubMqttClient hub)
         {
+            hub.mqttClient.UseConnectedHandler(async e =>
+            {
+                Trace.TraceWarning("### CONNECTED WITH SERVER ###");
+                var subres = await hub.mqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
+                                                        .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .Build());
+                subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+            });
+
+            hub.mqttClient.UseDisconnectedHandler(e =>
+            {
+                Trace.TraceError("## DISCONNECT ##");
+                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
+            });
 
             hub.mqttClient.UseApplicationMessageReceivedHandler(e =>
             {
@@ -179,27 +194,10 @@ namespace Rido.IoTHubClient
                     });
                 }
             });
-
-            hub.mqttClient.UseConnectedHandler(async e =>
-            {
-                Trace.TraceWarning("### CONNECTED WITH SERVER ###");
-                var subres = await hub.mqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
-                                                        .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                        .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                        .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                        .Build());
-                subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
-            });
-
-            hub.mqttClient.UseDisconnectedHandler(e =>
-            {
-                Trace.TraceError("## DISCONNECT ##");
-                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
-            });
         }
-        public async Task SendTelemetryAsync(object payload) => 
+        public async Task SendTelemetryAsync(object payload) =>
             await PublishAsync($"devices/{this.DeviceConnectionString.DeviceId}/messages/events/", payload);
-        
+
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
           await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
 
