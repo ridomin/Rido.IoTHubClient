@@ -103,7 +103,7 @@ namespace Rido.IoTHubClient
                 timerTokenRenew.Dispose();
                 Close().Wait();
                 var dcs = DeviceConnectionString;
-                mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60).Wait();
+                mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60).Wait();
                 reconnecting = false;
                 timerTokenRenew = new Timer(ReconnectWithToken, null, refreshTokenInterval, 0);
             }
