@@ -1,8 +1,10 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Options;
+using MQTTnet.Diagnostics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -37,7 +39,18 @@ namespace Rido.IoTHubClient
         static int rid = 1;
         static DpsClient()
         {
-            var factory = new MqttFactory();
+            MqttNetLogger logger = new MqttNetLogger();
+            logger.LogMessagePublished += (s, e) =>
+            {
+                var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
+                if (e.LogMessage.Exception != null)
+                {
+                    trace += Environment.NewLine + e.LogMessage.Exception.ToString();
+                }
+
+                Trace.TraceInformation(trace);
+            };
+            var factory = new MqttFactory(logger);
             _mqttClient = factory.CreateMqttClient();
         }
 
@@ -73,7 +86,7 @@ namespace Rido.IoTHubClient
             await _mqttClient.ConnectAsync(options);
 
             var suback = await _mqttClient.SubscribeAsync("$dps/registrations/res/#");
-            suback.Items.ToList().ForEach(x => Console.WriteLine($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+            suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             await ConfigureDPSFlowAsync(registrationId, tcs);
             return tcs.Task.Result;
         }
@@ -105,7 +118,7 @@ namespace Rido.IoTHubClient
             await _mqttClient.ConnectAsync(options);
 
             var suback = await _mqttClient.SubscribeAsync("$dps/registrations/res/#");
-            suback.Items.ToList().ForEach(x => Console.WriteLine($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+            suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             await ConfigureDPSFlowAsync(registrationId, tcs);
             return tcs.Task.Result;
 
@@ -117,7 +130,6 @@ namespace Rido.IoTHubClient
             _mqttClient.UseApplicationMessageReceivedHandler(async e =>
             {
                 var topic = e.ApplicationMessage.Topic;
-                Console.WriteLine($"<-{topic}");
 
                 if (e.ApplicationMessage.Payload != null)
                 {
@@ -138,8 +150,6 @@ namespace Rido.IoTHubClient
                         await Task.Delay(800);
                         var pollTopic = $"$dps/registrations/GET/iotdps-get-operationstatus/?$rid={rid}&operationId={dpsRes.operationId}";
                         var puback = await _mqttClient.PublishAsync(pollTopic);
-                        Console.WriteLine($"-> {pollTopic} {puback.ReasonCode}");
-
                     }
                     else
                     {
@@ -152,7 +162,6 @@ namespace Rido.IoTHubClient
             var putTopic = $"$dps/registrations/PUT/iotdps-register/?$rid={rid}";
             var puback = await _mqttClient.PublishAsync(putTopic,
                 "{ \"registrationId\" : \"" + registrationId + "\"}");
-            Console.WriteLine($"-> {putTopic} {puback.ReasonCode}");
         }
     }
 }

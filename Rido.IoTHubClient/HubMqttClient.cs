@@ -277,22 +277,7 @@ namespace Rido.IoTHubClient
             else
             {
                 Trace.TraceWarning(" !!!!!  Missing one message ");
-                if (!reconnecting)
-                {
-                    reconnecting = true;
-                    await mqttClient.ReconnectAsync();
-                    reconnecting = false;
-                    //Trace.TraceWarning(" *** Force Reconnection *** ");
-                    //var dcs = DeviceConnectionString;
-                    //if (dcs.Auth=="SAS")
-                    //{ 
-                    //    mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60).Wait();
-                    //}
-                    //else
-                    //{
-                    //    mqttClient.ConnectWithX509Async(dcs.HostName, cert).Wait();
-                    //}
-                }
+                // TODO: Reconnect here?
                 return null;
             }
         }
