@@ -16,22 +16,6 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class CommandEventArgs : EventArgs
-    {
-        public string Rid { get; set; }
-        public string CommandName { get; set; }
-        public string CommandRequestMessageJson { get; set; }
-        public string Topic { get; set; }
-    }
-
-    public class PropertyEventArgs : EventArgs
-    {
-        public string Rid { get; set; }
-        public string PropertyMessageJson { get; set; }
-        public string Topic { get; set; }
-        public int Version { get; set; }
-    }
-
     public class HubMqttClient
     {
         const int refreshTokenInterval = 3540000; //59 mins

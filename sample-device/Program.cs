@@ -56,8 +56,8 @@ namespace sample_device
             
             while (client.IsConnected)
             {
-                //await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
-                await client.SendTelemetryAsync(new { temperature = 1 });
+                await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos", new { lat = 23.32323, lon = 54.45454 });
+                var pubacktel = await client.SendTelemetryAsync(new { temperature = 1 });
                 await Task.Delay(5000);
                 Console.Write("t");
             }
