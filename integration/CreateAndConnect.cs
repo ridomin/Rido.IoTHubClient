@@ -8,12 +8,12 @@ using Xunit.Abstractions;
 using System.Text.Json;
 namespace integration
 {
-    public class CreateAndConnect
+    public class CreateAndConnectV1
     {
 
         private readonly ITestOutputHelper output;
 
-        public CreateAndConnect(ITestOutputHelper output)
+        public CreateAndConnectV1(ITestOutputHelper output)
         {
             this.output = output;
         }
@@ -21,7 +21,7 @@ namespace integration
         static string hubName = "rido-freetier.azure-devices.net";
         static string deviceId = "testdevice3";
         [Fact]
-        public async Task CreateDevice()
+        public async Task CreateDeviceWithSas()
         {
            // var tokenCredential = new DefaultAzureCredential();
             var rm = RegistryManager.CreateFromConnectionString("HostName=rido-freetier.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=tMLbwroX2KsKH4PiHCcDKg31QOln4t29MVHIG2q6Ric=");
@@ -37,13 +37,14 @@ namespace integration
 
             var client = await HubMqttClient.CreateFromConnectionStringAsync(connectionString);
             
-            var suback = await client.RequestTwinAsync(s => output.WriteLine(s));
-            Assert.NotNull(suback);
+            var t = await client.GetTwinAsync();
+            output.WriteLine(t);
+
+
             var tick = Environment.TickCount;
-            var puback = await client.UpdateTwinAsync(new {myProp = tick},  s =>
-            {
-                output.WriteLine("PATCHED:" + s.ToString());
-            }); 
+            var v = await client.UpdateTwinAsync(new { myProp = tick });
+            output.WriteLine("PATCHED:" + v.ToString());
+            
             await Task.Delay(2000);
             var twin = await rm.GetTwinAsync(deviceId);
             Assert.Contains(tick.ToString(),twin.ToJson());
@@ -55,8 +56,8 @@ namespace integration
                 await Task.Delay(500);
                 
                 var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
-                await client.UpdateTwinAsync(ack, 
-                    v => Console.WriteLine("PATCHED ACK: " + v));
+                var updateversion = await client.UpdateTwinAsync(ack);
+                Console.WriteLine("PATCHED ACK: " + updateversion); ;
                 propertyReceived = true;
             };
 

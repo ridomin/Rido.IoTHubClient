@@ -179,7 +179,7 @@ namespace Rido.IoTHubClient
                 }
             });
         }
-        public async Task SendTelemetryAsync(object payload) =>
+        public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload) =>
             await PublishAsync($"devices/{this.DeviceConnectionString.DeviceId}/messages/events/", payload);
 
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>

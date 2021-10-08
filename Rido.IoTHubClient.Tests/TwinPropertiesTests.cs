@@ -15,7 +15,7 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public void Ack()
+        public void Ack2()
         {
             var inJson = "{\"$version\":1,\"tool\":\"test\"}";
             var ack = TwinProperties.BuildAck(inJson, 1, 200, "ack description");
