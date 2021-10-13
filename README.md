@@ -78,8 +78,7 @@ client.OnPropertyReceived += async (s, e) =>
 {
     Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
     await Task.Delay(500);
-    await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = "put value here" } }, 
-    v => Console.WriteLine("PATCHED ACK: " + v));
+    var puback = await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = "put value here" } });
 };
 ```
 
