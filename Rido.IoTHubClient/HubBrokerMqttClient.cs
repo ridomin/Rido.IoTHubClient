@@ -221,6 +221,12 @@ namespace Rido.IoTHubClient
             }
             return tcs.Task.Result;
         }
+
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string topic)
+        {
+            return await mqttClient.SubscribeAsync(topic);
+        }
+
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
             while (!mqttClient.IsConnected && reconnecting)
