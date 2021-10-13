@@ -83,7 +83,7 @@ namespace sample_device
             
             while (client.IsConnected)
             {
-                var pubacktel = await client.SendTelemetryAsync(new { temperature = 1 });
+                await client.SendTelemetryAsync(new { temperature = 1 });
                 await Task.Delay(5000);
                 Console.Write("t");
             }
