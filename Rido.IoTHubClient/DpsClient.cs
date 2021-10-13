@@ -38,10 +38,7 @@ namespace Rido.IoTHubClient
 
         public static async Task<DpsStatus> ProvisionWithCertAsync(string idScope, string pfxPath, string pfxPwd)
         {
-            if (_mqttClient.IsConnected)
-            {
-                await _mqttClient.DisconnectAsync();
-            }
+           
             var tcs = new TaskCompletionSource<DpsStatus>();
 
             X509Certificate2 cert = new X509Certificate2(pfxPath, pfxPwd);
@@ -70,6 +67,10 @@ namespace Rido.IoTHubClient
             var suback = await _mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             await ConfigureDPSFlowAsync(registrationId, tcs);
+            if (_mqttClient.IsConnected)
+            {
+                await _mqttClient.DisconnectAsync();
+            }
             return tcs.Task.Result;
         }
 
@@ -102,6 +103,10 @@ namespace Rido.IoTHubClient
             var suback = await _mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             await ConfigureDPSFlowAsync(registrationId, tcs);
+            if (_mqttClient.IsConnected)
+            {
+                await _mqttClient.DisconnectAsync();
+            }
             return tcs.Task.Result;
 
         }
