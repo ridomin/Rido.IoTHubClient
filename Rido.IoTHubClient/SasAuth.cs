@@ -22,7 +22,7 @@ namespace Rido.IoTHubClient
             return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}";
         }
 
-        internal static (string username, string password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, int minutes) => 
+        internal static (string username, string password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, int minutes = 60) => 
             (GetUserName(hostName, deviceId), CreateSasToken($"{hostName}/devices/{deviceId}", sasKey, minutes));
     }
 }
