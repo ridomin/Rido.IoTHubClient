@@ -5,11 +5,8 @@ using MQTTnet.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
-using System.Net;
 using System.Security.Authentication;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
@@ -17,21 +14,6 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
-
-    public class RegistrationState
-    {
-        public string registrationId { get; set; }
-        public  string assignedHub { get; set; }
-        public string deviceId { get; set; }
-        public string subStatus { get; set; }
-    }
-
-    public class DpsStatus
-    {
-        public string operationId { get; set; }
-        public string status { get; set; }
-        public RegistrationState registrationState { get; set; }
-    }
 
     public class DpsClient
     {
@@ -147,7 +129,7 @@ namespace Rido.IoTHubClient
                     var dpsRes = JsonSerializer.Deserialize<DpsStatus>(msg);
                     if (dpsRes.status == "assigning")
                     {
-                        await Task.Delay(800);
+                        await Task.Delay(900);
                         var pollTopic = $"$dps/registrations/GET/iotdps-get-operationstatus/?$rid={rid}&operationId={dpsRes.operationId}";
                         var puback = await _mqttClient.PublishAsync(pollTopic);
                     }

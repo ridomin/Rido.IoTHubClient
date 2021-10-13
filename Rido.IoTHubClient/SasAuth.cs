@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
@@ -22,7 +18,7 @@ namespace Rido.IoTHubClient
             return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}";
         }
 
-        internal static (string username, string password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, int minutes = 60) => 
+        internal static (string username, string password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, int minutes = 60) =>
             (GetUserName(hostName, deviceId), CreateSasToken($"{hostName}/devices/{deviceId}", sasKey, minutes));
     }
 }

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Rido.IoTHubClient
 {
@@ -10,11 +7,11 @@ namespace Rido.IoTHubClient
     {
         public string HostName { get; set; }
         public string DeviceId { get; set; }
-        public string SharedAccessKey { get;  set; }
+        public string SharedAccessKey { get; set; }
         public string Auth { get; set; } = "SAS";
 
 
-        public DeviceConnectionString(){}
+        public DeviceConnectionString() { }
         public DeviceConnectionString(string cs) => ParseConnectionString(cs);
 
         private void ParseConnectionString(string cs)
@@ -32,7 +29,7 @@ namespace Rido.IoTHubClient
             this.HostName = GetConnectionStringValue(map, nameof(this.HostName));
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
-            this.Auth = GetConnectionStringValue(map,nameof(this.Auth));
+            this.Auth = GetConnectionStringValue(map, nameof(this.Auth));
         }
 
         public override string ToString()
