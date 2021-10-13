@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31728.292
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31702.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rido.IoTHubClient", "Rido.IoTHubClient\Rido.IoTHubClient.csproj", "{6D8B2D57-C4B5-4912-9192-054E84EA019C}"
 EndProject
@@ -16,8 +16,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rido.IoTHubClient.Tests", "Rido.IoTHubClient.Tests\Rido.IoTHubClient.Tests.csproj", "{E1F5F59F-8ECE-4B5D-BF34-31226ABAA17D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "v1client", "v1client\v1client.csproj", "{687A5BE0-002A-4AC3-83BA-20BA3D382497}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "integration", "integration\integration.csproj", "{9BFD05A3-93F2-4568-9BC6-E533CDA7CD76}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +39,6 @@ Global
 		{687A5BE0-002A-4AC3-83BA-20BA3D382497}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{687A5BE0-002A-4AC3-83BA-20BA3D382497}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{687A5BE0-002A-4AC3-83BA-20BA3D382497}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9BFD05A3-93F2-4568-9BC6-E533CDA7CD76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9BFD05A3-93F2-4568-9BC6-E533CDA7CD76}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9BFD05A3-93F2-4568-9BC6-E533CDA7CD76}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9BFD05A3-93F2-4568-9BC6-E533CDA7CD76}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

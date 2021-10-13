@@ -80,7 +80,7 @@ namespace Rido.IoTHubClient
             return hub;
         }
 
-        async Task Close()
+        public async Task CloseAsync()
         {
             var unsuback = await mqttClient.UnsubscribeAsync(new string[]
             {
@@ -99,7 +99,7 @@ namespace Rido.IoTHubClient
                 reconnecting = true;
                 Trace.TraceWarning("*** REFRESHING TOKEN *** ");
                 timerTokenRenew.Dispose();
-                Close().Wait();
+                CloseAsync().Wait();
                 var dcs = DeviceConnectionString;
                 mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60).Wait();
                 reconnecting = false;

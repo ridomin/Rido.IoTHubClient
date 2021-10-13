@@ -26,4 +26,10 @@
     <ProjectReference Include="..\Rido.IoTHubClient\Rido.IoTHubClient.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="testdevice.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

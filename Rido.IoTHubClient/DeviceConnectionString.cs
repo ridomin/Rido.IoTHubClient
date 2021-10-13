@@ -12,8 +12,6 @@ namespace Rido.IoTHubClient
         public string DeviceId { get; set; }
         public string SharedAccessKey { get;  set; }
         public string Auth { get; set; } = "SAS";
-        public string CertPath { get; private set; }
-        public string CertPassword { get; private set; }
 
 
         public DeviceConnectionString(){}
@@ -40,24 +38,6 @@ namespace Rido.IoTHubClient
         public override string ToString()
         {
             return $"HostName={HostName};DeviceId={DeviceId};SharedAccessKey={SharedAccessKey};Auth={Auth}";
-        }
-
-        public string GetUserName2(string expiryString)
-        {
-            string username = $"av=2021-06-30-preview&" +
-                   $"h={this.HostName}&" +
-                   $"did={this.DeviceId}&" +
-                   $"am=SAS&" +
-                   $"se={expiryString}";
-
-            return username;
-        }
-
-        public byte[] BuildSasToken2(string expiryString)
-        {
-            var algorithm = new HMACSHA256(Convert.FromBase64String(this.SharedAccessKey));
-            string toSign = $"{this.HostName}\n{this.DeviceId}\n\n\n{expiryString}\n";
-            return algorithm.ComputeHash(Encoding.UTF8.GetBytes(toSign));
         }
     }
 }
