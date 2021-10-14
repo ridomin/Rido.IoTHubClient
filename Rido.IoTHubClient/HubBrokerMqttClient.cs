@@ -81,7 +81,7 @@ namespace Rido.IoTHubClient
             return hub;
         }
 
-        async Task Close()
+        public async Task CloseAsync()
         {
             var unsuback = await mqttClient.UnsubscribeAsync(new string[]
             {
@@ -101,7 +101,7 @@ namespace Rido.IoTHubClient
                 reconnecting = true;
                 Trace.TraceWarning("*** REFRESHING TOKEN *** ");
                 timerTokenRenew.Dispose();
-                Close().Wait();
+                CloseAsync().Wait();
                 var dcs = DeviceConnectionString;
                 mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60).Wait();
                 reconnecting = false;
@@ -120,7 +120,15 @@ namespace Rido.IoTHubClient
                                                         .WithTopicFilter("$az/iot/twin/patch/response/+", MqttQualityOfServiceLevel.AtLeastOnce)
                                                         .WithTopicFilter("$az/iot/twin/events/desired-changed/+", MqttQualityOfServiceLevel.AtLeastOnce)
                                                         .Build());
+
                 subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+                
+                if  (subres.Items.ToList().Any(s => 
+                    s.ResultCode != MqttClientSubscribeResultCode.GrantedQoS0 &&
+                    s.ResultCode != MqttClientSubscribeResultCode.GrantedQoS1))
+                {
+                    throw new ApplicationException("Error subscribing to reserved topics");
+                }
             });
 
             hub.mqttClient.UseDisconnectedHandler(e =>
