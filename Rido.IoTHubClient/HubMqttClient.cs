@@ -67,15 +67,15 @@ namespace Rido.IoTHubClient
         public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
             await CreateFromDCSAsync(new DeviceConnectionString(connectionString));
 
-        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey) =>
-            await CreateFromDCSAsync(new DeviceConnectionString() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey });
+        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey, string modelId = "") =>
+            await CreateFromDCSAsync(new DeviceConnectionString() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey, ModelId = modelId });
 
         private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
             var hub = new HubMqttClient();
             hub.DeviceConnectionString = dcs;
             ConfigureReservedTopics(hub);
-            await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60);
+            await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60);
             timerTokenRenew = new Timer(hub.ReconnectWithToken, null, refreshTokenInterval, 0);
             return hub;
         }
@@ -101,7 +101,7 @@ namespace Rido.IoTHubClient
                 timerTokenRenew.Dispose();
                 CloseAsync().Wait();
                 var dcs = DeviceConnectionString;
-                mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60).Wait();
+                mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60).Wait();
                 reconnecting = false;
                 timerTokenRenew = new Timer(ReconnectWithToken, null, refreshTokenInterval, 0);
             }
