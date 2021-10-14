@@ -95,6 +95,15 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
+        [Fact]
+        public async Task AnnounceModelId()
+        {
+            string modelId = "dtmi:rido:test;1";
+            var client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey, modelId);
+            var deviceRecord = await rm.GetTwinAsync(device.Id);
+            Assert.Equal(modelId, deviceRecord.ModelId);
+        }
+
         private async Task<Device> GetOrCreateDevice(string deviceId, bool x509 = false)
         {
             var device = await rm.GetDeviceAsync(deviceId);
