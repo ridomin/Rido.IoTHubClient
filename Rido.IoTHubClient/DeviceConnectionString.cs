@@ -49,6 +49,11 @@ namespace Rido.IoTHubClient
                 result += $";ModuleId={ModuleId}";
             }
 
+            if (!string.IsNullOrEmpty(ModelId))
+            {
+                result += $";ModelId={ModelId}";
+            }
+
             result +=  $";SharedAccessKey={SharedAccessKey};Auth={Auth}";
             return result;
         }

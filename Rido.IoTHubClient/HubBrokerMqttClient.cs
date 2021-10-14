@@ -60,7 +60,7 @@ namespace Rido.IoTHubClient
 
             var hub = new HubBrokerMqttClient();
             hub.cert = new X509Certificate2(certPath, certPwd);
-            ConfigureReservedTopics(hub);
+            //ConfigureReservedTopics(hub);
             await hub.mqttClient.ConnectV2WithX509Async(hostname, cert);
             hub.DeviceConnectionString = new DeviceConnectionString($"HostName={hostname};DeviceId={cid};Auth=X509");
             return hub;
@@ -79,7 +79,7 @@ namespace Rido.IoTHubClient
         {
             var hub = new HubBrokerMqttClient();
             hub.DeviceConnectionString = dcs;
-            ConfigureReservedTopics(hub);
+            //ConfigureReservedTopics(hub);
             MqttClientAuthenticateResult connack;
             if (string.IsNullOrEmpty(dcs.ModuleId))
             {

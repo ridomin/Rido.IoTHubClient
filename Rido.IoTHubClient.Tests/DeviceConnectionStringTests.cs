@@ -38,9 +38,10 @@ namespace Rido.IoTHubClient.Tests
             {
                 HostName = "h",
                 DeviceId = "d",
-                SharedAccessKey = "sas"
+                SharedAccessKey = "sas",
+                ModelId = "dtmi"
             };
-            string expected = "HostName=h;DeviceId=d;SharedAccessKey=sas;Auth=SAS;ModelId=dtmi";
+            string expected = "HostName=h;DeviceId=d;ModelId=dtmi;SharedAccessKey=sas;Auth=SAS";
             Assert.Equal(expected, dcs.ToString());
         }
 
