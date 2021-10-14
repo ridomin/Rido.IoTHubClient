@@ -8,13 +8,13 @@ namespace sample_device
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task Main__(string[] args)
         {
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-            var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("csm"));
             //var client = await HubBrokerMqttClient.CreateWithClientCertsAsync("broker.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
 
             var t = await client.GetTwinAsync();

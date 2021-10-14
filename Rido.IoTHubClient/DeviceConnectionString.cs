@@ -9,6 +9,7 @@ namespace Rido.IoTHubClient
         public string DeviceId { get; set; }
         public string SharedAccessKey { get; set; }
         public string Auth { get; set; } = "SAS";
+        public string ModuleId { get; set; }
 
 
         public DeviceConnectionString() { }
@@ -16,11 +17,14 @@ namespace Rido.IoTHubClient
 
         private void ParseConnectionString(string cs)
         {
-            string GetConnectionStringValue(IDictionary<string, string> dict, string propertyName)
+            string GetConnectionStringValue(IDictionary<string, string> dict, string propertyName, bool warnIfNotFound = true)
             {
                 if (!dict.TryGetValue(propertyName, out string value))
                 {
-                    Trace.TraceWarning($"The connection string is missing the property: {propertyName}");
+                    if (warnIfNotFound)
+                    {
+                        Trace.TraceWarning($"The connection string is missing the property: {propertyName}");
+                    }
                 }
                 return value;
             }
@@ -28,8 +32,9 @@ namespace Rido.IoTHubClient
             IDictionary<string, string> map = cs.ToDictionary(';', '=');
             this.HostName = GetConnectionStringValue(map, nameof(this.HostName));
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
+            this.ModuleId= GetConnectionStringValue(map, nameof(this.ModuleId), false);
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
-            this.Auth = GetConnectionStringValue(map, nameof(this.Auth));
+            this.Auth = GetConnectionStringValue(map, nameof(this.Auth), false);
         }
 
         public override string ToString()

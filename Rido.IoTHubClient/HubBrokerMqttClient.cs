@@ -1,5 +1,6 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics;
@@ -71,12 +72,27 @@ namespace Rido.IoTHubClient
         public static async Task<HubBrokerMqttClient> CreateAsync(string hostName, string deviceId, string sasKey) =>
             await CreateFromDCSAsync(new DeviceConnectionString() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey });
 
+        public static async Task<HubBrokerMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey) =>
+            await CreateFromDCSAsync(new DeviceConnectionString() { DeviceId = deviceId, HostName = hostName, ModuleId = moduleId, SharedAccessKey = sasKey });
+
         private static async Task<HubBrokerMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
             var hub = new HubBrokerMqttClient();
             hub.DeviceConnectionString = dcs;
             ConfigureReservedTopics(hub);
-            await hub.mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60);
+            MqttClientAuthenticateResult connack;
+            if (string.IsNullOrEmpty(dcs.ModuleId))
+            {
+                connack = await hub.mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60);
+            }
+            else
+            {
+                connack = await hub.mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, 60);
+            }
+            if (connack.ResultCode != MqttClientConnectResultCode.Success)
+            {
+                Trace.TraceError($"Error connecting: {connack.ResultCode} {connack.ReasonString} {connack.ServerReference}");
+            }
             timerTokenRenew = new Timer(hub.ReconnectWithToken, null, refreshTokenInterval, 0);
             return hub;
         }
