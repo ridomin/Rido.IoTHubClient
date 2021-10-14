@@ -16,7 +16,7 @@ namespace sample_device
 
         static string DefaultKey  => Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")));
 
-        public static async Task Main(string[] args)
+        public static async Task Main__(string[] args)
         {
 
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
@@ -37,7 +37,7 @@ namespace sample_device
             };
             MQTTnet.Client.IMqttClient mqttClient = new MqttFactory(logger).CreateMqttClient();
 
-            var connack= await mqttClient.ConnectV2WithSasAsync("broker.azure-devices.net", "d5", "mod3", DefaultKey);
+            var connack= await mqttClient.ConnectV2WithSasAsync("broker.azure-devices.net", "d5", DefaultKey, "", 60);
 
             Console.WriteLine(connack.ResultCode);
 

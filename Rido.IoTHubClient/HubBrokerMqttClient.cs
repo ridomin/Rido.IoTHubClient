@@ -83,7 +83,7 @@ namespace Rido.IoTHubClient
             MqttClientAuthenticateResult connack;
             if (string.IsNullOrEmpty(dcs.ModuleId))
             {
-                connack = await hub.mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60);
+                connack = await hub.mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60);
             }
             else
             {
@@ -119,7 +119,7 @@ namespace Rido.IoTHubClient
                 timerTokenRenew.Dispose();
                 CloseAsync().Wait();
                 var dcs = DeviceConnectionString;
-                mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, 60).Wait();
+                mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60).Wait();
                 reconnecting = false;
                 timerTokenRenew = new Timer(ReconnectWithToken, null, refreshTokenInterval, 0);
             }

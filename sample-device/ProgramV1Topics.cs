@@ -10,7 +10,7 @@ namespace sample_device
 {
     class ProgramV1Topics
     {
-        static async Task MainV1(string[] args)
+        static async Task Main(string[] args)
         {
             //var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne00385995", "paad", "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
             //Console.WriteLine(dpsRes.registrationState.assignedHub);
@@ -24,7 +24,8 @@ namespace sample_device
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
             //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            string modelId = "dtmi:com:demos;1";
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModelId={modelId}");
             Console.WriteLine();
             Console.WriteLine(client.DeviceConnectionString);
             Console.WriteLine();

@@ -35,7 +35,6 @@ namespace Rido.IoTHubClient
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
             this.ModuleId= GetConnectionStringValue(map, nameof(this.ModuleId), false);
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
-            this.Auth = GetConnectionStringValue(map, nameof(this.Auth));
             this.ModelId= GetConnectionStringValue(map, nameof(this.ModelId));
             this.Auth = GetConnectionStringValue(map, nameof(this.Auth), false);
         }
@@ -54,7 +53,7 @@ namespace Rido.IoTHubClient
                 result += $";ModelId={ModelId}";
             }
 
-            result +=  $";SharedAccessKey={SharedAccessKey};Auth={Auth}";
+            result +=  $";SharedAccessKey=***;Auth={Auth}";
             return result;
         }
     }
