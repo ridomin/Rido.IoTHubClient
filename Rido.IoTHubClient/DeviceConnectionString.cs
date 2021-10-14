@@ -39,7 +39,15 @@ namespace Rido.IoTHubClient
 
         public override string ToString()
         {
-            return $"HostName={HostName};DeviceId={DeviceId};SharedAccessKey={SharedAccessKey};Auth={Auth}";
+            var result = $"HostName={HostName};DeviceId={DeviceId}";
+            
+            if (!string.IsNullOrEmpty(ModuleId))
+            {
+                result += $";ModuleId={ModuleId}";
+            }
+
+            result +=  $";SharedAccessKey={SharedAccessKey};Auth={Auth}";
+            return result;
         }
     }
 }
