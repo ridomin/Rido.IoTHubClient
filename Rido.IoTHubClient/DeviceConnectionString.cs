@@ -9,6 +9,7 @@ namespace Rido.IoTHubClient
         public string DeviceId { get; set; }
         public string SharedAccessKey { get; set; }
         public string Auth { get; set; } = "SAS";
+        public string ModelId { get; set; }
 
 
         public DeviceConnectionString() { }
@@ -30,11 +31,12 @@ namespace Rido.IoTHubClient
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
             this.Auth = GetConnectionStringValue(map, nameof(this.Auth));
+            this.ModelId= GetConnectionStringValue(map, nameof(this.ModelId));
         }
 
         public override string ToString()
         {
-            return $"HostName={HostName};DeviceId={DeviceId};SharedAccessKey={SharedAccessKey};Auth={Auth}";
+            return $"HostName={HostName};DeviceId={DeviceId};SharedAccessKey={SharedAccessKey};Auth={Auth};ModelId={ModelId}";
         }
     }
 }

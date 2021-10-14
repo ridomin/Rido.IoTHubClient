@@ -5,7 +5,8 @@ namespace Rido.IoTHubClient
 {
     internal class SasAuth
     {
-        internal static string GetUserName(string hostName, string deviceId) => $"{hostName}/{deviceId}/?api-version=2020-05-31-preview";
+        internal static string GetUserName(string hostName, string deviceId, string modelId = "") =>
+            $"{hostName}/{deviceId}/?api-version=2020-05-31-preview&model-id={modelId}";
         internal static string CreateSasToken(string resource, string sasKey, int minutes)
         {
             static string Sign(string requestString, string key)
@@ -18,7 +19,7 @@ namespace Rido.IoTHubClient
             return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}";
         }
 
-        internal static (string username, string password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, int minutes = 60) =>
-            (GetUserName(hostName, deviceId), CreateSasToken($"{hostName}/devices/{deviceId}", sasKey, minutes));
+        internal static (string username, string password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, string modelId, int minutes = 60) =>
+            (GetUserName(hostName, deviceId, modelId), CreateSasToken($"{hostName}/devices/{deviceId}", sasKey, minutes));
     }
 }
