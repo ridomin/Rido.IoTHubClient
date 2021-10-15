@@ -1,4 +1,4 @@
-﻿    using Microsoft.Azure.Devices.Client;
+﻿using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using System;
 using System.Security.Cryptography.X509Certificates;
@@ -20,11 +20,11 @@ namespace v1client
             var cert = new X509Certificate2(certpath, certpwd);
             var security = new SecurityProviderX509Certificate(cert);
             var cid = cert.SubjectName.Name.Substring(3);
-           
+
 
             var dc = DeviceClient.Create(
-                hostname, 
-                new DeviceAuthenticationWithX509Certificate(cid, security.GetAuthenticationCertificate()), 
+                hostname,
+                new DeviceAuthenticationWithX509Certificate(cid, security.GetAuthenticationCertificate()),
                 TransportType.Mqtt);
             return dc;
         }

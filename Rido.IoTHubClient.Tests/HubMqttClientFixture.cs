@@ -1,11 +1,8 @@
-using System;
-using Xunit;
 using Microsoft.Azure.Devices;
+using System;
 using System.Threading.Tasks;
-using Azure.Identity;
-using Rido.IoTHubClient;
+using Xunit;
 using Xunit.Abstractions;
-using System.Text.Json;
 namespace Rido.IoTHubClient.Tests
 {
     public class HubMqttClientFixture
@@ -13,14 +10,14 @@ namespace Rido.IoTHubClient.Tests
         RegistryManager rm;
         string hubName = "tests.azure-devices.net";
         string deviceId = "d" + new Random().Next(10);
-        
+
         Device device;
 
         private readonly ITestOutputHelper output;
 
         public HubMqttClientFixture(ITestOutputHelper output)
         {
-           // var tokenCredential = new DefaultAzureCredential();
+            // var tokenCredential = new DefaultAzureCredential();
             rm = RegistryManager.CreateFromConnectionString("HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=");
             device = GetOrCreateDevice(deviceId).Result;
             this.output = output;
