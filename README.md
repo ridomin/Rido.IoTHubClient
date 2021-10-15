@@ -4,11 +4,11 @@ Minimalistic device client to interact with Azure IoT Hub
 
 ## Features
 
-- V2 Auth scheme, X509 + SaS
-- Telemetry, Properties and Commands using the new topics
-- Pub/Sub to broker
+- V1, V2 Auth scheme, X509 + SaS
+- Telemetry, Properties and Commands using reserved topics
+- Pub/Sub to broker (only on hubs with broker enabled)
 
-## Connect to IoTHub, including upcoming preview features (eg: MQTT Broker)
+## Connect to IoTHub
 
 Connect With SaS
 
@@ -26,11 +26,15 @@ var client = await HubMqttClient.CreateWithClientCertsAsync(
 
 ## Custom Topics Usage
 
-Note> MQTT Broker support lives in the `preview` branch
 
 When connected to a MQTTBroker enabled hub, this library allows to pub/sub to topics defined in the hub topic-space.
 
+var cs = Environment.GetEnvironmentVariable("cs");
+var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(cs);
+
+
 ```cs
+
 client.OnMessageReceived += (s, e) =>
 {
     string payload = (e.ApplicationMessage.Topic);

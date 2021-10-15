@@ -138,10 +138,10 @@ namespace Rido.IoTHubClient
                                                         .Build());
 
                 subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
-                
-                if  (subres.Items.ToList().Any(s => 
-                    s.ResultCode != MqttClientSubscribeResultCode.GrantedQoS0 &&
-                    s.ResultCode != MqttClientSubscribeResultCode.GrantedQoS1))
+
+                if (subres.Items.ToList().Any(s =>
+                   s.ResultCode != MqttClientSubscribeResultCode.GrantedQoS0 &&
+                   s.ResultCode != MqttClientSubscribeResultCode.GrantedQoS1))
                 {
                     throw new ApplicationException("Error subscribing to reserved topics");
                 }

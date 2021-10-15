@@ -1,20 +1,18 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Diagnostics;
+using Rido.IoTHubClient;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
-using Rido.IoTHubClient;
-using System.Diagnostics;
-using MQTTnet.Diagnostics;
 
 namespace sample_device
 {
     class Program_BYOM
     {
 
-        static string DefaultKey  => Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")));
+        static string DefaultKey => Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")));
 
         public static async Task Main__(string[] args)
         {
@@ -37,14 +35,14 @@ namespace sample_device
             };
             MQTTnet.Client.IMqttClient mqttClient = new MqttFactory(logger).CreateMqttClient();
 
-            var connack= await mqttClient.ConnectV2WithSasAsync("broker.azure-devices.net", "d5", DefaultKey, "", 60);
+            var connack = await mqttClient.ConnectV2WithSasAsync("broker.azure-devices.net", "d5", DefaultKey, "", 60);
 
             Console.WriteLine(connack.ResultCode);
 
             await Task.Delay(1000);
 
             await mqttClient.DisconnectAsync();
-            
+
             Console.WriteLine(connack.ResultCode);
             Console.WriteLine(connack.MaximumQoS);
             Console.WriteLine(connack.IsSessionPresent);

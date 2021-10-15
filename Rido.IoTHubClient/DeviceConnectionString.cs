@@ -33,16 +33,16 @@ namespace Rido.IoTHubClient
             IDictionary<string, string> map = cs.ToDictionary(';', '=');
             this.HostName = GetConnectionStringValue(map, nameof(this.HostName));
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
-            this.ModuleId= GetConnectionStringValue(map, nameof(this.ModuleId), false);
+            this.ModuleId = GetConnectionStringValue(map, nameof(this.ModuleId), false);
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
-            this.ModelId= GetConnectionStringValue(map, nameof(this.ModelId));
+            this.ModelId = GetConnectionStringValue(map, nameof(this.ModelId));
             this.Auth = GetConnectionStringValue(map, nameof(this.Auth), false);
         }
 
         public override string ToString()
         {
             var result = $"HostName={HostName};DeviceId={DeviceId}";
-            
+
             if (!string.IsNullOrEmpty(ModuleId))
             {
                 result += $";ModuleId={ModuleId}";
@@ -53,7 +53,7 @@ namespace Rido.IoTHubClient
                 result += $";ModelId={ModelId}";
             }
 
-            result +=  $";SharedAccessKey=***;Auth={Auth}";
+            result += $";SharedAccessKey=***;Auth={Auth}";
             return result;
         }
     }

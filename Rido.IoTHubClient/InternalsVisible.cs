@@ -1,5 +1,2 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
-[assembly:InternalsVisibleTo("Rido.IoTHubClient.Tests")]
+﻿using System.Runtime.CompilerServices;
+[assembly: InternalsVisibleTo("Rido.IoTHubClient.Tests")]
