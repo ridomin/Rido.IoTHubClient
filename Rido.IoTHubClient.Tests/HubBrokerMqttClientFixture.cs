@@ -1,23 +1,26 @@
-using Microsoft.Azure.Devices;
 using System;
-using System.Threading.Tasks;
 using Xunit;
+using Microsoft.Azure.Devices;
+using System.Threading.Tasks;
+using Azure.Identity;
+using Rido.IoTHubClient;
 using Xunit.Abstractions;
+using System.Text.Json;
 namespace Rido.IoTHubClient.Tests
 {
-    public class HubBrokerMqttClientFixture
+    public class HubBrokerMqttClientFixture //: IDisposable
     {
         RegistryManager rm;
         string hubName = "broker.azure-devices.net";
         string deviceId = "testsas" + new Random().Next(10);
-
+        
         Device device;
 
         private readonly ITestOutputHelper output;
 
         public HubBrokerMqttClientFixture(ITestOutputHelper output)
         {
-            // var tokenCredential = new DefaultAzureCredential();
+           // var tokenCredential = new DefaultAzureCredential();
             rm = RegistryManager.CreateFromConnectionString("HostName=broker.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=HbdIWLOaSHdaL5xmF0OhiC0kmDHPinOyI0kISxZ0Rt0=");
             device = GetOrCreateDevice(deviceId).Result;
             this.output = output;
@@ -110,5 +113,10 @@ namespace Rido.IoTHubClient.Tests
 
             return device;
         }
+
+        //public void Dispose()
+        //{
+        //    rm.RemoveDeviceAsync(deviceId).Wait();
+        //}
     }
 }
