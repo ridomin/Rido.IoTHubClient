@@ -3,13 +3,11 @@ using System.Text;
 
 namespace Rido.IoTHubClient
 {
-
     enum AuthType
     {
         SAS,
         X509
     }
-
     internal class SasAuthV2
     {
         internal static string GetUserName(string hostName, string deviceId, string expiryString, AuthType auth = AuthType.SAS) =>
@@ -28,7 +26,6 @@ namespace Rido.IoTHubClient
                 return algorithm.ComputeHash(Encoding.UTF8.GetBytes(requestString));
             }
             return Sign($"{resource}\n\n\n{expiry}\n", sasKey);
-            //return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}";
         }
 
         internal static (string username, byte[] password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, int minutes)

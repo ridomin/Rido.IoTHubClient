@@ -1,10 +1,8 @@
-using System;
-using Xunit;
 using Microsoft.Azure.Devices;
+using System;
 using System.Threading.Tasks;
-using Rido.IoTHubClient;
+using Xunit;
 using Xunit.Abstractions;
-using System.Text.Json;
 namespace Rido.IoTHubClient.Tests
 {
     public class HubBrokerModules
@@ -13,7 +11,7 @@ namespace Rido.IoTHubClient.Tests
         string hubName = "broker.azure-devices.net";
         string deviceId = "testsas" + new Random().Next(10);
         string moduleId = "module" + new Random().Next(10);
-        
+
         Device device;
         Module module;
 
@@ -118,7 +116,7 @@ namespace Rido.IoTHubClient.Tests
         private async Task<Module> GetOrCreateModule(string deviceId, string moduleId, bool x509 = false)
         {
             var device = await rm.GetDeviceAsync(deviceId);
-            
+
             if (device == null)
             {
                 await GetOrCreateDeviceAsync(deviceId);
@@ -126,7 +124,7 @@ namespace Rido.IoTHubClient.Tests
 
             var module = await rm.GetModuleAsync(deviceId, moduleId);
 
-            if (module== null)
+            if (module == null)
             {
                 module = new Module(deviceId, moduleId);
                 await rm.AddModuleAsync(module);

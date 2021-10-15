@@ -5,7 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 namespace Rido.IoTHubClient.Tests
 {
-    public class HubBrokerMqttClientFixture //: IDisposable
+    public class HubBrokerMqttClientFixture 
     {
         RegistryManager rm;
         string hubName = "broker.azure-devices.net";
@@ -110,10 +110,5 @@ namespace Rido.IoTHubClient.Tests
 
             return device;
         }
-
-        //public void Dispose()
-        //{
-        //    rm.RemoveDeviceAsync(deviceId).Wait();
-        //}
     }
 }
