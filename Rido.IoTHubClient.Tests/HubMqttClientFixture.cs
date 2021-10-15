@@ -119,7 +119,7 @@ namespace Rido.IoTHubClient.Tests
                 }
                 device = await rm.AddDeviceAsync(d);
             }
-
+            Console.WriteLine($"Test Device Created: {hubName} {device.Id}");
             return device;
         }
     }
