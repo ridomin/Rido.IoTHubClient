@@ -1,9 +1,6 @@
 ﻿using Rido.IoTHubClient;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace sample_device
@@ -37,7 +34,8 @@ namespace sample_device
                 await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
             };
 
-            client.OnPropertyReceived += async (s, e) => {
+            client.OnPropertyReceived += async (s, e) =>
+            {
                 Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 await Task.Delay(500);
                 // todo parse property
