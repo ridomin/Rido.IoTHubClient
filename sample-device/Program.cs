@@ -8,17 +8,20 @@ namespace sample_device
 {
     public class Program
     {
-        public static async Task Main__(string[] args)
+        public static async Task Main_V2(string[] args)
         {
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-            var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("csm"));
+            string modelId = "dtmi:com:demos;1";
+            var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModelId={modelId}");
             //var client = await HubBrokerMqttClient.CreateWithClientCertsAsync("broker.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
 
-            var t = await client.GetTwinAsync();
-            Console.WriteLine("Twin REPLY 1" + t);
+            Console.WriteLine(client.DeviceConnectionString);
+
+            //var t = await client.GetTwinAsync();
+            //Console.WriteLine("Twin REPLY 1" + t);
 
             var suback = await client.SubscribeAsync("vehicles/#");
             suback.Items.ToList().ForEach(c => Console.WriteLine($"sub to {c.TopicFilter.Topic} {c.ResultCode}"));

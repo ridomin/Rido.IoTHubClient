@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
@@ -16,7 +12,7 @@ namespace Rido.IoTHubClient
 
     internal class SasAuthV2
     {
-        internal static string GetUserName(string hostName, string deviceId, string expiryString, AuthType auth = AuthType.SAS) => 
+        internal static string GetUserName(string hostName, string deviceId, string expiryString, AuthType auth = AuthType.SAS) =>
             $"av=2021-06-30-preview&h={hostName}&did={deviceId}&am={auth}&se={expiryString}";
         internal static string GetUserName(string hostName, string deviceId, string moduleId, string expiryString, AuthType auth = AuthType.SAS) =>
             $"av=2021-06-30-preview&h={hostName}&did={deviceId}&mid={moduleId}&am={auth}&se={expiryString}";

@@ -71,7 +71,7 @@ namespace Rido.IoTHubClient
             var suback = await _mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             await ConfigureDPSFlowAsync(registrationId, tcs);
-         
+
             return tcs.Task.Result;
         }
 

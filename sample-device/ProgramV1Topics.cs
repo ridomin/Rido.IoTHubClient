@@ -1,16 +1,13 @@
 ﻿using Rido.IoTHubClient;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace sample_device
 {
     class ProgramV1Topics
     {
-        static async Task MainV1(string[] args)
+        static async Task Main(string[] args)
         {
             //var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne00385995", "paad", "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
             //Console.WriteLine(dpsRes.registrationState.assignedHub);
@@ -24,7 +21,8 @@ namespace sample_device
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
             //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            string modelId = "dtmi:com:demos;1";
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModelId={modelId}");
             Console.WriteLine();
             Console.WriteLine(client.DeviceConnectionString);
             Console.WriteLine();
@@ -36,7 +34,8 @@ namespace sample_device
                 await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
             };
 
-            client.OnPropertyReceived += async (s, e) => {
+            client.OnPropertyReceived += async (s, e) =>
+            {
                 Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 await Task.Delay(500);
                 // todo parse property
