@@ -27,15 +27,15 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public async Task ConnectWithCertKeyAndGetTwin()
+        public async Task ConnectWithCertKey() //AndGetTwin()
         {
             var xdevice = GetOrCreateDevice("testdevice", true);
             var client = await HubBrokerMqttClient.CreateWithClientCertsAsync(hubName, "testdevice.pfx", "1234");
             Assert.True(client.IsConnected);
-
-            var t = await client.GetTwinAsync();
-            Assert.StartsWith("{", t);
             await client.CloseAsync();
+
+            //var t = await client.GetTwinAsync();
+            //Assert.StartsWith("{", t);
         }
 
         [Fact]
@@ -46,54 +46,54 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact]
-        public async Task GetTwin()
-        {
-            var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
-            var t = await client.GetTwinAsync();
-            output.WriteLine(t);
-            Assert.StartsWith("{", t);
-            await client.CloseAsync();
-        }
+        //[Fact]
+        //public async Task GetTwin()
+        //{
+        //    var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
+        //    var t = await client.GetTwinAsync();
+        //    output.WriteLine(t);
+        //    Assert.StartsWith("{", t);
+        //    await client.CloseAsync();
+        //}
 
-        [Fact]
-        public async Task UpdateTwin()
-        {
-            var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
-            var tick = Environment.TickCount;
-            var p = await client.UpdateTwinAsync(new { myProp = tick });
+        //[Fact]
+        //public async Task UpdateTwin()
+        //{
+        //    var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
+        //    var tick = Environment.TickCount;
+        //    var p = await client.UpdateTwinAsync(new { myProp = tick });
 
-            output.WriteLine("PATCHED:" + p.ToString());
+        //    output.WriteLine("PATCHED:" + p.ToString());
 
-            await Task.Delay(2000);
-            var twin = await rm.GetTwinAsync(deviceId);
-            Assert.Contains(tick.ToString(), twin.ToJson());
-            output.WriteLine(twin.ToJson());
-        }
+        //    await Task.Delay(2000);
+        //    var twin = await rm.GetTwinAsync(deviceId);
+        //    Assert.Contains(tick.ToString(), twin.ToJson());
+        //    output.WriteLine(twin.ToJson());
+        //}
 
-        [Fact]
-        public async Task ReceiveUpdate()
-        {
-            var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
-            bool propertyReceived = false;
-            client.OnPropertyReceived += async (s, e) =>
-            {
-                output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
-                await Task.Delay(500);
+        //[Fact]
+        //public async Task ReceiveUpdate()
+        //{
+        //    var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
+        //    bool propertyReceived = false;
+        //    client.OnPropertyReceived += async (s, e) =>
+        //    {
+        //        output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
+        //        await Task.Delay(500);
 
-                var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
-                var v = await client.UpdateTwinAsync(ack);
-                Console.WriteLine("PATCHED ACK: " + v);
-                propertyReceived = true;
-            };
-            var twin = await rm.GetTwinAsync(deviceId);
-            twin.Properties.Desired["myDProp"] = "some value";
-            await rm.UpdateTwinAsync(deviceId, twin, twin.ETag);
+        //        var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
+        //        var v = await client.UpdateTwinAsync(ack);
+        //        Console.WriteLine("PATCHED ACK: " + v);
+        //        propertyReceived = true;
+        //    };
+        //    var twin = await rm.GetTwinAsync(deviceId);
+        //    twin.Properties.Desired["myDProp"] = "some value";
+        //    await rm.UpdateTwinAsync(deviceId, twin, twin.ETag);
 
-            await Task.Delay(3000);
-            Assert.True(propertyReceived);
-            await client.CloseAsync();
-        }
+        //    await Task.Delay(3000);
+        //    Assert.True(propertyReceived);
+        //    await client.CloseAsync();
+        //}
 
         private async Task<Device> GetOrCreateDevice(string deviceId, bool x509 = false)
         {
