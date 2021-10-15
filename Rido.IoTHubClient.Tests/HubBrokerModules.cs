@@ -2,14 +2,12 @@ using System;
 using Xunit;
 using Microsoft.Azure.Devices;
 using System.Threading.Tasks;
-using Azure.Identity;
 using Rido.IoTHubClient;
 using Xunit.Abstractions;
 using System.Text.Json;
 namespace Rido.IoTHubClient.Tests
 {
     public class HubBrokerModules
-        : IDisposable
     {
         RegistryManager rm;
         string hubName = "broker.azure-devices.net";
@@ -23,7 +21,6 @@ namespace Rido.IoTHubClient.Tests
 
         public HubBrokerModules(ITestOutputHelper output)
         {
-           // var tokenCredential = new DefaultAzureCredential();
             rm = RegistryManager.CreateFromConnectionString("HostName=broker.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=HbdIWLOaSHdaL5xmF0OhiC0kmDHPinOyI0kISxZ0Rt0=");
             device = GetOrCreateDeviceAsync(deviceId).Result;
             module = GetOrCreateModule(deviceId, moduleId).Result;
@@ -50,7 +47,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact]
+        [Fact(Skip = "reseved topics not available")]
         public async Task GetTwin()
         {
             var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
@@ -60,7 +57,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact]
+        [Fact(Skip = "reseved topics not available")]
         public async Task UpdateTwin()
         {
             var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
@@ -75,7 +72,7 @@ namespace Rido.IoTHubClient.Tests
             output.WriteLine(twin.ToJson());
         }
 
-        [Fact]
+        [Fact(Skip = "reseved topics not available")]
         public async Task ReceiveUpdate()
         {
             var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
@@ -137,12 +134,6 @@ namespace Rido.IoTHubClient.Tests
             module = await rm.GetModuleAsync(deviceId, moduleId);
 
             return module;
-        }
-
-
-        public void Dispose()
-        {
-            rm.RemoveDeviceAsync(deviceId).Wait();
         }
     }
 }

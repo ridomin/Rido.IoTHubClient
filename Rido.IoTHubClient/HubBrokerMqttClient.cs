@@ -87,7 +87,7 @@ namespace Rido.IoTHubClient
             }
             else
             {
-                connack = await hub.mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, 60);
+                connack = await hub.mqttClient.ConnectV2WithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, 60);
             }
             if (connack.ResultCode != MqttClientConnectResultCode.Success)
             {
