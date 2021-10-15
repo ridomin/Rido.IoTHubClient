@@ -9,7 +9,7 @@ namespace Rido.IoTHubClient.Tests
     {
         RegistryManager rm;
         string hubName = "broker.azure-devices.net";
-        string deviceId = "testsas" + new Random().Next(10);
+        string deviceId = "testmodsas" + new Random().Next(10);
         string moduleId = "module" + new Random().Next(10);
 
         Device device;
