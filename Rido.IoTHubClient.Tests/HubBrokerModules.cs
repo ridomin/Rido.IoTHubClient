@@ -47,54 +47,54 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact(Skip = "reseved topics not available")]
-        public async Task GetTwin()
-        {
-            var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
-            var t = await client.GetTwinAsync();
-            output.WriteLine(t);
-            Assert.StartsWith("{", t);
-            await client.CloseAsync();
-        }
+        //[Fact(Skip = "reseved topics not available")]
+        //public async Task GetTwin()
+        //{
+        //    var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
+        //    var t = await client.GetTwinAsync();
+        //    output.WriteLine(t);
+        //    Assert.StartsWith("{", t);
+        //    await client.CloseAsync();
+        //}
 
-        [Fact(Skip = "reseved topics not available")]
-        public async Task UpdateTwin()
-        {
-            var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
-            var tick = Environment.TickCount;
-            var p = await client.UpdateTwinAsync(new { myProp = tick });
+        //[Fact(Skip = "reseved topics not available")]
+        //public async Task UpdateTwin()
+        //{
+        //    var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
+        //    var tick = Environment.TickCount;
+        //    var p = await client.UpdateTwinAsync(new { myProp = tick });
 
-            output.WriteLine("PATCHED:" + p.ToString());
+        //    output.WriteLine("PATCHED:" + p.ToString());
 
-            await Task.Delay(2000);
-            var twin = await rm.GetTwinAsync(deviceId,moduleId);
-            Assert.Contains(tick.ToString(), twin.ToJson());
-            output.WriteLine(twin.ToJson());
-        }
+        //    await Task.Delay(2000);
+        //    var twin = await rm.GetTwinAsync(deviceId,moduleId);
+        //    Assert.Contains(tick.ToString(), twin.ToJson());
+        //    output.WriteLine(twin.ToJson());
+        //}
 
-        [Fact(Skip = "reseved topics not available")]
-        public async Task ReceiveUpdate()
-        {
-            var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
-            bool propertyReceived = false;
-            client.OnPropertyReceived += async (s, e) =>
-            {
-                output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
-                await Task.Delay(500);
+        //[Fact(Skip = "reseved topics not available")]
+        //public async Task ReceiveUpdate()
+        //{
+        //    var client = await HubBrokerMqttClient.CreateAsync(hubName, device.Id, module.Id, module.Authentication.SymmetricKey.PrimaryKey);
+        //    bool propertyReceived = false;
+        //    client.OnPropertyReceived += async (s, e) =>
+        //    {
+        //        output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
+        //        await Task.Delay(500);
 
-                var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
-                var v = await client.UpdateTwinAsync(ack);
-                Console.WriteLine("PATCHED ACK: " + v);
-                propertyReceived = true;
-            };
-            var twin = await rm.GetTwinAsync(deviceId, moduleId);
-            twin.Properties.Desired["myDProp"] = "some value";
-            await rm.UpdateTwinAsync(deviceId, moduleId, twin, twin.ETag);
+        //        var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
+        //        var v = await client.UpdateTwinAsync(ack);
+        //        Console.WriteLine("PATCHED ACK: " + v);
+        //        propertyReceived = true;
+        //    };
+        //    var twin = await rm.GetTwinAsync(deviceId, moduleId);
+        //    twin.Properties.Desired["myDProp"] = "some value";
+        //    await rm.UpdateTwinAsync(deviceId, moduleId, twin, twin.ETag);
 
-            await Task.Delay(3000);
-            Assert.True(propertyReceived);
-            await client.CloseAsync();
-        }
+        //    await Task.Delay(3000);
+        //    Assert.True(propertyReceived);
+        //    await client.CloseAsync();
+        //}
 
         private async Task<Device> GetOrCreateDeviceAsync(string deviceId, bool x509 = false)
         {
