@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace sample_device
 {
-    class ProgramV1Topics
+    class ProgramV1
     {
         static async Task Main(string[] args)
         {
@@ -14,7 +14,6 @@ namespace sample_device
             //var client1 = await HubMqttClient.CreateAsync(dpsRes.registrationState.assignedHub, dpsRes.registrationState.deviceId, "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
             //var t1 = await client1.GetTwinAsync();
             //Console.WriteLine("Twin1 REPLY 1" + t1);
-
 
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
