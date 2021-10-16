@@ -15,8 +15,8 @@ namespace sample_device
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
             string modelId = "dtmi:com:demos;1";
-            var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModelId={modelId}");
-            //var client = await HubBrokerMqttClient.CreateWithClientCertsAsync("broker.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
+            //var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModelId={modelId}");
+            var client = await HubBrokerMqttClient.CreateWithClientCertsAsync("broker.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
 
             Console.WriteLine(client.DeviceConnectionString);
 
