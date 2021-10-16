@@ -144,14 +144,6 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public async Task ConnectModuleWithSas()
-        {
-            var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
-            var client = await HubMqttClient.CreateAsync(hubName, $"{device.Id}/{module.Id}", module.Authentication.SymmetricKey.PrimaryKey);
-            Assert.True(client.IsConnected);
-        }
-
-        [Fact]
         public async Task ConnectModuleWithModelIDWithSas()
         {
             string modelId = "dtmi:rido:tests;1";
