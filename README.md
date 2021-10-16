@@ -1,6 +1,10 @@
 # Rido.IoTHubClient
 
-Minimalistic device client to interact with Azure IoT Hub
+Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](https://github.com/chkr1011/MQTTnet)
+
+[![.NET](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml/badge.svg)](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml)
+
+[![.NET](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml/badge.svg?branch=preview)](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml)
 
 ## Features
 
@@ -24,13 +28,6 @@ var client = await HubMqttClient.CreateWithClientCertsAsync(
             "<pathTo.pfx>", "<PFX Pwd>");
 ```
 
-## Custom Topics Usage
-
-
-When connected to a MQTTBroker enabled hub, this library allows to pub/sub to topics defined in the hub topic-space.
-
-var cs = Environment.GetEnvironmentVariable("cs");
-var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(cs);
 
 
 ```cs
@@ -106,4 +103,21 @@ This library uses `System.Diagnostics.Tracing`
 Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
 Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
 Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
+```
+
+## Custom Topics Usage
+
+> Custom topics require IoTHub V2, available in the `preview` branch
+
+When connected to a MQTTBroker enabled hub, this library allows to pub/sub to topics defined in the hub topic-space.
+
+Using MQTTNet directly
+```cs
+var connack = await mqttClient.ConnectV2WithSasAsync(hostname, deviceId, DefaultKey);
+```
+
+With the Client implementing v2 reserved topics
+```cs
+var cs = Environment.GetEnvironmentVariable("cs");
+var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(cs);
 ```

@@ -58,8 +58,6 @@ namespace Rido.IoTHubClient
             var cid = cert.Subject.Substring(3);
 
             var hub = new HubMqttClient();
-            // TODO: review why cert is dupe
-            hub.cert = new X509Certificate2(certPath, certPwd);
             ConfigureReservedTopics(hub);
             await hub.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
             hub.DeviceConnectionString = new DeviceConnectionString($"HostName={hostname};DeviceId={cid};Auth=X509");
@@ -87,7 +85,7 @@ namespace Rido.IoTHubClient
                 connAck = await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, 60);
             }
 
-            if (connAck.ResultCode==MqttClientConnectResultCode.Success)
+            if (connAck.ResultCode == MqttClientConnectResultCode.Success)
             {
                 timerTokenRenew = new Timer(hub.ReconnectWithToken, null, refreshTokenInterval, 0);
             }
