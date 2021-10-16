@@ -21,14 +21,14 @@ namespace Rido.IoTHubClient.Tests
         {
             // var tokenCredential = new DefaultAzureCredential();
             rm = RegistryManager.CreateFromConnectionString(hubConnectionString);
-            device = GetOrCreateDevice(deviceId).Result;
+            device = GetOrCreateDeviceAsync(deviceId).Result;
             this.output = output;
         }
 
         [Fact]
         public async Task ConnectWithCertKeyAndGetTwin()
         {
-            var xdevice = GetOrCreateDevice("testdevice", true);
+            var xdevice = GetOrCreateDeviceAsync("testdevice", true);
             var client = await HubMqttClient.CreateWithClientCertsAsync(hubName, "testdevice.pfx", "1234");
             Assert.True(client.IsConnected);
 
@@ -130,11 +130,38 @@ namespace Rido.IoTHubClient.Tests
         {
             string modelId = "dtmi:rido:test;1";
             var client = await HubMqttClient.CreateWithClientCertsAsync(hubName, "testdevice.pfx", "1234", modelId);
+            Assert.True(client.IsConnected);
             var deviceRecord = await rm.GetTwinAsync(device.Id);
             Assert.Equal(modelId, deviceRecord.ModelId);
         }
 
-        private async Task<Device> GetOrCreateDevice(string deviceId, bool x509 = false)
+        [Fact]
+        public async Task ConnectModuleWithSas()
+        {
+            var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
+            var client = await HubMqttClient.CreateAsync(hubName, $"{device.Id}/{module.Id}", module.Authentication.SymmetricKey.PrimaryKey);
+            Assert.True(client.IsConnected);
+        }
+
+        [Fact]
+        public async Task ConnectModuleDCSWithSas()
+        {
+            var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(
+                $"HostName={hubName};DeviceId={module.DeviceId};ModuleId={module.Id};SharedAccessKey={module.Authentication.SymmetricKey.PrimaryKey}");
+            Assert.True(client.IsConnected);
+        }
+
+        //[Fact]
+        //public async Task ConnectModuleWithCert()
+        //{
+        //    var module = await GetOrCreateModuleAsync(device.Id, "testmodule", true);
+        //    var client = await HubMqttClient.CreateWithClientCertsAsync(hubName, @"C:\certs\ridocafy22\testmodule.pfx", "1234");
+        //    Assert.True(client.IsConnected);
+        //}
+
+
+        private async Task<Device> GetOrCreateDeviceAsync(string deviceId, bool x509 = false)
         {
             var device = await rm.GetDeviceAsync(deviceId);
             if (device == null)
@@ -151,6 +178,34 @@ namespace Rido.IoTHubClient.Tests
             }
             Console.WriteLine($"Test Device Created: {hubName} {device.Id}");
             return device;
+        }
+
+        private async Task<Module> GetOrCreateModuleAsync(string deviceId, string moduleId, bool x509 = false)
+        {
+            var device = await rm.GetDeviceAsync(deviceId);
+
+            if (device == null)
+            {
+                await GetOrCreateDeviceAsync(deviceId, x509);
+            }
+
+            var module = await rm.GetModuleAsync(deviceId, moduleId);
+
+            if (module == null)
+            {
+                module = new Module(deviceId, moduleId);
+                if (x509)
+                {
+                    module.Authentication = new AuthenticationMechanism()
+                    {
+                        Type = AuthenticationType.CertificateAuthority
+                    };
+                }
+                await rm.AddModuleAsync(module);
+            }
+            module = await rm.GetModuleAsync(deviceId, moduleId);
+            Console.WriteLine($"Created Module {module.Id} on {module.DeviceId}");
+            return module;
         }
     }
 }

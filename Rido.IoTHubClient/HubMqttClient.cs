@@ -1,5 +1,6 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics;
@@ -57,6 +58,7 @@ namespace Rido.IoTHubClient
             var cid = cert.Subject.Substring(3);
 
             var hub = new HubMqttClient();
+            // TODO: review why cert is dupe
             hub.cert = new X509Certificate2(certPath, certPwd);
             ConfigureReservedTopics(hub);
             await hub.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
@@ -75,8 +77,25 @@ namespace Rido.IoTHubClient
             var hub = new HubMqttClient();
             hub.DeviceConnectionString = dcs;
             ConfigureReservedTopics(hub);
-            await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60);
-            timerTokenRenew = new Timer(hub.ReconnectWithToken, null, refreshTokenInterval, 0);
+            MqttClientAuthenticateResult connAck;
+            if (string.IsNullOrEmpty(dcs.ModuleId))
+            {
+                connAck = await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60);
+            }
+            else
+            {
+                connAck = await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, 60);
+            }
+
+            if (connAck.ResultCode==MqttClientConnectResultCode.Success)
+            {
+                timerTokenRenew = new Timer(hub.ReconnectWithToken, null, refreshTokenInterval, 0);
+            }
+            else
+            {
+                throw new ApplicationException($"Error connecting: {connAck.ResultCode} {connAck.ReasonString}");
+            }
+
             return hub;
         }
 
