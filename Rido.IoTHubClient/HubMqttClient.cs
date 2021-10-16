@@ -50,7 +50,7 @@ namespace Rido.IoTHubClient
             mqttClient = new MqttFactory(logger).CreateMqttClient();
         }
 
-        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd)
+        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd, string modelId = "")
         {
             using var cert = new X509Certificate2(certPath, certPwd);
             Trace.TraceInformation($"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})");
@@ -59,7 +59,7 @@ namespace Rido.IoTHubClient
             var hub = new HubMqttClient();
             hub.cert = new X509Certificate2(certPath, certPwd);
             ConfigureReservedTopics(hub);
-            await hub.mqttClient.ConnectWithX509Async(hostname, cert);
+            await hub.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
             hub.DeviceConnectionString = new DeviceConnectionString($"HostName={hostname};DeviceId={cid};Auth=X509");
             return hub;
         }

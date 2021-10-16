@@ -26,7 +26,7 @@ namespace Rido.IoTHubClient
                  .Build());
         }
 
-        public static async Task<MqttClientAuthenticateResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert)
+        public static async Task<MqttClientAuthenticateResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, string modelId = "")
         {
             return await mqttClient.ConnectAsync(
                new MqttClientOptionsBuilder()
@@ -34,7 +34,7 @@ namespace Rido.IoTHubClient
                    .WithTcpServer(hostName, 8883)
                    .WithCredentials(new MqttClientCredentials()
                    {
-                       Username = SasAuth.GetUserName(hostName, cert.Subject.Substring(3))
+                       Username = SasAuth.GetUserName(hostName, cert.Subject.Substring(3), modelId)
                    })
                    .WithTls(new MqttClientOptionsBuilderTlsParameters
                    {
