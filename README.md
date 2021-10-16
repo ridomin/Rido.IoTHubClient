@@ -8,9 +8,9 @@ Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](htt
 
 ## Features
 
-- V1, V2 Auth scheme, X509 + SaS
-- Telemetry, Properties and Commands using reserved topics
-- Pub/Sub to broker (only on hubs with broker enabled)
+- V1, V2 Auth scheme, X509 + SaS (V2 available in the `preview` branch, enabling Pub/Sub to MQTT Broker)
+- DPS Client with X509 and SaS
+- Telemetry, Properties and Commands using reserved topics for v1 and v2
 
 ## Connect to IoTHub
 
@@ -25,8 +25,22 @@ Connect with X509
 ```cs
 var client = await HubMqttClient.CreateWithClientCertsAsync(
             "<hubname>.azure-devices.net",
-            "<pathTo.pfx>", "<PFX Pwd>");
+            "<pathTo.pfx>", "<pfx Pwd>");
 ```
+
+### DPS Support
+
+```cs
+var dpsRes = await DpsClient.ProvisionWithSasAsync("<IdScope>", "<deviceId>", "<deviceKey>");
+Console.WriteLine(dpsRes.registrationState.assignedHub));
+```
+
+```cs
+var dpsRes = await DpsClient.ProvisionWithCertAsync("<IdScope>", "<pathTo.pfx>", "<pfx Pwd>");
+Console.WriteLine(dpsRes.registrationState.assignedHub));
+```
+
+
 ## Reserved Topics Usage
 
 Send Telemetry
