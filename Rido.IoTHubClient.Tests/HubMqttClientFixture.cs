@@ -144,12 +144,48 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
+        public async Task ConnectModuleWithSas()
+        {
+            var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
+            var client = await HubMqttClient.CreateAsync(hubName, $"{device.Id}/{module.Id}", module.Authentication.SymmetricKey.PrimaryKey);
+            Assert.True(client.IsConnected);
+        }
+
+        [Fact]
+        public async Task ConnectModuleWithModelIDWithSas()
+        {
+            string modelId = "dtmi:rido:tests;1";
+            var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
+            var client = await HubMqttClient.CreateAsync(
+                hubName, 
+                $"{device.Id}/{module.Id}", 
+                module.Authentication.SymmetricKey.PrimaryKey,
+                modelId
+                );
+            Assert.True(client.IsConnected);
+            var twin = await rm.GetTwinAsync(module.DeviceId, module.Id);
+            Assert.Equal(modelId, twin.ModelId);
+        }
+
+        [Fact]
         public async Task ConnectModuleDCSWithSas()
         {
             var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
             var client = await HubMqttClient.CreateFromConnectionStringAsync(
                 $"HostName={hubName};DeviceId={module.DeviceId};ModuleId={module.Id};SharedAccessKey={module.Authentication.SymmetricKey.PrimaryKey}");
             Assert.True(client.IsConnected);
+        }
+
+        [Fact]
+        public async Task ConnectModuleWithModelIdDCSWithSas()
+        {
+            string modelId = "dtmi:rido:tests;1";
+            var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(
+                $"HostName={hubName};DeviceId={module.DeviceId};ModuleId={module.Id};SharedAccessKey={module.Authentication.SymmetricKey.PrimaryKey};ModelId={modelId}");
+            Assert.True(client.IsConnected);
+            var twin = await rm.GetTwinAsync(module.DeviceId, module.Id);
+            Assert.Equal(modelId, twin.ModelId);
         }
 
         //[Fact]
@@ -204,7 +240,7 @@ namespace Rido.IoTHubClient.Tests
                 await rm.AddModuleAsync(module);
             }
             module = await rm.GetModuleAsync(deviceId, moduleId);
-            Console.WriteLine($"Created Module {module.Id} on {module.DeviceId}");
+            output.WriteLine($"Created Module {module.Id} on {module.DeviceId}");
             return module;
         }
     }
