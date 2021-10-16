@@ -19,9 +19,10 @@ namespace sample_device
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-            //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
+            //var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModelId={modelId}");
+            var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234");
+            Console.WriteLine(client.CertInfo);
             string modelId = "dtmi:com:demos;1";
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModelId={modelId}");
             Console.WriteLine();
             Console.WriteLine(client.DeviceConnectionString);
             Console.WriteLine();
