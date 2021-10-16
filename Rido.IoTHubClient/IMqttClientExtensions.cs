@@ -26,6 +26,12 @@ namespace Rido.IoTHubClient
                  .Build());
         }
 
+        public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, string modelId = "", int minutes = 60)
+        {
+            return await ConnectWithSasAsync(mqttClient, hostName, $"{deviceId}/{moduleId}", sasKey, modelId, minutes);
+        }
+
+
         public static async Task<MqttClientAuthenticateResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, string modelId = "")
         {
             return await mqttClient.ConnectAsync(
