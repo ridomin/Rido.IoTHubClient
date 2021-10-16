@@ -28,7 +28,7 @@ var client = await HubMqttClient.CreateWithClientCertsAsync(
             "<pathTo.pfx>", "<pfx Pwd>");
 ```
 
-# DPS Support
+### DPS Support
 
 ```cs
 var dpsRes = await DpsClient.ProvisionWithSasAsync("<IdScope>", "<deviceId>", "<deviceKey>");
