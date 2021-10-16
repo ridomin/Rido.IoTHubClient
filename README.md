@@ -27,29 +27,6 @@ var client = await HubMqttClient.CreateWithClientCertsAsync(
             "<hubname>.azure-devices.net",
             "<pathTo.pfx>", "<PFX Pwd>");
 ```
-
-
-
-```cs
-
-client.OnMessageReceived += (s, e) =>
-{
-    string payload = (e.ApplicationMessage.Topic);
-};
-
-await client.SubscribeAsync("vehicles/#");
-await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
-                            new { lat = 23.32323, lon = 54.45454 });
-```
-
-to create this topic spaces, use
-
-```bash
-az iot hub topic-space create -n {iothub_name} --tsn publisher_ts --tst PublishOnly --template 'vehicles/${principal.deviceid}/GPS/#'
-az iot hub topic-space create -n {iothub_name} --tsn subscriber_ts --tst LowFanout --template 'vehicles/#'
-
-```
-
 ## Reserved Topics Usage
 
 Send Telemetry
@@ -120,4 +97,25 @@ With the Client implementing v2 reserved topics
 ```cs
 var cs = Environment.GetEnvironmentVariable("cs");
 var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(cs);
+```
+
+
+```cs
+
+client.OnMessageReceived += (s, e) =>
+{
+    string payload = (e.ApplicationMessage.Topic);
+};
+
+await client.SubscribeAsync("vehicles/#");
+await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
+                            new { lat = 23.32323, lon = 54.45454 });
+```
+
+to create this topic spaces, use
+
+```bash
+az iot hub topic-space create -n {iothub_name} --tsn publisher_ts --tst PublishOnly --template 'vehicles/${principal.deviceid}/GPS/#'
+az iot hub topic-space create -n {iothub_name} --tsn subscriber_ts --tst LowFanout --template 'vehicles/#'
+
 ```
