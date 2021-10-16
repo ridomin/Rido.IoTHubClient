@@ -25,6 +25,7 @@ namespace Rido.IoTHubClient
         public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
         public DeviceConnectionString DeviceConnectionString;
+        public string CertInfo;
 
         IMqttClient mqttClient;
         static Timer timerTokenRenew;
@@ -33,7 +34,6 @@ namespace Rido.IoTHubClient
         static Action<int> patch_cb;
         int lastRid = 1;
         bool reconnecting = false;
-        X509Certificate cert;
 
         private HubMqttClient()
         {
@@ -54,15 +54,15 @@ namespace Rido.IoTHubClient
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd, string modelId = "")
         {
             using var cert = new X509Certificate2(certPath, certPwd);
-            Trace.TraceInformation($"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})");
+            string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
+            Trace.TraceInformation(certInfo);
             var cid = cert.Subject.Substring(3);
 
             var hub = new HubMqttClient();
-            // TODO: review why cert is dupe
-            hub.cert = new X509Certificate2(certPath, certPwd);
             ConfigureReservedTopics(hub);
             await hub.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
             hub.DeviceConnectionString = new DeviceConnectionString($"HostName={hostname};DeviceId={cid};Auth=X509");
+            hub.CertInfo = certInfo;
             return hub;
         }
 
@@ -87,7 +87,7 @@ namespace Rido.IoTHubClient
                 connAck = await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, 60);
             }
 
-            if (connAck.ResultCode==MqttClientConnectResultCode.Success)
+            if (connAck.ResultCode == MqttClientConnectResultCode.Success)
             {
                 timerTokenRenew = new Timer(hub.ReconnectWithToken, null, refreshTokenInterval, 0);
             }
