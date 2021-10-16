@@ -1,5 +1,6 @@
 using Microsoft.Azure.Devices;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -8,6 +9,7 @@ namespace Rido.IoTHubClient.Tests
     public class HubMqttClientFixture
     {
         RegistryManager rm;
+        string hubConnectionString = "HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=";
         string hubName = "tests.azure-devices.net";
         string deviceId = "d" + new Random().Next(10);
 
@@ -18,7 +20,7 @@ namespace Rido.IoTHubClient.Tests
         public HubMqttClientFixture(ITestOutputHelper output)
         {
             // var tokenCredential = new DefaultAzureCredential();
-            rm = RegistryManager.CreateFromConnectionString("HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=");
+            rm = RegistryManager.CreateFromConnectionString(hubConnectionString);
             device = GetOrCreateDevice(deviceId).Result;
             this.output = output;
         }
@@ -69,7 +71,7 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public async Task ReceiveUpdate()
+        public async Task ReceivePropertyUpdate()
         {
             var client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             bool propertyReceived = false;
@@ -77,7 +79,6 @@ namespace Rido.IoTHubClient.Tests
             {
                 output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 await Task.Delay(500);
-
                 var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
                 var v = await client.UpdateTwinAsync(ack);
                 Console.WriteLine("PATCHED ACK: " + v);
@@ -87,8 +88,31 @@ namespace Rido.IoTHubClient.Tests
             twin.Properties.Desired["myDProp"] = "some value";
             await rm.UpdateTwinAsync(deviceId, twin, twin.ETag);
 
-            await Task.Delay(3000);
+            await Task.Delay(1000);
             Assert.True(propertyReceived);
+            await client.CloseAsync();
+        }
+
+
+        [Fact]
+        public async Task ReceiveCommand()
+        {
+            var client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
+            bool commandInvoked = false;
+            client.OnCommandReceived += async (s, e) =>
+            {
+                Console.WriteLine($"Processing Command {e.CommandName}");
+                await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
+                commandInvoked = true;
+            };
+         
+            ServiceClient sc = ServiceClient.CreateFromConnectionString(hubConnectionString);
+            CloudToDeviceMethod c2dMethod = new CloudToDeviceMethod("TestMethod");
+            c2dMethod.SetPayloadJson(JsonSerializer.Serialize(new { myPayload = "some payload" }));
+            var dmRes =  await sc.InvokeDeviceMethodAsync(device.Id, c2dMethod);
+            await Task.Delay(1000);
+            Assert.True(commandInvoked);
+            Assert.Equal("{\"myResponse\":\"ok\"}", dmRes.GetPayloadAsJson());
             await client.CloseAsync();
         }
 
