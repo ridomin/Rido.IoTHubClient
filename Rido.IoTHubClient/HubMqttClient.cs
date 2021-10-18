@@ -17,14 +17,14 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient
+    public class HubMqttClient : IHubMqttClient
     {
         const int refreshTokenInterval = 3540000; //59 mins
 
         public bool IsConnected => mqttClient.IsConnected;
         public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
-        public DeviceConnectionString DeviceConnectionString;
+        public DeviceConnectionString DeviceConnectionString { get; private set; }
         public string CertInfo;
 
         IMqttClient mqttClient;
@@ -49,21 +49,7 @@ namespace Rido.IoTHubClient
                 Trace.TraceInformation(trace);
             };
             mqttClient = new MqttFactory(logger).CreateMqttClient();
-        }
-
-        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd, string modelId = "")
-        {
-            using var cert = new X509Certificate2(certPath, certPwd);
-            string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
-            Trace.TraceInformation(certInfo);
-            var cid = cert.Subject.Substring(3);
-
-            var hub = new HubMqttClient();
-            ConfigureReservedTopics(hub);
-            await hub.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
-            hub.DeviceConnectionString = new DeviceConnectionString($"HostName={hostname};DeviceId={cid};Auth=X509");
-            hub.CertInfo = certInfo;
-            return hub;
+            ConfigureReservedTopics();
         }
 
         public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
@@ -72,132 +58,67 @@ namespace Rido.IoTHubClient
         public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey, string modelId = "") =>
             await CreateFromDCSAsync(new DeviceConnectionString() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey, ModelId = modelId });
 
+        // TODO: Review overloads, easy to conflict with the optional param
+        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
+           await CreateFromDCSAsync(new DeviceConnectionString() { HostName = hostName, DeviceId = deviceId, ModuleId = moduleId, SharedAccessKey = sasKey, ModelId = modelId });
+
         private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
-            var hub = new HubMqttClient();
-            hub.DeviceConnectionString = dcs;
-            ConfigureReservedTopics(hub);
+            var client = new HubMqttClient();
             MqttClientAuthenticateResult connAck;
             if (string.IsNullOrEmpty(dcs.ModuleId))
             {
-                connAck = await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60);
+                connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60);
             }
             else
             {
-                connAck = await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, 60);
+                connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, 60);
             }
 
             if (connAck.ResultCode == MqttClientConnectResultCode.Success)
             {
-                timerTokenRenew = new Timer(hub.ReconnectWithToken, null, refreshTokenInterval, 0);
+                timerTokenRenew = new Timer(client.ReconnectWithToken, null, refreshTokenInterval, 0);
             }
             else
             {
                 throw new ApplicationException($"Error connecting: {connAck.ResultCode} {connAck.ReasonString}");
             }
 
-            return hub;
+            client.DeviceConnectionString = dcs;
+            return client;
         }
 
-        public async Task CloseAsync()
+        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd, string modelId = "")
         {
-            var unsuback = await mqttClient.UnsubscribeAsync(new string[]
-            {
-                "$iothub/methods/POST/#",
-                "$iothub/twin/res/#",
-                "$iothub/twin/PATCH/properties/desired/#"
-            });
-            unsuback.Items.ToList().ForEach(i => Trace.TraceInformation($"- {i.TopicFilter} {i.ReasonCode}"));
-            await mqttClient.DisconnectAsync();
-        }
+            using var cert = new X509Certificate2(certPath, certPwd);
+            string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
+            Trace.TraceInformation(certInfo);
+            var cid = cert.Subject.Substring(3);
+            string deviceId = cid;
+            string moduleId = string.Empty;
 
-        void ReconnectWithToken(object state)
-        {
-            lock (this)
+            if (cid.Contains("/")) // is a module
             {
-                reconnecting = true;
-                Trace.TraceWarning("*** REFRESHING TOKEN *** ");
-                timerTokenRenew.Dispose();
-                CloseAsync().Wait();
-                var dcs = DeviceConnectionString;
-                mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60).Wait();
-                reconnecting = false;
-                timerTokenRenew = new Timer(ReconnectWithToken, null, refreshTokenInterval, 0);
+                var segments = cid.Split('/');
+                deviceId = segments[0];
+                moduleId = segments[1];
             }
+
+            var client = new HubMqttClient();
+            var connack = await client.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
+            if (connack.ResultCode == MqttClientConnectResultCode.Success)
+            {
+                client.DeviceConnectionString = new DeviceConnectionString($"HostName={hostname};DeviceId={deviceId};ModuleId={moduleId};Auth=X509");
+                client.CertInfo = certInfo;
+            }
+            else
+            {
+                throw new ApplicationException($"Error connecting: {connack.ResultCode} {connack.ReasonString}");
+            }
+
+            return client;
         }
 
-        static void ConfigureReservedTopics(HubMqttClient hub)
-        {
-            hub.mqttClient.UseConnectedHandler(async e =>
-            {
-                Trace.TraceWarning("### CONNECTED WITH SERVER ###");
-                var subres = await hub.mqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
-                                                        .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                        .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                        .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                        .Build());
-                subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
-            });
-
-            hub.mqttClient.UseDisconnectedHandler(e =>
-            {
-                Trace.TraceError("## DISCONNECT ##");
-                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
-            });
-
-            hub.mqttClient.UseApplicationMessageReceivedHandler(e =>
-            {
-                string msg = string.Empty;
-
-                var segments = e.ApplicationMessage.Topic.Split('/');
-                int rid = 0;
-                int twinVersion = 0;
-                if (e.ApplicationMessage.Topic.Contains("?"))
-                {
-                    // parse qs to extract the rid
-                    var qs = HttpUtility.ParseQueryString(segments[segments.Length - 1]);
-                    rid = Convert.ToInt32(qs["$rid"]);
-                    twinVersion = Convert.ToInt32(qs["$version"]);
-                }
-
-                if (e.ApplicationMessage.Payload != null)
-                {
-                    msg = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-                }
-
-                //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
-                if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
-                {
-                    twin_cb(msg);
-                }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
-                {
-                    patch_cb(twinVersion);
-                }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
-                {
-                    hub.OnPropertyReceived?.Invoke(hub, new PropertyEventArgs()
-                    {
-                        Topic = e.ApplicationMessage.Topic,
-                        Rid = rid.ToString(),
-                        PropertyMessageJson = TwinProperties.RemoveVersion(msg),
-                        Version = twinVersion
-                    });
-                }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
-                {
-                    var cmdName = segments[3];
-                    //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic} {cmdName} {e.ApplicationMessage.Payload.Length} Bytes");
-                    hub.OnCommandReceived?.Invoke(hub, new CommandEventArgs()
-                    {
-                        Topic = e.ApplicationMessage.Topic,
-                        Rid = rid.ToString(),
-                        CommandName = cmdName,
-                        CommandRequestMessageJson = msg
-                    });
-                }
-            });
-        }
         public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload) =>
             await PublishAsync($"devices/{this.DeviceConnectionString.DeviceId}/messages/events/", payload);
 
@@ -233,6 +154,19 @@ namespace Rido.IoTHubClient
             }
             return tcs.Task.Result;
         }
+
+        public async Task CloseAsync()
+        {
+            var unsuback = await mqttClient.UnsubscribeAsync(new string[]
+            {
+                "$iothub/methods/POST/#",
+                "$iothub/twin/res/#",
+                "$iothub/twin/PATCH/properties/desired/#"
+            });
+            unsuback.Items.ToList().ForEach(i => Trace.TraceInformation($"- {i.TopicFilter} {i.ReasonCode}"));
+            await mqttClient.DisconnectAsync();
+        }
+
         async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
             while (!mqttClient.IsConnected && reconnecting)
@@ -280,6 +214,94 @@ namespace Rido.IoTHubClient
                 Trace.TraceWarning(" !!!!!  Missing one message ");
                 // TODO: Reconnect here?
                 return null;
+            }
+        }
+
+        void ConfigureReservedTopics()
+        {
+            mqttClient.UseConnectedHandler(async e =>
+            {
+                Trace.TraceWarning("### CONNECTED WITH SERVER ###");
+                var subres = await mqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
+                                                        .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .Build());
+                subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+            });
+
+            mqttClient.UseDisconnectedHandler(e =>
+            {
+                Trace.TraceError("## DISCONNECT ##");
+                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
+            });
+
+            mqttClient.UseApplicationMessageReceivedHandler(e =>
+            {
+                string msg = string.Empty;
+
+                var segments = e.ApplicationMessage.Topic.Split('/');
+                int rid = 0;
+                int twinVersion = 0;
+                if (e.ApplicationMessage.Topic.Contains("?"))
+                {
+                    // parse qs to extract the rid
+                    var qs = HttpUtility.ParseQueryString(segments[segments.Length - 1]);
+                    rid = Convert.ToInt32(qs["$rid"]);
+                    twinVersion = Convert.ToInt32(qs["$version"]);
+                }
+
+                if (e.ApplicationMessage.Payload != null)
+                {
+                    msg = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+                }
+
+                //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
+                if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
+                {
+                    twin_cb(msg);
+                }
+                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
+                {
+                    patch_cb(twinVersion);
+                }
+                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
+                {
+                    OnPropertyReceived?.Invoke(this, new PropertyEventArgs()
+                    {
+                        Topic = e.ApplicationMessage.Topic,
+                        Rid = rid.ToString(),
+                        PropertyMessageJson = TwinProperties.RemoveVersion(msg),
+                        Version = twinVersion
+                    });
+                }
+                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
+                {
+                    var cmdName = segments[3];
+                    //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic} {cmdName} {e.ApplicationMessage.Payload.Length} Bytes");
+                    OnCommandReceived?.Invoke(this, new CommandEventArgs()
+                    {
+                        Topic = e.ApplicationMessage.Topic,
+                        Rid = rid.ToString(),
+                        CommandName = cmdName,
+                        CommandRequestMessageJson = msg
+                    });
+                }
+            });
+        }
+
+        void ReconnectWithToken(object state)
+        {
+            lock (this)
+            {
+                reconnecting = true;
+                Trace.TraceWarning("*** REFRESHING TOKEN *** ");
+                timerTokenRenew.Dispose();
+                CloseAsync().Wait();
+                var dcs = DeviceConnectionString;
+                mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60).Wait();
+                reconnecting = false;
+                timerTokenRenew = new Timer(ReconnectWithToken, null, refreshTokenInterval, 0);
             }
         }
     }
