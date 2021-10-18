@@ -193,10 +193,10 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ConnectModuleWithCert()
         {
-            var module = await GetOrCreateModuleAsync("d3", "xmod", true);
-            IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, "d3_xmod.pfx", "1234");
+            var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
+            IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, "xd01_xmod01.pfx", "1234");
             Assert.True(client.IsConnected);
-            string expectedCS = $"HostName={hubName};DeviceId=d3;ModuleId=xmod;Auth=X509";
+            string expectedCS = $"HostName={hubName};DeviceId=xd01;ModuleId=xmod01;Auth=X509";
             Assert.Equal(expectedCS, client.DeviceConnectionString.ToString());
             await client.CloseAsync();
         }
@@ -205,8 +205,8 @@ namespace Rido.IoTHubClient.Tests
         public async Task ConnectModuleWithCertAndModelId()
         {
             string modelId = "dtmi:rido:tests;1";
-            var module = await GetOrCreateModuleAsync("d3", "xmod", true);
-            IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, "d3_xmod.pfx", "1234", modelId);
+            var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
+            IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, "xd01_xmod01.pfx", "1234", modelId);
             Assert.True(client.IsConnected);
 
             var moduleTwin = await rm.GetTwinAsync(module.DeviceId, module.Id);
