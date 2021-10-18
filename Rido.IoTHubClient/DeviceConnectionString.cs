@@ -52,8 +52,15 @@ namespace Rido.IoTHubClient
             {
                 result += $";ModelId={ModelId}";
             }
+            if (Auth=="SAS")
+            {
+                result += $";SharedAccessKey=***;Auth={Auth}";
+            }
+            else
+            {
+                result += $";Auth={Auth}";
+            }
 
-            result += $";SharedAccessKey=***;Auth={Auth}";
             return result;
         }
     }

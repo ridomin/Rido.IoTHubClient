@@ -17,7 +17,7 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient
+    public class HubMqttClient : IHubMqttClient
     {
         const int refreshTokenInterval = 3540000; //59 mins
 
@@ -51,52 +51,65 @@ namespace Rido.IoTHubClient
             mqttClient = new MqttFactory(logger).CreateMqttClient();
         }
 
-        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd, string modelId = "")
-        {
-            using var cert = new X509Certificate2(certPath, certPwd);
-            string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
-            Trace.TraceInformation(certInfo);
-            var cid = cert.Subject.Substring(3);
-
-            var hub = new HubMqttClient();
-            ConfigureReservedTopics(hub);
-            await hub.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
-            hub.DeviceConnectionString = new DeviceConnectionString($"HostName={hostname};DeviceId={cid};Auth=X509");
-            hub.CertInfo = certInfo;
-            return hub;
-        }
-
         public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
             await CreateFromDCSAsync(new DeviceConnectionString(connectionString));
 
         public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey, string modelId = "") =>
             await CreateFromDCSAsync(new DeviceConnectionString() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey, ModelId = modelId });
 
+        // TODO: Review overloads, easy to conflict with the optional param
+        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
+           await CreateFromDCSAsync(new DeviceConnectionString() { HostName = hostName, DeviceId = deviceId, ModuleId = moduleId, SharedAccessKey = sasKey, ModelId = modelId });
+
         private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
-            var hub = new HubMqttClient();
-            hub.DeviceConnectionString = dcs;
-            ConfigureReservedTopics(hub);
+            var client = new HubMqttClient();
+            client.DeviceConnectionString = dcs;
+            ConfigureReservedTopics(client);
             MqttClientAuthenticateResult connAck;
             if (string.IsNullOrEmpty(dcs.ModuleId))
             {
-                connAck = await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60);
+                connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, 60);
             }
             else
             {
-                connAck = await hub.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, 60);
+                connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, 60);
             }
 
             if (connAck.ResultCode == MqttClientConnectResultCode.Success)
             {
-                timerTokenRenew = new Timer(hub.ReconnectWithToken, null, refreshTokenInterval, 0);
+                timerTokenRenew = new Timer(client.ReconnectWithToken, null, refreshTokenInterval, 0);
             }
             else
             {
                 throw new ApplicationException($"Error connecting: {connAck.ResultCode} {connAck.ReasonString}");
             }
 
-            return hub;
+            return client;
+        }
+
+        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd, string modelId = "")
+        {
+            using var cert = new X509Certificate2(certPath, certPwd);
+            string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
+            Trace.TraceInformation(certInfo);
+            var cid = cert.Subject.Substring(3);
+            string deviceId = cid;
+            string moduleId = string.Empty;
+
+            if (cid.Contains("/")) // is a module
+            {
+                var segments = cid.Split('/');
+                deviceId = segments[0];
+                moduleId = segments[1];
+            }
+
+            var client = new HubMqttClient();
+            ConfigureReservedTopics(client);
+            await client.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
+            client.DeviceConnectionString = new DeviceConnectionString($"HostName={hostname};DeviceId={deviceId};ModuleId={moduleId};Auth=X509");
+            client.CertInfo = certInfo;
+            return client;
         }
 
         public async Task CloseAsync()
