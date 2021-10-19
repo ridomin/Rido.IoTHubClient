@@ -17,7 +17,7 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient : IHubMqttClient
+    public class HubMqttClient : IHubMqttClient, IDisposable
     {
         public bool IsConnected => mqttClient.IsConnected;
         public event EventHandler<CommandEventArgs> OnCommandReceived;
@@ -31,6 +31,7 @@ namespace Rido.IoTHubClient
         static Action<int> patch_cb;
         int lastRid = 1;
         bool reconnecting = false;
+        private bool disposedValue;
 
         private HubMqttClient()
         {
@@ -307,6 +308,26 @@ namespace Rido.IoTHubClient
                 reconnecting = false;
                 timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    mqttClient.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
