@@ -108,11 +108,11 @@ namespace Rido.IoTHubClient.Tests
                 await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
                 commandInvoked = true;
             };
-         
+
             ServiceClient sc = ServiceClient.CreateFromConnectionString(hubConnectionString);
             CloudToDeviceMethod c2dMethod = new CloudToDeviceMethod("TestMethod");
             c2dMethod.SetPayloadJson(JsonSerializer.Serialize(new { myPayload = "some payload" }));
-            var dmRes =  await sc.InvokeDeviceMethodAsync(device.Id, c2dMethod);
+            var dmRes = await sc.InvokeDeviceMethodAsync(device.Id, c2dMethod);
             await Task.Delay(1000);
             Assert.True(commandInvoked);
             Assert.Equal("{\"myResponse\":\"ok\"}", dmRes.GetPayloadAsJson());
@@ -156,9 +156,9 @@ namespace Rido.IoTHubClient.Tests
             string modelId = "dtmi:rido:tests;1";
             var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
             IHubMqttClient client = await HubMqttClient.CreateAsync(
-                hubName, 
+                hubName,
                 device.Id,
-                module.Id, 
+                module.Id,
                 module.Authentication.SymmetricKey.PrimaryKey,
                 modelId);
             Assert.True(client.IsConnected);

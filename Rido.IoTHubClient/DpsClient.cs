@@ -17,7 +17,7 @@ namespace Rido.IoTHubClient
 
     public class DpsClient
     {
-        static IMqttClient _mqttClient;
+        static readonly IMqttClient mqttClient;
         static int rid = 1;
         static DpsClient()
         {
@@ -33,20 +33,20 @@ namespace Rido.IoTHubClient
                 Trace.TraceInformation(trace);
             };
             var factory = new MqttFactory(logger);
-            _mqttClient = factory.CreateMqttClient();
+            mqttClient = factory.CreateMqttClient();
         }
 
         public static async Task<DpsStatus> ProvisionWithCertAsync(string idScope, string pfxPath, string pfxPwd)
         {
-            if (_mqttClient.IsConnected)
+            if (mqttClient.IsConnected)
             {
-                await _mqttClient.DisconnectAsync();
+                await mqttClient.DisconnectAsync();
             }
 
             var tcs = new TaskCompletionSource<DpsStatus>();
 
             X509Certificate2 cert = new X509Certificate2(pfxPath, pfxPwd);
-            var registrationId = cert.SubjectName.Name.Substring(3);
+            var registrationId = cert.SubjectName.Name[3..];
             var resource = $"{idScope}/registrations/{registrationId}";
             var username = $"{resource}/api-version=2019-03-31";
 
@@ -66,9 +66,9 @@ namespace Rido.IoTHubClient
                 })
                 .Build();
 
-            await _mqttClient.ConnectAsync(options);
+            await mqttClient.ConnectAsync(options);
 
-            var suback = await _mqttClient.SubscribeAsync("$dps/registrations/res/#");
+            var suback = await mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             await ConfigureDPSFlowAsync(registrationId, tcs);
 
@@ -77,9 +77,9 @@ namespace Rido.IoTHubClient
 
         public static async Task<DpsStatus> ProvisionWithSasAsync(string idScope, string registrationId, string sasKey)
         {
-            if (_mqttClient.IsConnected)
+            if (mqttClient.IsConnected)
             {
-                await _mqttClient.DisconnectAsync();
+                await mqttClient.DisconnectAsync();
             }
             var tcs = new TaskCompletionSource<DpsStatus>();
 
@@ -99,9 +99,9 @@ namespace Rido.IoTHubClient
                 })
             .Build();
 
-            await _mqttClient.ConnectAsync(options);
+            await mqttClient.ConnectAsync(options);
 
-            var suback = await _mqttClient.SubscribeAsync("$dps/registrations/res/#");
+            var suback = await mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             await ConfigureDPSFlowAsync(registrationId, tcs);
             return tcs.Task.Result;
@@ -111,7 +111,7 @@ namespace Rido.IoTHubClient
         private static async Task ConfigureDPSFlowAsync(string registrationId, TaskCompletionSource<DpsStatus> tcs)
         {
             string msg = string.Empty;
-            _mqttClient.UseApplicationMessageReceivedHandler(async e =>
+            mqttClient.UseApplicationMessageReceivedHandler(async e =>
             {
                 var topic = e.ApplicationMessage.Topic;
 
@@ -133,7 +133,7 @@ namespace Rido.IoTHubClient
                     {
                         await Task.Delay(900);
                         var pollTopic = $"$dps/registrations/GET/iotdps-get-operationstatus/?$rid={rid}&operationId={dpsRes.operationId}";
-                        var puback = await _mqttClient.PublishAsync(pollTopic);
+                        var puback = await mqttClient.PublishAsync(pollTopic);
                     }
                     else
                     {
@@ -144,7 +144,7 @@ namespace Rido.IoTHubClient
             });
 
             var putTopic = $"$dps/registrations/PUT/iotdps-register/?$rid={rid}";
-            var puback = await _mqttClient.PublishAsync(putTopic,
+            var puback = await mqttClient.PublishAsync(putTopic,
                 "{ \"registrationId\" : \"" + registrationId + "\"}");
         }
     }

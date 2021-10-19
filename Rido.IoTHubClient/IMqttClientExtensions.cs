@@ -33,11 +33,11 @@ namespace Rido.IoTHubClient
         {
             return await mqttClient.ConnectAsync(
                new MqttClientOptionsBuilder()
-                   .WithClientId(cert.Subject.Substring(3))
+                   .WithClientId(cert.Subject[3..])
                    .WithTcpServer(hostName, 8883)
                    .WithCredentials(new MqttClientCredentials()
                    {
-                       Username = SasAuth.GetUserName(hostName, cert.Subject.Substring(3), modelId)
+                       Username = SasAuth.GetUserName(hostName, cert.Subject[3..], modelId)
                    })
                    .WithTls(new MqttClientOptionsBuilderTlsParameters
                    {

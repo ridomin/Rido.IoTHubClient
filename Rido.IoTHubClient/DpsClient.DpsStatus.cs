@@ -1,5 +1,6 @@
 ﻿namespace Rido.IoTHubClient
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "JSON Serializer Payloads")]
     public class DpsStatus
     {
         public string operationId { get; set; }

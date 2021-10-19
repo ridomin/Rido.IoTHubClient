@@ -22,7 +22,7 @@ namespace sample_device
             string modelId = "dtmi:com:demos;1";
             //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234", modelId);
             var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModuleId=m1;ModelId={modelId}");
-            
+
             Console.WriteLine();
             Console.WriteLine(client.DeviceConnectionString);
             Console.WriteLine();
@@ -59,8 +59,6 @@ namespace sample_device
                 await Task.Delay(2000);
                 Console.Write("t");
             }
-
-            Console.WriteLine("End");
 
         }
     }
