@@ -3,13 +3,31 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.0.1-pre010</Version>
+    <Version>0.0.1</Version>
     <Authors>ridomin</Authors>
-    <Description>A minimal IoTHub client to work with latest Broker features</Description>
+    <Description>Minimalistic device client to interact with Azure IoT Hub using MqttNet</Description>
     <PackageProjectUrl>https://github.com/ridomin/Rido.IoTHubClient</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ridomin/Rido.IoTHubClient</RepositoryUrl>
     <PackageTags>mqtt; azure-iot</PackageTags>
+    <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <Copyright>copyleft</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReleaseNotes>0.0.1 - Support api-version 2020-09-30
+	    Device/Module support
+		Sas Tokens Auth with Refresh
+		X509 Certs
+		DPS Client
+	</PackageReleaseNotes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MQTTnet" Version="3.0.16" />
