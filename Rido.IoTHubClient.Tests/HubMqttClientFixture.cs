@@ -132,14 +132,15 @@ namespace Rido.IoTHubClient.Tests
         public async Task AnnounceModelIdWithX509()
         {
             string modelId = "dtmi:rido:test;1";
+            await GetOrCreateDeviceAsync("testdevice", true);
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("testdevice.pfx", "1234"), modelId);
             Assert.True(client.IsConnected);
-            var deviceRecord = await rm.GetTwinAsync(device.Id);
+            var deviceRecord = await rm.GetTwinAsync("testdevice");
             Assert.Equal(modelId, deviceRecord.ModelId);
             await client.CloseAsync();
         }
 
-        [Fact]
+        [Fact(Skip="Modules")]
         public async Task ConnectModuleWithSas()
         {
             var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
@@ -149,7 +150,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact]
+        [Fact(Skip = "Modules")]
         public async Task ConnectModuleWithModelIDWithSas()
         {
             string modelId = "dtmi:rido:tests;1";
@@ -166,7 +167,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact]
+        [Fact(Skip = "Modules")]
         public async Task ConnectModuleDCSWithSas()
         {
             var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
@@ -176,7 +177,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact]
+        [Fact(Skip = "Modules")]
         public async Task ConnectModuleWithModelIdDCSWithSas()
         {
             string modelId = "dtmi:rido:tests;1";
@@ -189,7 +190,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact]
+        [Fact(Skip = "Modules")]
         public async Task ConnectModuleWithCert()
         {
             await GetOrCreateModuleAsync("xd01", "xmod01", true);
@@ -200,7 +201,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact]
+        [Fact(Skip = "Modules")]
         public async Task ConnectModuleWithCertAndModelId()
         {
             string modelId = "dtmi:rido:tests;1";
