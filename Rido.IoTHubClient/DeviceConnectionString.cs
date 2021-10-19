@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Rido.IoTHubClient
@@ -8,9 +9,10 @@ namespace Rido.IoTHubClient
         public string HostName { get; set; }
         public string DeviceId { get; set; }
         public string SharedAccessKey { get; set; }
-        public string Auth { get; set; } = "SAS";
         public string ModelId { get; set; }
         public string ModuleId { get; set; }
+        public string Auth { get; set; } = "SAS";
+        public int SasMinutes { get; set; } = 60;
 
 
         public DeviceConnectionString() { }
@@ -37,6 +39,11 @@ namespace Rido.IoTHubClient
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
             this.ModelId = GetConnectionStringValue(map, nameof(this.ModelId));
             this.Auth = GetConnectionStringValue(map, nameof(this.Auth), false);
+            var sasMinutesValue = GetConnectionStringValue(map, nameof(this.SasMinutes), false);
+            if (!string.IsNullOrEmpty(sasMinutesValue))
+            {
+                this.SasMinutes =  Convert.ToInt32(sasMinutesValue);
+            }
         }
 
         public override string ToString()
@@ -55,6 +62,7 @@ namespace Rido.IoTHubClient
             if (Auth=="SAS")
             {
                 result += $";SharedAccessKey=***;Auth={Auth}";
+                result += $";SasMinutes=***;Auth={SasMinutes}";
             }
             else
             {
