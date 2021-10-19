@@ -15,11 +15,14 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>mqtt; azure-iot</PackageTags>
+	<EmbedUntrackedSources>true</EmbedUntrackedSources>
+	<Deterministic>true</Deterministic>
+	<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     <PackageReleaseNotes>
 		0.0.1 - Support api-version 2020-09-30
 	    Device/Module support
 		Sas Tokens Auth with Refresh
-		X509 Certs
+		X509 Auth
 		DPS Client
 	</PackageReleaseNotes>
 	<IncludeSymbols>true</IncludeSymbols>
