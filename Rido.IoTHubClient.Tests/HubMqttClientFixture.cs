@@ -90,8 +90,7 @@ namespace Rido.IoTHubClient.Tests
             var twin = await rm.GetTwinAsync(deviceId);
             twin.Properties.Desired["myDProp"] = "some value";
             await rm.UpdateTwinAsync(deviceId, twin, twin.ETag);
-
-            await Task.Delay(1000);
+            await Task.Delay(2000);
             Assert.True(propertyReceived);
             await client.CloseAsync();
         }
