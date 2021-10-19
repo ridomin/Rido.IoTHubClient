@@ -14,8 +14,8 @@ namespace Rido.IoTHubClient
         const string apiversion_2021_06_30_preview = "2021-06-30-preview";
         internal static string GetUserName(string hostName, string deviceId, string expiryString, string modelId, AuthType auth = AuthType.SAS) =>
             $"av={apiversion_2021_06_30_preview}&h={hostName}&did={deviceId}&am={auth}&se={expiryString}&dtmi={modelId}";
-        //internal static string GetUserName(string hostName, string deviceId, string moduleId, string expiryString, AuthType auth = AuthType.SAS) =>
-        //    $"av={apiversion_2021_06_30_preview}&h={hostName}&did={deviceId}&mid={moduleId}&am={auth}&se={expiryString}";
+        internal static string GetUserName(string hostName, string deviceId, string moduleId, string expiryString, string modelId, AuthType auth = AuthType.SAS) =>
+            $"av={apiversion_2021_06_30_preview}&h={hostName}&did={deviceId}&mid={moduleId}&am={auth}&se={expiryString}&dtmi={modelId}";
 
         internal static string GetUserName(string hostName, string deviceId, string modelId, AuthType auth = AuthType.X509) =>
             $"av={apiversion_2021_06_30_preview}&h={hostName}&did={deviceId}&am={auth}&dtmi={modelId}";
@@ -50,12 +50,12 @@ namespace Rido.IoTHubClient
             return (username, password);
         }
 
-        //internal static (string username, byte[] password) GenerateHubSasCredentials(string hostName, string deviceId, string moduleId, string sasKey, int minutes)
-        //{
-        //    var expiry = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeMilliseconds().ToString();
-        //    string username = GetUserName(hostName, deviceId, moduleId, expiry);
-        //    byte[] password = CreateSasToken($"{hostName}\n{deviceId}/{moduleId}", sasKey, expiry);
-        //    return (username, password);
-        //}
+        internal static (string username, byte[] password) GenerateHubSasCredentials(string hostName, string deviceId, string moduleId, string sasKey, string modelId, int minutes)
+        {
+            var expiry = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeMilliseconds().ToString();
+            string username = GetUserName(hostName, deviceId, moduleId, expiry);
+            byte[] password = CreateSasToken($"{hostName}\n{deviceId}/{moduleId}", sasKey, expiry);
+            return (username, password);
+        }
     }
 }
