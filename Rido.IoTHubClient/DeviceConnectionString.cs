@@ -20,7 +20,7 @@ namespace Rido.IoTHubClient
 
         private void ParseConnectionString(string cs)
         {
-            string GetConnectionStringValue(IDictionary<string, string> dict, string propertyName, bool warnIfNotFound = true)
+            static string GetConnectionStringValue(IDictionary<string, string> dict, string propertyName, bool warnIfNotFound = true)
             {
                 if (!dict.TryGetValue(propertyName, out string value))
                 {
@@ -42,7 +42,7 @@ namespace Rido.IoTHubClient
             var sasMinutesValue = GetConnectionStringValue(map, nameof(this.SasMinutes), false);
             if (!string.IsNullOrEmpty(sasMinutesValue))
             {
-                this.SasMinutes =  Convert.ToInt32(sasMinutesValue);
+                this.SasMinutes = Convert.ToInt32(sasMinutesValue);
             }
         }
 
@@ -59,7 +59,7 @@ namespace Rido.IoTHubClient
             {
                 result += $";ModelId={ModelId}";
             }
-            if (Auth=="SAS")
+            if (Auth == "SAS")
             {
                 result += $";SharedAccessKey=***";
                 result += $";SasMinutes={SasMinutes};Auth={Auth}";

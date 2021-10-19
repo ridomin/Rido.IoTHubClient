@@ -17,13 +17,12 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient : IHubMqttClient
+    public class HubMqttClient : IHubMqttClient, IDisposable
     {
         public bool IsConnected => mqttClient.IsConnected;
         public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
         public DeviceConnectionString DeviceConnectionString { get; private set; }
-        //public string CertInfo;
 
         IMqttClient mqttClient;
         static Timer timerTokenRenew;
@@ -32,6 +31,7 @@ namespace Rido.IoTHubClient
         static Action<int> patch_cb;
         int lastRid = 1;
         bool reconnecting = false;
+        private bool disposedValue;
 
         private HubMqttClient()
         {
@@ -75,7 +75,7 @@ namespace Rido.IoTHubClient
 
             if (connAck.ResultCode == MqttClientConnectResultCode.Success)
             {
-                timerTokenRenew = new Timer(client.ReconnectWithToken, null, (dcs.SasMinutes-1) * 60 * 1000, 0);
+                timerTokenRenew = new Timer(client.ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
             }
             else
             {
@@ -86,12 +86,11 @@ namespace Rido.IoTHubClient
             return client;
         }
 
-        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd, string modelId = "")
+        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, X509Certificate2 cert, string modelId = "")
         {
-            using var cert = new X509Certificate2(certPath, certPwd);
             string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
             Trace.TraceInformation(certInfo);
-            var cid = cert.Subject.Substring(3);
+            var cid = cert.Subject[3..];
             string deviceId = cid;
             string moduleId = string.Empty;
 
@@ -252,7 +251,7 @@ namespace Rido.IoTHubClient
                 if (e.ApplicationMessage.Topic.Contains("?"))
                 {
                     // parse qs to extract the rid
-                    var qs = HttpUtility.ParseQueryString(segments[segments.Length - 1]);
+                    var qs = HttpUtility.ParseQueryString(segments[^1]);
                     rid = Convert.ToInt32(qs["$rid"]);
                     twinVersion = Convert.ToInt32(qs["$version"]);
                 }
@@ -307,8 +306,28 @@ namespace Rido.IoTHubClient
                 var dcs = DeviceConnectionString;
                 this.mqttClient = CreateFromDCSAsync(dcs).Result.mqttClient;
                 reconnecting = false;
-                timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes -1) * 60 * 1000, 0);
+                timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    mqttClient.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

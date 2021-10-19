@@ -5,8 +5,9 @@ namespace Rido.IoTHubClient
 {
     internal class SasAuth
     {
+        const string apiversion_2020_09_30 = "2020-09-30";
         internal static string GetUserName(string hostName, string deviceId, string modelId = "") =>
-            $"{hostName}/{deviceId}/?api-version=2020-05-31-preview&model-id={modelId}";
+            $"{hostName}/{deviceId}/?api-version={apiversion_2020_09_30}&model-id={modelId}";
         internal static string CreateSasToken(string resource, string sasKey, int minutes)
         {
             static string Sign(string requestString, string key)
