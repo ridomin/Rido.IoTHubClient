@@ -12,7 +12,6 @@
     <Copyright>copyleft</Copyright>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/ridomin/Rido.IoTHubClient</PackageProjectUrl>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>mqtt; azure-iot</PackageTags>
 	<EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -28,13 +27,6 @@
 	<IncludeSymbols>true</IncludeSymbols>
 	<SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="..\README.md">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MQTTnet" Version="3.0.16" />
