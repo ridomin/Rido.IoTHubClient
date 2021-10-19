@@ -10,8 +10,8 @@ namespace Rido.IoTHubClient.Tests
     public class HubMqttClientFixture
     {
         readonly RegistryManager rm;
-        const string hubConnectionString = "HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=";
-        const string hubName = "tests.azure-devices.net";
+        const string hubConnectionString = "HostName=broker.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=HbdIWLOaSHdaL5xmF0OhiC0kmDHPinOyI0kISxZ0Rt0=";
+        const string hubName = "broker.azure-devices.net";
         readonly string deviceId = "d" + new Random().Next(10);
         readonly Device device;
 
