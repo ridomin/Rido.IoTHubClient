@@ -85,9 +85,8 @@ namespace Rido.IoTHubClient
             return client;
         }
 
-        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, string certPath, string certPwd, string modelId = "")
+        public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, X509Certificate2 cert, string modelId = "")
         {
-            using var cert = new X509Certificate2(certPath, certPwd);
             string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
             Trace.TraceInformation(certInfo);
             var cid = cert.Subject[3..];
