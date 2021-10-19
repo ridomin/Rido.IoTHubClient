@@ -8,24 +8,35 @@ Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](htt
 
 ## Features
 
-- V1, V2 Auth scheme, X509 + SaS (V2 available in the `preview` branch, enabling Pub/Sub to MQTT Broker)
-- DPS Client with X509 and SaS
+- Device Auth for Devices and Modules, X509 + SaS with refresh tokens
+- V1 support in master (V2 available in the `preview` branch, enabling Pub/Sub to MQTT Broker)
+- DPS Client
 - Telemetry, Properties and Commands using reserved topics for v1 and v2
+- Extended Connection String support
 
 ## Connect to IoTHub
 
 Connect With SaS
 
 ```cs
-var cs = Environment.GetEnvironmentVariable("cs");
-var client = await HubMqttClient.CreateFromConnectionStringAsync(cs);
+var client = await HubMqttClient.CreateFromConnectionStringAsync(hostname, device, sasKey);
 ```
+
 Connect with X509
 
 ```cs
-var client = await HubMqttClient.CreateWithClientCertsAsync(
-            "<hubname>.azure-devices.net",
-            "<pathTo.pfx>", "<pfx Pwd>");
+var client = await HubMqttClient.CreateWithClientCertsAsync(hostname, certificate);
+```
+
+> Note: See [connection settings reference](#connection-settings-reference)
+
+### MQTT Extensions
+
+You can also connect with the MQTTNet client by using the extension methods:
+
+```
+var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, sasKey);
+var connack = await mqttClient.ConnectWithX509Async(hostname, certificate);
 ```
 
 ### DPS Support
@@ -43,27 +54,27 @@ Console.WriteLine(dpsRes.registrationState.assignedHub));
 
 ## Reserved Topics Usage
 
-Send Telemetry
+### Send Telemetry
 
 ```cs
 await client.SendTelemetryAsync(new { temperature = 1 });
 ```
 
-Read Twin
+### Read Twin
 
 ```cs
 var twin = await client.GetTwinAsync();
 ```
 
 
-Update Twin (Reported Properties)
+### Update Twin (Reported Properties)
 
 ```cs
 var version = await client.UpdateTwinAsync(new { tool = "from Rido.IoTHubClient" }); 
 Console.WriteLine("Twin PATCHED version: " + version));
 ```
 
-Respond to Twin updates (Desired Properties)
+### Respond to Twin updates (Desired Properties)
 
 ```cs
 client.OnPropertyReceived += async (s, e) => 
@@ -74,7 +85,7 @@ client.OnPropertyReceived += async (s, e) =>
 };
 ```
 
-Respond to Commands
+### Respond to Commands
 
 ```cs
 client.OnCommandReceived += async (s, e) =>
@@ -85,6 +96,22 @@ client.OnCommandReceived += async (s, e) =>
 };
 
 ```
+
+# Connection Settings Reference
+
+This library implements a compatible *connection string* with Azure IoT SDK Device Client, and adds some new properties:
+
+- `HostName` Azure IoT Hub hostname (FQDN)
+- `DeviceId` Device Identity 
+- `SharedAccessKey` Device Shared Access Key in Base64
+- `ModelId` DTDL Model ID in DTMI format to create PnP Devices
+- `ModuleId` Device Module Identity
+- `Auth` Device Authentication: [SAS, X509]
+- `SasMinutes` SasToken expire time in minutes
+
+Sample Connection String
+
+`$"HostName=test.azure-devices.net;DeviceId=myDevive;ModuleId=myModule;SharedAccessKey=<moduleSasKey>;ModelId={modelId}";SasMinutes=120`
 
 # Tracing
 
@@ -104,7 +131,7 @@ When connected to a MQTTBroker enabled hub, this library allows to pub/sub to to
 
 Using MQTTNet directly
 ```cs
-var connack = await mqttClient.ConnectV2WithSasAsync(hostname, deviceId, DefaultKey);
+var connack = await mqttClient.ConnectV2WithSasAsync(hostname, deviceId, sasKey);
 ```
 
 With the Client implementing v2 reserved topics
@@ -112,7 +139,6 @@ With the Client implementing v2 reserved topics
 var cs = Environment.GetEnvironmentVariable("cs");
 var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(cs);
 ```
-
 
 ```cs
 
@@ -126,7 +152,7 @@ await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
                             new { lat = 23.32323, lon = 54.45454 });
 ```
 
-to create this topic spaces, use
+To create topic spaces, use
 
 ```bash
 az iot hub topic-space create -n {iothub_name} --tsn publisher_ts --tst PublishOnly --template 'vehicles/${principal.deviceid}/GPS/#'

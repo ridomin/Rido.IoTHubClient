@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -6,20 +6,24 @@
     <Version>0.0.1</Version>
     <Authors>ridomin</Authors>
     <Description>Minimalistic device client to interact with Azure IoT Hub using MqttNet</Description>
-    <PackageProjectUrl>https://github.com/ridomin/Rido.IoTHubClient</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ridomin/Rido.IoTHubClient</RepositoryUrl>
-    <PackageTags>mqtt; azure-iot</PackageTags>
+	<PublishRepositoryUrl>true</PublishRepositoryUrl>
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <Copyright>copyleft</Copyright>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/ridomin/Rido.IoTHubClient</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>0.0.1 - Support api-version 2020-09-30
+    <PackageTags>mqtt; azure-iot</PackageTags>
+    <PackageReleaseNotes>
+		0.0.1 - Support api-version 2020-09-30
 	    Device/Module support
 		Sas Tokens Auth with Refresh
 		X509 Certs
 		DPS Client
 	</PackageReleaseNotes>
+	<IncludeSymbols>true</IncludeSymbols>
+	<SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,6 +36,10 @@
   <ItemGroup>
     <PackageReference Include="MQTTnet" Version="3.0.16" />
     <PackageReference Include="System.Text.Json" Version="5.0.2" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
