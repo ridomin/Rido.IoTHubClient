@@ -11,7 +11,7 @@ namespace Rido.IoTHubClient.Tests
 {
     public class IMqttClientExtensionsFixture : IDisposable
     {
-        const string hostname = "tests.azure-devices.net";
+        const string hostname = "broker.azure-devices.net";
         const string deviceId = "d5";
         static string DefaultKey => Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")));
 
@@ -22,7 +22,7 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public async Task ConnectWithSaSV1()
+        public async Task ConnectWithSaS()
         {
             var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);

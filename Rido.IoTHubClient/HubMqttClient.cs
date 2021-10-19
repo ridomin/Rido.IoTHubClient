@@ -119,21 +119,23 @@ namespace Rido.IoTHubClient
         {
             if (string.IsNullOrEmpty(DeviceConnectionString.ModuleId))
             {
-                return await PublishAsync($"devices/{DeviceConnectionString.DeviceId}/messages/events/", payload);
+                return await PublishAsync("$az/iot/telemetry", payload);
             }
             else
             {
-                return await PublishAsync($"devices/{DeviceConnectionString.DeviceId}/modules/{DeviceConnectionString.ModuleId}/messages/events/", payload);
+                // TODO: review telemetry topic for modules
+                return await PublishAsync("$az/iot/telemetry", payload);
             }
         }
 
+        // TODO: review topic for cmd response
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-          await PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
+          await PublishAsync($"$az/iot/methods/res/{status}/?rid={rid}", payload);
 
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>();
-            var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            var puback = await PublishAsync($"$az/iot/twin/get/?rid={lastRid++}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 twin_cb = s => tcs.TrySetResult(s);
@@ -148,7 +150,7 @@ namespace Rido.IoTHubClient
         public async Task<int> UpdateTwinAsync(object payload)
         {
             var tcs = new TaskCompletionSource<int>();
-            var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
+            var puback = await PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 patch_cb = s => tcs.TrySetResult(s);
@@ -164,9 +166,10 @@ namespace Rido.IoTHubClient
         {
             var unsuback = await mqttClient.UnsubscribeAsync(new string[]
             {
-                "$iothub/methods/POST/#",
-                "$iothub/twin/res/#",
-                "$iothub/twin/PATCH/properties/desired/#"
+                "$az/iot/methods/+/+",
+                "$az/iot/twin/get/response/+",
+                "$az/iot/twin/patch/response/+",
+                "$az/iot/twin/events/desired-changed/+"
             });
             unsuback.Items.ToList().ForEach(i => Trace.TraceInformation($"- {i.TopicFilter} {i.ReasonCode}"));
             await mqttClient.DisconnectAsync();
@@ -228,9 +231,10 @@ namespace Rido.IoTHubClient
             {
                 Trace.TraceWarning("### CONNECTED WITH SERVER ###");
                 var subres = await mqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
-                                                        .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                        .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                        .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                        .WithTopicFilter("$az/iot/methods/+/+", MqttQualityOfServiceLevel.AtLeastOnce)
+                                                        .WithTopicFilter("$az/iot/twin/get/response/+", MqttQualityOfServiceLevel.AtLeastOnce)
+                                                        .WithTopicFilter("$az/iot/twin/patch/response/+", MqttQualityOfServiceLevel.AtLeastOnce)
+                                                        .WithTopicFilter("$az/iot/twin/events/desired-changed/+", MqttQualityOfServiceLevel.AtLeastOnce)
                                                         .Build());
                 subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             });
@@ -252,8 +256,8 @@ namespace Rido.IoTHubClient
                 {
                     // parse qs to extract the rid
                     var qs = HttpUtility.ParseQueryString(segments[^1]);
-                    rid = Convert.ToInt32(qs["$rid"]);
-                    twinVersion = Convert.ToInt32(qs["$version"]);
+                    rid = Convert.ToInt32(qs["rid"]);
+                    twinVersion = Convert.ToInt32(qs["v"]);
                 }
 
                 if (e.ApplicationMessage.Payload != null)
@@ -262,15 +266,15 @@ namespace Rido.IoTHubClient
                 }
 
                 //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
-                if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
+                if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/get/response"))
                 {
                     twin_cb(msg);
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
+                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/patch/response/"))
                 {
                     patch_cb(twinVersion);
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
+                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/events/desired-changed"))
                 {
                     OnPropertyReceived?.Invoke(this, new PropertyEventArgs()
                     {
@@ -280,7 +284,7 @@ namespace Rido.IoTHubClient
                         Version = twinVersion
                     });
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
+                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/methods"))
                 {
                     var cmdName = segments[3];
                     //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic} {cmdName} {e.ApplicationMessage.Payload.Length} Bytes");

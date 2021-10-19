@@ -13,7 +13,7 @@ namespace Rido.IoTHubClient
     {
         public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, string modelId = "", int minutes = 60)
         {
-            (string username, string password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, sasKey, modelId, minutes);
+            (string username, byte[] password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, sasKey, minutes);
             return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
                  .WithClientId(deviceId)
                  .WithTcpServer(hostName, 8883)
@@ -31,13 +31,14 @@ namespace Rido.IoTHubClient
 
         public static async Task<MqttClientAuthenticateResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, string modelId = "")
         {
+            string username = SasAuth.GetUserName(hostName, cert.Subject[3..], AuthType.X509);
             return await mqttClient.ConnectAsync(
                new MqttClientOptionsBuilder()
                    .WithClientId(cert.Subject[3..])
                    .WithTcpServer(hostName, 8883)
                    .WithCredentials(new MqttClientCredentials()
                    {
-                       Username = SasAuth.GetUserName(hostName, cert.Subject[3..], modelId)
+                       Username = username
                    })
                    .WithTls(new MqttClientOptionsBuilderTlsParameters
                    {

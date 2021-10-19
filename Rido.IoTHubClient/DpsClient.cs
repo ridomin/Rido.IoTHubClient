@@ -85,7 +85,7 @@ namespace Rido.IoTHubClient
 
             var resource = $"{idScope}/registrations/{registrationId}";
             var username = $"{resource}/api-version=2019-03-31";
-            var password = SasAuth.CreateSasToken(resource, sasKey, 5);
+            var password = SasAuth.CreateDpsSasToken(resource, sasKey, 5);
 
             var options = new MqttClientOptionsBuilder()
                 .WithClientId(registrationId)
