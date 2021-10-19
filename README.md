@@ -19,7 +19,7 @@ Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](htt
 Connect With SaS
 
 ```cs
-var client = await HubMqttClient.CreateFromConnectionStringAsync(hostname, device, sasKey);
+var client = await HubMqttClient.CreateAsync(hostname, device, sasKey);
 ```
 
 Connect with X509
@@ -47,7 +47,7 @@ Console.WriteLine(dpsRes.registrationState.assignedHub));
 ```
 
 ```cs
-var dpsRes = await DpsClient.ProvisionWithCertAsync("<IdScope>", "<pathTo.pfx>", "<pfx Pwd>");
+var dpsRes = await DpsClient.ProvisionWithCertAsync("<IdScope>", certificate);
 Console.WriteLine(dpsRes.registrationState.assignedHub));
 ```
 
