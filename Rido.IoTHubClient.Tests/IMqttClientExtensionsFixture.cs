@@ -11,10 +11,11 @@ namespace Rido.IoTHubClient.Tests
 {
     public class IMqttClientExtensionsFixture : IDisposable
     {
-        string hostname = "tests.azure-devices.net";
-        string deviceId = "d5";
-        string DefaultKey => Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")));
-        IMqttClient mqttClient;
+        const string hostname = "tests.azure-devices.net";
+        const string deviceId = "d5";
+        static string DefaultKey => Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")));
+
+        readonly IMqttClient mqttClient;
         public IMqttClientExtensionsFixture()
         {
             mqttClient = new MqttFactory().CreateMqttClient();
@@ -36,6 +37,7 @@ namespace Rido.IoTHubClient.Tests
         public void Dispose()
         {
             _ = mqttClient.DisconnectAsync();
+            GC.SuppressFinalize(this);
         }
     }
 }
