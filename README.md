@@ -47,7 +47,7 @@ Console.WriteLine(dpsRes.registrationState.assignedHub));
 ```
 
 ```cs
-var dpsRes = await DpsClient.ProvisionWithCertAsync("<IdScope>", "<pathTo.pfx>", "<pfx Pwd>");
+var dpsRes = await DpsClient.ProvisionWithCertAsync("<IdScope>", certificate);
 Console.WriteLine(dpsRes.registrationState.assignedHub));
 ```
 
