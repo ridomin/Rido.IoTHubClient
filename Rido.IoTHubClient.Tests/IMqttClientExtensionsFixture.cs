@@ -35,19 +35,19 @@ namespace Rido.IoTHubClient.Tests
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
-        [Fact]
-        public async Task ConnectModuleWithSaS()
-        {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, String.Empty);
-            Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
-        }
+        //[Fact]
+        //public async Task ConnectModuleWithSaS()
+        //{
+        //    var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, String.Empty);
+        //    Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
+        //}
 
-        [Fact]
-        public async Task ConnectModuleWithSaSAndModelId()
-        {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, "dtmi:rido:module;1");
-            Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
-        }
+        //[Fact]
+        //public async Task ConnectModuleWithSaSAndModelId()
+        //{
+        //    var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, "dtmi:rido:module;1");
+        //    Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
+        //}
 
         [Fact]
         public async Task ConnectDeviceWithCert()
@@ -63,19 +63,19 @@ namespace Rido.IoTHubClient.Tests
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
-        [Fact]
-        public async Task ConnectModuleWithCert()
-        {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"));
-            Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
-        }
+        //[Fact]
+        //public async Task ConnectModuleWithCert()
+        //{
+        //    var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"));
+        //    Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
+        //}
 
-        [Fact]
-        public async Task ConnectModuleWithCertAndModelId()
-        {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), "dtmi:rido:module;1");
-            Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
-        }
+        //[Fact]
+        //public async Task ConnectModuleWithCertAndModelId()
+        //{
+        //    var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), "dtmi:rido:module;1");
+        //    Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
+        //}
 
         public void Dispose()
         {

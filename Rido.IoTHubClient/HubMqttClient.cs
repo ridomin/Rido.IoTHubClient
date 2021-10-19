@@ -64,14 +64,14 @@ namespace Rido.IoTHubClient
         {
             var client = new HubMqttClient();
             MqttClientAuthenticateResult connAck;
-            if (string.IsNullOrEmpty(dcs.ModuleId))
-            {
-                connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
-            }
-            else
-            {
-                connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
-            }
+            connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
+            //if (string.IsNullOrEmpty(dcs.ModuleId))
+            //{
+            //}
+            //else
+            //{
+            //   connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
+            //}
 
             if (connAck.ResultCode == MqttClientConnectResultCode.Success)
             {

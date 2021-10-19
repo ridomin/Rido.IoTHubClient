@@ -12,14 +12,26 @@ namespace Rido.IoTHubClient
     internal class SasAuth
     {
         const string apiversion_2021_06_30_preview = "2021-06-30-preview";
-        internal static string GetUserName(string hostName, string deviceId, string expiryString, string modelId, AuthType auth = AuthType.SAS) =>
-            $"av={apiversion_2021_06_30_preview}&h={hostName}&did={deviceId}&am={auth}&se={expiryString}&dtmi={modelId}";
-        internal static string GetUserName(string hostName, string deviceId, string moduleId, string expiryString, string modelId, AuthType auth = AuthType.SAS) =>
-            $"av={apiversion_2021_06_30_preview}&h={hostName}&did={deviceId}&mid={moduleId}&am={auth}&se={expiryString}&dtmi={modelId}";
-
-        internal static string GetUserName(string hostName, string deviceId, string modelId, AuthType auth = AuthType.X509) =>
-            $"av={apiversion_2021_06_30_preview}&h={hostName}&did={deviceId}&am={auth}&dtmi={modelId}";
-
+        internal static string GetUserName(string hostName, string deviceId, string moduleId, string expiryString, string modelId, AuthType auth)
+        {
+            string username = $"av={apiversion_2021_06_30_preview}&h={hostName}&did={deviceId}&am={auth}";
+            if (!string.IsNullOrEmpty(moduleId))
+            {
+                username += $"&mid={moduleId}";
+            }
+            if (!string.IsNullOrEmpty(modelId))
+            {
+                username += $"&dtmi={modelId}";
+            }
+            if (auth==AuthType.SAS)
+            {
+                username += $"&se={expiryString}";
+            }
+            //username += $"&am={auth}";
+            return username;
+        }
+            
+        
         static byte[] CreateSasToken(string resource, string sasKey, string expiry)
         {
             static byte[] Sign(string requestString, string key)
@@ -45,17 +57,17 @@ namespace Rido.IoTHubClient
         internal static (string username, byte[] password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, string modelId, int minutes)
         {
             var expiry = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeMilliseconds().ToString();
-            string username = GetUserName(hostName, deviceId, expiry, modelId);
+            string username = GetUserName(hostName, deviceId, string.Empty, expiry, modelId, AuthType.SAS);
             byte[] password = CreateSasToken($"{hostName}\n{deviceId}", sasKey, expiry);
             return (username, password);
         }
 
-        internal static (string username, byte[] password) GenerateHubSasCredentials(string hostName, string deviceId, string moduleId, string sasKey, string modelId, int minutes)
-        {
-            var expiry = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeMilliseconds().ToString();
-            string username = GetUserName(hostName, deviceId, moduleId, expiry);
-            byte[] password = CreateSasToken($"{hostName}\n{deviceId}/{moduleId}", sasKey, expiry);
-            return (username, password);
-        }
+        //internal static (string username, byte[] password) GenerateHubSasCredentials(string hostName, string deviceId, string moduleId, string sasKey, string modelId, int minutes)
+        //{
+        //    var expiry = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeMilliseconds().ToString();
+        //    string username = GetUserName(hostName, deviceId, moduleId, expiry, modelId, AuthType.SAS);
+        //    byte[] password = CreateSasToken($"{hostName}\n{deviceId}/{moduleId}", sasKey, expiry);
+        //    return (username, password);
+        //}
     }
 }

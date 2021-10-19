@@ -26,27 +26,39 @@ namespace Rido.IoTHubClient
                  .Build());
         }
 
-        public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, string modelId = "", int minutes = 60)
-        {
-            (string username, byte[] password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, moduleId, sasKey, modelId, minutes);
-            return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
-                 .WithClientId($"{deviceId}/{moduleId}")
-                 .WithTcpServer(hostName, 8883)
-                 .WithCredentials(username, password)
-                 .WithTls(new MqttClientOptionsBuilderTlsParameters
-                 {
-                     UseTls = true,
-                     SslProtocol = SslProtocols.Tls12
-                 })
-                 .Build());
-        }
+        //public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, string modelId = "", int minutes = 60)
+        //{
+        //    (string username, byte[] password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, moduleId, sasKey, modelId, minutes);
+        //    return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
+        //         .WithClientId($"{deviceId}/{moduleId}")
+        //         .WithTcpServer(hostName, 8883)
+        //         .WithCredentials(username, password)
+        //         .WithTls(new MqttClientOptionsBuilderTlsParameters
+        //         {
+        //             UseTls = true,
+        //             SslProtocol = SslProtocols.Tls12
+        //         })
+        //         .Build());
+        //}
 
         public static async Task<MqttClientAuthenticateResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, string modelId = "")
         {
-            string username = SasAuth.GetUserName(hostName, cert.Subject[3..], modelId, AuthType.X509);
+            var cid = cert.Subject[3..];
+            string deviceId = cid;
+            string moduleId = string.Empty;
+            
+            if (cid.Contains("/")) // is a module
+            {
+                var segments = cid.Split('/');
+                deviceId = segments[0];
+                moduleId = segments[1];
+            }
+                                 
+            string username = SasAuth.GetUserName(hostName, deviceId, moduleId, string.Empty, modelId, AuthType.X509);
+            
             return await mqttClient.ConnectAsync(
                new MqttClientOptionsBuilder()
-                   .WithClientId(cert.Subject[3..])
+                   .WithClientId(cid)
                    .WithTcpServer(hostName, 8883)
                    .WithCredentials(new MqttClientCredentials()
                    {
