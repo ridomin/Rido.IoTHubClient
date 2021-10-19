@@ -237,6 +237,11 @@ namespace Rido.IoTHubClient
                                                         .WithTopicFilter("$az/iot/twin/events/desired-changed/+", MqttQualityOfServiceLevel.AtLeastOnce)
                                                         .Build());
                 subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+
+                if (subres.Items.ToList().Any(x => x.ResultCode == MqttClientSubscribeResultCode.UnspecifiedError))
+                {
+                    throw new ApplicationException("Error subscribing to system topics");
+                }
             });
 
             mqttClient.UseDisconnectedHandler(e =>
