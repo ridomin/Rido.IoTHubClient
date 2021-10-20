@@ -23,14 +23,14 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public async Task ConnectWithSaSV1()
+        public async Task ConnectWithSaS()
         {
             var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
-        public async Task ConnectWithCertsV1()
+        public async Task ConnectWithCerts()
         {
             var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"));
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
