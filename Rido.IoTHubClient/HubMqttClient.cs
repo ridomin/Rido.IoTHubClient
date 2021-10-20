@@ -62,14 +62,18 @@ namespace Rido.IoTHubClient
                 {
                     try
                     {
-                        Trace.TraceWarning("*** Reconnecting in 1s.. ");
-                        await Task.Delay(2000);
+                        Trace.TraceWarning($"*** Reconnecting in {DeviceConnectionString.RetryInterval} s.. ");
+                        await Task.Delay(DeviceConnectionString.RetryInterval * 1000);
                         await mqttClient.ReconnectAsync();
                     }
                     catch (Exception ex)
                     {
                         Trace.TraceError(ex.Message);
                     }
+                }
+                else
+                {
+                    Trace.TraceWarning($"*** Reconnecting Disabled {DeviceConnectionString.RetryInterval}");
                 }
             });
         }
@@ -246,16 +250,6 @@ namespace Rido.IoTHubClient
             else
             {
                 Trace.TraceWarning(" !!!!!  Missing one message ");
-                try
-                {
-                    Trace.TraceWarning("*** Reconnecting.. ");
-                    await mqttClient.ReconnectAsync();
-
-                }
-                catch (Exception ex)
-                {
-                    Trace.TraceError(ex.Message);
-                }
                 return null;
             }
         }
