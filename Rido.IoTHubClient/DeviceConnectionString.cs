@@ -18,6 +18,16 @@ namespace Rido.IoTHubClient
         public DeviceConnectionString() { }
         public DeviceConnectionString(string cs) => ParseConnectionString(cs);
 
+        public static DeviceConnectionString CreateWithDefaultKey(string hub, string did)
+        {
+            return new DeviceConnectionString
+            {
+                HostName = hub.Contains("azure-devices.net") ? hub : hub + ".azure-devices.net",
+                DeviceId = did,
+                SharedAccessKey = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")))
+            };
+        }
+
         private void ParseConnectionString(string cs)
         {
             static string GetConnectionStringValue(IDictionary<string, string> dict, string propertyName, bool warnIfNotFound = true)
@@ -48,8 +58,9 @@ namespace Rido.IoTHubClient
 
         public override string ToString()
         {
-            var result = $"HostName={HostName};DeviceId={DeviceId}";
-
+            var result = @$"HostName={HostName};
+                            DeviceId={DeviceId}";
+            
             if (!string.IsNullOrEmpty(ModuleId))
             {
                 result += $";ModuleId={ModuleId}";

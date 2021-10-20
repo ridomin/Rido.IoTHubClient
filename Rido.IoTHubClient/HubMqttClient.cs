@@ -279,11 +279,11 @@ namespace Rido.IoTHubClient
                 {
                     msg = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                 }
-
+    
                 //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
                 if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/get/response"))
                 {
-                    twin_cb(msg);
+                    twin_cb(msg);   
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/patch/response/"))
                 {

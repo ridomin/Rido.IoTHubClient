@@ -16,8 +16,9 @@ namespace sample_device
         static async Task Main(string[] args)
         {
             var mqttClient = new MqttFactory().CreateMqttClient(); //CreateMqttClientWithDiagnostics();  
-            var dcs = new DeviceConnectionString(Environment.GetEnvironmentVariable("cs"));
+            var dcs = DeviceConnectionString.CreateWithDefaultKey("broker", "d4"); 
             System.Console.WriteLine(dcs);
+
             var connack = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
             Console.WriteLine($"{nameof(mqttClient.IsConnected)}:{mqttClient.IsConnected} . {connack.ResultCode}");
 
@@ -29,19 +30,18 @@ namespace sample_device
             });
 
             var topic = $"vehicles";
-            var subAck = await mqttClient.SubscribeAsync(topic + $"/{dcs.DeviceId}/nodes/+/telemetry");
+            var subAck = await mqttClient.SubscribeAsync(topic + $"/+/telemetry");
             subAck.Items.ForEach(x => Console.WriteLine($"{x.TopicFilter}{x.ResultCode}"));
 
             while (true)
             {
-                string pubtopic = $"{topic}/{dcs.DeviceId}/nodes/{new Random().Next(100)}/telemetry";
+                string pubtopic = $"{topic}/{dcs.DeviceId}/telemetry";
                 var msg = Environment.TickCount64.ToString();
                 var pubAck = await mqttClient.PublishAsync(pubtopic, msg);
                 Console.WriteLine($"-> {pubtopic} {msg}. {pubAck.ReasonCode}");
                 await Task.Delay(1000);
             }
 
-            //ConfigTracing();
             //await DPSProvisionAndConnect();
             //var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
             //await RunAppWithReservedTopics(client);
