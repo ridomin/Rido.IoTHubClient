@@ -8,7 +8,7 @@ namespace Rido.IoTHubClient
     {
         bool IsConnected { get; }
         DeviceConnectionString DeviceConnectionString { get; }
-        Task<MqttClientPublishResult> SendTelemetryAsync(object payload);
+        Task<MqttClientPublishResult> SendTelemetryAsync(object payload, string dtdlComponentName = "");
         Task<string> GetTwinAsync();
         Task<int> UpdateTwinAsync(object payload);
         event EventHandler<PropertyEventArgs> OnPropertyReceived;
