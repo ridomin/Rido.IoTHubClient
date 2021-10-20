@@ -232,7 +232,16 @@ namespace Rido.IoTHubClient
             else
             {
                 Trace.TraceWarning(" !!!!!  Missing one message ");
-                // TODO: Reconnect here?
+                try
+                {
+                    Trace.TraceWarning("*** Reconnecting.. ");
+                    await mqttClient.ReconnectAsync();
+
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError(ex.Message);
+                }
                 return null;
             }
         }
