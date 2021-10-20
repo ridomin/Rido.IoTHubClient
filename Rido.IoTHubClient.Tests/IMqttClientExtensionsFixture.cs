@@ -41,12 +41,9 @@ namespace Rido.IoTHubClient.Tests
         {
             var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, "dmit:com:example:Thermostat;1", 60);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
-            var msg = new MqttApplicationMessage();
-            msg.ContentType = "application/json";
-            msg.UserProperties = new System.Collections.Generic.List<MQTTnet.Packets.MqttUserProperty>();
-            msg.UserProperties.Add(new MQTTnet.Packets.MqttUserProperty("myUserProperty", "my_comp"));
-            msg.Payload = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { temperature = 3 }));
-            msg.Topic = $"devices/{deviceId}/messages/events/";
+            MqttApplicationMessage msg = new();
+            msg.Payload = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { temperature = 432 }));
+            msg.Topic = $"devices/{deviceId}/messages/events/$.sub=mycomp";
             var puback = await mqttClient.PublishAsync(msg);
             Console.WriteLine(puback.ReasonCode);
         }
