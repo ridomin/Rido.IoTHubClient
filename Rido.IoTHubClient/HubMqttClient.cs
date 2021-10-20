@@ -52,11 +52,25 @@ namespace Rido.IoTHubClient
 
             mqttClient = new MqttFactory(logger).CreateMqttClient();
             ConfigureReservedTopics();
-            mqttClient.UseDisconnectedHandler(e =>
+            mqttClient.UseDisconnectedHandler(async e =>
             {
                 Trace.TraceError("## DISCONNECT ##");
                 Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
                 OnMqttClientDisconnected?.Invoke(this, e);
+
+                if (DeviceConnectionString.RetryInterval>0)
+                {
+                    try
+                    {
+                        Trace.TraceWarning("*** Reconnecting in 1s.. ");
+                        await Task.Delay(2000);
+                        await mqttClient.ReconnectAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.TraceError(ex.Message);
+                    }
+                }
             });
         }
 

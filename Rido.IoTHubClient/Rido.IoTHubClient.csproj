@@ -18,7 +18,9 @@
 	<Deterministic>true</Deterministic>
 	<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     <PackageReleaseNotes>
-		0.0.2 Expose Disconnect event, adds component name to telemetry
+		0.0.2 Expose Disconnect event, 
+		      Add component name to telemetry
+			  Reconnects
 		0.0.1 - Support api-version 2020-09-30
 	    Device/Module support
 		Sas Tokens Auth with Refresh
