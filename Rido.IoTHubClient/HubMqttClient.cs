@@ -127,13 +127,12 @@ namespace Rido.IoTHubClient
 
         public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")
         {
-            string topic = $"devices/{DeviceConnectionString.DeviceId}/";
+            string topic = $"$az/iot/telemetry";
 
-            if (!string.IsNullOrEmpty(DeviceConnectionString.ModuleId))
-            {
-                topic += $"/modules/{DeviceConnectionString.ModuleId}";
-                return await PublishAsync("$az/iot/telemetry", payload);
-            }
+            //if (!string.IsNullOrEmpty(DeviceConnectionString.ModuleId))
+            //{
+            //    topic += $"/modules/{DeviceConnectionString.ModuleId}";
+            //}
             topic += "/messages/events/";
 
             if (!string.IsNullOrEmpty(dtdlComponentname))
