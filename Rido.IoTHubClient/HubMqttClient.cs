@@ -125,16 +125,21 @@ namespace Rido.IoTHubClient
             return client;
         }
 
-        public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload)
+        public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")
         {
-            if (string.IsNullOrEmpty(DeviceConnectionString.ModuleId))
+            string topic = $"devices/{DeviceConnectionString.DeviceId}/";
+
+            if (!string.IsNullOrEmpty(DeviceConnectionString.ModuleId))
             {
-                return await PublishAsync($"devices/{DeviceConnectionString.DeviceId}/messages/events/", payload);
+                topic += $"/modules/{DeviceConnectionString.ModuleId}";
             }
-            else
+            topic += "/messages/events/";
+
+            if (!string.IsNullOrEmpty(dtdlComponentname))
             {
-                return await PublishAsync($"devices/{DeviceConnectionString.DeviceId}/modules/{DeviceConnectionString.ModuleId}/messages/events/", payload);
+                topic += $"$.sub={dtdlComponentname}";
             }
+            return await PublishAsync(topic, payload);
         }
 
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
