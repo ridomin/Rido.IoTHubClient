@@ -27,6 +27,11 @@ namespace sample_device
             Console.WriteLine(client.DeviceConnectionString);
             Console.WriteLine();
 
+            client.OnMqttClientDisconnected += (s, e) =>
+            {
+                Console.WriteLine("Client Disconnected");
+            };
+
             client.OnCommandReceived += async (s, e) =>
             {
                 Console.WriteLine($"Processing Command {e.CommandName}");

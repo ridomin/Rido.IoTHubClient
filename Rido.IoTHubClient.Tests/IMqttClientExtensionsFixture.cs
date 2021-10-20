@@ -4,6 +4,7 @@ using MQTTnet.Client.Connecting;
 using System;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -54,6 +55,18 @@ namespace Rido.IoTHubClient.Tests
         {
             var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"));
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
+        }
+
+        [Fact]
+        public async Task SendTelemetryWithHeaders()
+        {
+            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, "dmit:com:example:Thermostat;1", 60);
+            Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
+            MqttApplicationMessage msg = new();
+            msg.Payload = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { temperature = 432 }));
+            msg.Topic = $"devices/{deviceId}/messages/events/$.sub=mycomp";
+            var puback = await mqttClient.PublishAsync(msg);
+            Console.WriteLine(puback.ReasonCode);
         }
 
         [Fact]

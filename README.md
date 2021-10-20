@@ -30,6 +30,13 @@ var client = await HubMqttClient.CreateWithClientCertsAsync(hostname, certificat
 
 > Note: See [connection settings reference](#connection-settings-reference)
 
+### Disconnects
+
+The client will trigger the event ` event EventHandler<MqttClientDisconnectedEventArgs> OnMqttClientDisconnected;`
+
+(also visible in diagnostics traces)
+
+
 ### MQTT Extensions
 
 You can also connect with the MQTTNet client by using the extension methods:
