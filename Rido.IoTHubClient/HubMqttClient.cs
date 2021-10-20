@@ -1,6 +1,7 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
+using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics;
@@ -22,6 +23,8 @@ namespace Rido.IoTHubClient
         public bool IsConnected => mqttClient.IsConnected;
         public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
+        public event EventHandler<MqttClientDisconnectedEventArgs> OnMqttClientDisconnected;
+
         public DeviceConnectionString DeviceConnectionString { get; private set; }
 
         IMqttClient mqttClient;
@@ -46,8 +49,15 @@ namespace Rido.IoTHubClient
 
                 Trace.TraceInformation(trace);
             };
+
             mqttClient = new MqttFactory(logger).CreateMqttClient();
             ConfigureReservedTopics();
+            mqttClient.UseDisconnectedHandler(e =>
+            {
+                Trace.TraceError("## DISCONNECT ##");
+                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
+                OnMqttClientDisconnected?.Invoke(this, e);
+            });
         }
 
         public static async Task<IHubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
@@ -240,11 +250,7 @@ namespace Rido.IoTHubClient
                 }
             });
 
-            mqttClient.UseDisconnectedHandler(e =>
-            {
-                Trace.TraceError("## DISCONNECT ##");
-                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
-            });
+           
 
             mqttClient.UseApplicationMessageReceivedHandler(e =>
             {
