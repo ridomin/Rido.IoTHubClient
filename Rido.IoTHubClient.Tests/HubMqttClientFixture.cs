@@ -1,4 +1,5 @@
 using Microsoft.Azure.Devices;
+using MQTTnet.Client.Publishing;
 using System;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -45,6 +46,26 @@ namespace Rido.IoTHubClient.Tests
         {
             IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             Assert.True(client.IsConnected);
+            await client.CloseAsync();
+        }
+
+        [Fact]
+        public async Task ConnectWithSasKeyAndSendTelemetry()
+        {
+            IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
+            Assert.True(client.IsConnected);
+            var puback = await client.SendTelemetryAsync(new { temp = 2 });
+            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            await client.CloseAsync();
+        }
+
+        [Fact]
+        public async Task ConnectWithSasKeyAndSendTelemetryComponent()
+        {
+            IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
+            Assert.True(client.IsConnected);
+            var puback = await client.SendTelemetryAsync(new { temp = 2 }, "mycomponent");
+            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
             await client.CloseAsync();
         }
 
