@@ -1,5 +1,8 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Client.Subscribing;
+using MQTTnet.Diagnostics;
+using MQTTnet.Protocol;
 using Rido.IoTHubClient;
 using System;
 using System.Diagnostics;
@@ -8,32 +11,33 @@ using System.Threading.Tasks;
 
 namespace sample_device
 {
-    class ProgramV1
+    class Program
     {
         static async Task Main(string[] args)
         {
-            var mqttClient = new MqttFactory().CreateMqttClient();
+            var mqttClient = new MqttFactory().CreateMqttClient(); //CreateMqttClientWithDiagnostics();  
             var dcs = new DeviceConnectionString(Environment.GetEnvironmentVariable("cs"));
+            System.Console.WriteLine(dcs);
             var connack = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
             Console.WriteLine($"{nameof(mqttClient.IsConnected)}:{mqttClient.IsConnected} . {connack.ResultCode}");
 
             mqttClient.UseApplicationMessageReceivedHandler(e =>
             {
-                Console.WriteLine($"<- {e.ApplicationMessage.Topic} {e.ApplicationMessage.Payload.Length} Bytes");
+                Console.Write($"<- {e.ApplicationMessage.Topic} {e.ApplicationMessage.Payload.Length} Bytes: ");
                 Console.WriteLine(Encoding.UTF8.GetString(e.ApplicationMessage.Payload));
-                Console.WriteLine();
+                //Console.Write('.');
             });
 
-            var topic = $"vehicles/{dcs.DeviceId}/GPS";
-            var subAck = await mqttClient.SubscribeAsync(topic);
-            subAck.Items.ForEach(x => Console.WriteLine(x.ResultCode));
+            var topic = $"vehicles";
+            var subAck = await mqttClient.SubscribeAsync(topic + $"/{dcs.DeviceId}/nodes/+/telemetry");
+            subAck.Items.ForEach(x => Console.WriteLine($"{x.TopicFilter}{x.ResultCode}"));
 
             while (true)
             {
-                var msg = Environment.TickCount.ToString();
-                var pubAck = await mqttClient.PublishAsync(topic, msg);
-                Console.WriteLine($"-> {topic} {msg}. {pubAck.ReasonCode}");
-                Console.WriteLine();
+                string pubtopic = $"{topic}/{dcs.DeviceId}/nodes/{new Random().Next(100)}/telemetry";
+                var msg = Environment.TickCount64.ToString();
+                var pubAck = await mqttClient.PublishAsync(pubtopic, msg);
+                Console.WriteLine($"-> {pubtopic} {msg}. {pubAck.ReasonCode}");
                 await Task.Delay(1000);
             }
 
@@ -45,11 +49,24 @@ namespace sample_device
 
         }
 
-        private static void ConfigTracing()
+        private static IMqttClient CreateMqttClientWithDiagnostics()
         {
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Information);
+            MqttNetLogger logger = new MqttNetLogger();
+            logger.LogMessagePublished += (s, e) =>
+            {
+                var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
+                if (e.LogMessage.Exception != null)
+                {
+                    trace += Environment.NewLine + e.LogMessage.Exception.ToString();
+                }
+
+                Trace.TraceInformation(trace);
+            };
+
+            return  new MqttFactory(logger).CreateMqttClient();
         }
 
         static async Task RunAppWithReservedTopics(IHubMqttClient client)
