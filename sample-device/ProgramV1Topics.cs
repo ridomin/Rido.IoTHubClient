@@ -1,6 +1,9 @@
-﻿using Rido.IoTHubClient;
+﻿using MQTTnet;
+using MQTTnet.Client;
+using Rido.IoTHubClient;
 using System;
 using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace sample_device
@@ -9,20 +12,48 @@ namespace sample_device
     {
         static async Task Main(string[] args)
         {
-            //var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne00385995", "paad", "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
-            //Console.WriteLine(dpsRes.registrationState.assignedHub);
-            //var client1 = await HubMqttClient.CreateAsync(dpsRes.registrationState.assignedHub, dpsRes.registrationState.deviceId, "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
-            //var t1 = await client1.GetTwinAsync();
-            //Console.WriteLine("Twin1 REPLY 1" + t1);
+            var mqttClient = new MqttFactory().CreateMqttClient();
+            var dcs = new DeviceConnectionString(Environment.GetEnvironmentVariable("cs"));
+            var connack = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
+            Console.WriteLine($"{nameof(mqttClient.IsConnected)}:{mqttClient.IsConnected} . {connack.ResultCode}");
 
+            mqttClient.UseApplicationMessageReceivedHandler(e =>
+            {
+                Console.WriteLine($"<- {e.ApplicationMessage.Topic} {e.ApplicationMessage.Payload.Length} Bytes");
+                Console.WriteLine(Encoding.UTF8.GetString(e.ApplicationMessage.Payload));
+                Console.WriteLine();
+            });
+
+            var topic = $"vehicles/{dcs.DeviceId}/GPS";
+            var subAck = await mqttClient.SubscribeAsync(topic);
+            subAck.Items.ForEach(x => Console.WriteLine(x.ResultCode));
+
+            while (true)
+            {
+                var msg = Environment.TickCount.ToString();
+                var pubAck = await mqttClient.PublishAsync(topic, msg);
+                Console.WriteLine($"-> {topic} {msg}. {pubAck.ReasonCode}");
+                Console.WriteLine();
+                await Task.Delay(1000);
+            }
+
+            //ConfigTracing();
+            //await DPSProvisionAndConnect();
+            //var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            //await RunAppWithReservedTopics(client);
+
+
+        }
+
+        private static void ConfigTracing()
+        {
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Information);
+        }
 
-            string modelId = "dtmi:com:demos;1";
-            //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234", modelId);
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModuleId=m1;ModelId={modelId}");
-
+        static async Task RunAppWithReservedTopics(IHubMqttClient client)
+        {
             Console.WriteLine();
             Console.WriteLine(client.DeviceConnectionString);
             Console.WriteLine();
@@ -64,6 +95,13 @@ namespace sample_device
                 await Task.Delay(2000);
                 Console.Write("t");
             }
+        }
+
+       static  async Task DPSProvisionAndConnect()
+        {
+            var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne003861C6", "sampleDevice", "Ne+NEEj/NNYkbHGHx0NRoJwZHmN3LoFve2tAdwnCDFQ=");
+            Console.WriteLine(dpsRes.registrationState.assignedHub);
+            var client = await HubMqttClient.CreateAsync(dpsRes.registrationState.assignedHub, dpsRes.registrationState.deviceId, "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
 
         }
     }
