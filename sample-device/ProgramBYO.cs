@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace sample_device
 {
-    class Program
+    class Program_BYO
     {
-        static async Task Main(string[] args)
+        static async Task Main_BYO(string[] args)
         {
             var mqttClient = new MqttFactory().CreateMqttClient(); //CreateMqttClientWithDiagnostics();  
             var dcs = DeviceConnectionString.CreateWithDefaultKey("broker", "d4"); 
