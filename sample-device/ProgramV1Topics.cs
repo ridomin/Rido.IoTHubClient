@@ -27,6 +27,11 @@ namespace sample_device
             Console.WriteLine(client.DeviceConnectionString);
             Console.WriteLine();
 
+            client.OnMqttClientDisconnected += (s, e) =>
+            {
+                Console.WriteLine("Client Disconnected");
+            };
+
             client.OnCommandReceived += async (s, e) =>
             {
                 Console.WriteLine($"Processing Command {e.CommandName}");
@@ -52,14 +57,24 @@ namespace sample_device
 
             var v = await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount });
             Console.WriteLine("Twin PATCHED version: " + v);
-            int counter = 0;
-            while (true)
-            {
-                await client.SendTelemetryAsync(new { temperature = counter++ });
-                await Task.Delay(2000);
-                Console.Write("t");
-            }
 
+            int missedMessages = 0;
+            while (missedMessages < 10)
+            {
+                if (client.IsConnected)
+                {
+                    await client.SendTelemetryAsync(new { temperature = 21 });
+                    Console.Write("t");
+                    missedMessages = 0;
+                }
+                else
+                {
+                    System.Console.WriteLine("missed messages " + missedMessages);
+                    missedMessages++;
+                }
+                await Task.Delay(2000);
+            }
+            System.Console.WriteLine("The End");
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
+using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics;
@@ -22,6 +23,8 @@ namespace Rido.IoTHubClient
         public bool IsConnected => mqttClient.IsConnected;
         public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
+        public event EventHandler<MqttClientDisconnectedEventArgs> OnMqttClientDisconnected;
+
         public DeviceConnectionString DeviceConnectionString { get; private set; }
 
         IMqttClient mqttClient;
@@ -46,8 +49,33 @@ namespace Rido.IoTHubClient
 
                 Trace.TraceInformation(trace);
             };
+
             mqttClient = new MqttFactory(logger).CreateMqttClient();
             ConfigureReservedTopics();
+            mqttClient.UseDisconnectedHandler(async e =>
+            {
+                Trace.TraceError("## DISCONNECT ##");
+                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
+                OnMqttClientDisconnected?.Invoke(this, e);
+
+                if (DeviceConnectionString.RetryInterval>0)
+                {
+                    try
+                    {
+                        Trace.TraceWarning($"*** Reconnecting in {DeviceConnectionString.RetryInterval} s.. ");
+                        await Task.Delay(DeviceConnectionString.RetryInterval * 1000);
+                        await mqttClient.ReconnectAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.TraceError(ex.Message);
+                    }
+                }
+                else
+                {
+                    Trace.TraceWarning($"*** Reconnecting Disabled {DeviceConnectionString.RetryInterval}");
+                }
+            });
         }
 
         public static async Task<IHubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
@@ -115,16 +143,21 @@ namespace Rido.IoTHubClient
             return client;
         }
 
-        public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload)
+        public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")
         {
-            if (string.IsNullOrEmpty(DeviceConnectionString.ModuleId))
+            string topic = $"devices/{DeviceConnectionString.DeviceId}";
+
+            if (!string.IsNullOrEmpty(DeviceConnectionString.ModuleId))
             {
-                return await PublishAsync($"devices/{DeviceConnectionString.DeviceId}/messages/events/", payload);
+                topic += $"/modules/{DeviceConnectionString.ModuleId}";
             }
-            else
+            topic += "/messages/events/";
+
+            if (!string.IsNullOrEmpty(dtdlComponentname))
             {
-                return await PublishAsync($"devices/{DeviceConnectionString.DeviceId}/modules/{DeviceConnectionString.ModuleId}/messages/events/", payload);
+                topic += $"$.sub={dtdlComponentname}";
             }
+            return await PublishAsync(topic, payload);
         }
 
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
@@ -217,7 +250,6 @@ namespace Rido.IoTHubClient
             else
             {
                 Trace.TraceWarning(" !!!!!  Missing one message ");
-                // TODO: Reconnect here?
                 return null;
             }
         }
@@ -233,13 +265,14 @@ namespace Rido.IoTHubClient
                                                         .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
                                                         .Build());
                 subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+
+                if (subres.Items.ToList().Any(x => x.ResultCode == MqttClientSubscribeResultCode.UnspecifiedError))
+                {
+                    throw new ApplicationException("Error subscribing to system topics");
+                }
             });
 
-            mqttClient.UseDisconnectedHandler(e =>
-            {
-                Trace.TraceError("## DISCONNECT ##");
-                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
-            });
+           
 
             mqttClient.UseApplicationMessageReceivedHandler(e =>
             {
