@@ -2,6 +2,7 @@ using Microsoft.Azure.Devices;
 using MQTTnet.Client.Publishing;
 using System;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
@@ -50,17 +51,63 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public async Task ConnectWithSasKeyAndSendTelemetry()
+        public async Task SendTelemetry_SaS()
         {
             IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
-            Assert.True(client.IsConnected);
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
             Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.True(client.IsConnected);
             await client.CloseAsync();
         }
 
         [Fact]
-        public async Task ConnectWithSasKeyAndSendTelemetryComponent()
+        public async Task SendTelemetry_SaSModule()
+        {
+            var module = await GetOrCreateModuleAsync("deviceWithModules", "ModuleSas");
+            IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, module.DeviceId, module.Id,  module.Authentication.SymmetricKey.PrimaryKey, string.Empty);
+            var puback = await client.SendTelemetryAsync(new { temp = 2 });
+            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.True(client.IsConnected);
+            await client.CloseAsync();
+        }
+
+        [Fact]
+        public async Task SendTelemetry_SaSModule_PnP()
+        {
+            var module = await GetOrCreateModuleAsync("deviceWithModules", "ModuleSas");
+            var modelId = "dtmi:test:module;1";
+            IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, module.DeviceId, module.Id, module.Authentication.SymmetricKey.PrimaryKey, modelId);
+            var puback = await client.SendTelemetryAsync(new { temp = 2 }, "comp1");
+            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.True(client.IsConnected);
+            await client.CloseAsync();
+        }
+
+        [Fact]
+        public async Task SendTelemetry_X509Module()
+        {
+            var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
+            IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"));
+            var puback = await client.SendTelemetryAsync(new { temp = 2 });
+            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.True(client.IsConnected);
+            await client.CloseAsync();
+        }
+
+        [Fact]
+        public async Task SendTelemetry_X509Module_PnP()
+        {
+            var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
+            var modelId = "dtmi:test:module;1";
+            IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"), modelId);
+            var puback = await client.SendTelemetryAsync(new { temp = 2 }, "comp1");
+            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.True(client.IsConnected);
+            await client.CloseAsync();
+        }
+
+        [Fact]
+        public async Task SendTelemetryComponent_SaS()
         {
             IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             Assert.True(client.IsConnected);
@@ -286,6 +333,18 @@ namespace Rido.IoTHubClient.Tests
                     module.Authentication = new AuthenticationMechanism()
                     {
                         Type = AuthenticationType.CertificateAuthority
+                    };
+                }
+                else
+                {
+                    module.Authentication = new AuthenticationMechanism()
+                    {
+                        Type = AuthenticationType.Sas,
+                        SymmetricKey = new SymmetricKey()
+                        {
+                            PrimaryKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N"))),
+                            SecondaryKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")))
+                        }
                     };
                 }
                 await rm.AddModuleAsync(module);

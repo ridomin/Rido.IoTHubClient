@@ -16,13 +16,25 @@ Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](htt
 
 ## Connect to IoTHub
 
-Connect With SaS
+Connect Device With SaS
 
 ```cs
 var client = await HubMqttClient.CreateAsync(hostname, device, sasKey);
 ```
 
-Connect with X509
+Connect Module With SaS
+
+```cs
+var client = await HubMqttClient.CreateAsync(hostname, device, module, sasKey);
+```
+
+Announce the model Id
+
+```cs
+var client = await HubMqttClient.CreateAsync(hostname, device, sasKey, modelId);
+```
+
+Connect Device or Module with X509
 
 ```cs
 var client = await HubMqttClient.CreateWithClientCertsAsync(hostname, certificate);
@@ -115,10 +127,13 @@ This library implements a compatible *connection string* with Azure IoT SDK Devi
 - `ModuleId` Device Module Identity
 - `Auth` Device Authentication: [SAS, X509]
 - `SasMinutes` SasToken expire time in minutes
+- `RetryInterval` Wait before connection retries in seconds. 0 to disable automatic reconnects.
 
 Sample Connection String
 
-`$"HostName=test.azure-devices.net;DeviceId=myDevive;ModuleId=myModule;SharedAccessKey=<moduleSasKey>;ModelId={modelId}";SasMinutes=120`
+```cs
+$"HostName=test.azure-devices.net;DeviceId=myDevice;ModuleId=myModule;SharedAccessKey=<moduleSasKey>;ModelId=dtmi:my:model;1";SasMinutes=120
+```
 
 # Tracing
 
