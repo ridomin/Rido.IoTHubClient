@@ -69,8 +69,7 @@ namespace Rido.IoTHubClient
 
         public override string ToString()
         {
-            var result = @$"HostName={HostName};
-                            DeviceId={DeviceId}";
+            var result = @$"HostName={HostName};DeviceId={DeviceId}";
             
             if (!string.IsNullOrEmpty(ModuleId))
             {
