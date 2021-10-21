@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 
 namespace Rido.IoTHubClient
 {
@@ -10,12 +11,13 @@ namespace Rido.IoTHubClient
         public string HostName { get; set; }
         public string DeviceId { get; set; }
         public string SharedAccessKey { get; set; }
+        public string X509Key { get; set; } //paht-to.pfx|pfxpwd
         public string ModelId { get; set; }
         public string ModuleId { get; set; }
         public string Auth { get; set; } = "SAS";
         public int SasMinutes { get; set; } = 60;
         public int RetryInterval { get; set; }
-
+            
 
         public DeviceConnectionString() { }
         public DeviceConnectionString(string cs) => ParseConnectionString(cs);
@@ -38,8 +40,9 @@ namespace Rido.IoTHubClient
             this.IdScope = GetConnectionStringValue(map, nameof(this.IdScope));
             this.HostName = GetConnectionStringValue(map, nameof(this.HostName));
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
-            this.ModuleId = GetConnectionStringValue(map, nameof(this.ModuleId), false);
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
+            this.ModuleId = GetConnectionStringValue(map, nameof(this.ModuleId), false);
+            this.X509Key = GetConnectionStringValue(map, nameof(this.X509Key), false);
             this.ModelId = GetConnectionStringValue(map, nameof(this.ModelId), false);
             this.Auth = GetConnectionStringValue(map, nameof(this.Auth), false);
             var sasMinutesValue = GetConnectionStringValue(map, nameof(this.SasMinutes), false);
@@ -55,34 +58,46 @@ namespace Rido.IoTHubClient
                 {
                     this.RetryInterval = intRetryInterval;
                 } 
-                    
+            }
+            if (!string.IsNullOrEmpty(this.SharedAccessKey))
+            {
+                this.Auth = "SAS";
+            }
+            if (!string.IsNullOrEmpty(this.X509Key))
+            {
+                this.Auth = "X509";
             }
         }
 
         public override string ToString()
         {
-            var result = $"HostName={HostName};DeviceId={DeviceId}";
-
-            if (!string.IsNullOrEmpty(ModuleId))
+            void AppendIfNotEmpty(StringBuilder sb, string name, string val)
             {
-                result += $";ModuleId={ModuleId}";
+                if (!string.IsNullOrEmpty(val))
+                {
+                    if (name.Contains("Key"))
+                    {
+                        sb.Append($";{name}=***");
+                    }
+                    else
+                    {
+                        sb.Append($";{name}={val}");
+                    }
+                }
             }
 
-            if (!string.IsNullOrEmpty(ModelId))
-            {
-                result += $";ModelId={ModelId}";
-            }
-            if (Auth == "SAS")
-            {
-                result += $";SharedAccessKey=***";
-                result += $";SasMinutes={SasMinutes};Auth={Auth}";
-            }
-            else
-            {
-                result += $";Auth={Auth}";
-            }
-
-            return result;
+            var result = new StringBuilder();
+            result.Append($"DeviceId={DeviceId}");
+            AppendIfNotEmpty(result, nameof(this.IdScope), IdScope);
+            AppendIfNotEmpty(result, nameof(this.HostName), HostName);
+            AppendIfNotEmpty(result, nameof(this.ModuleId), ModuleId);
+            AppendIfNotEmpty(result, nameof(this.SharedAccessKey), SharedAccessKey);
+            AppendIfNotEmpty(result, nameof(this.ModelId), ModelId);
+            AppendIfNotEmpty(result, nameof(this.SasMinutes), SasMinutes.ToString());
+            AppendIfNotEmpty(result, nameof(this.RetryInterval), RetryInterval.ToString());
+            AppendIfNotEmpty(result, nameof(this.X509Key), X509Key);
+            AppendIfNotEmpty(result, nameof(this.Auth), Auth);
+            return result.ToString();
         }
     }
 }

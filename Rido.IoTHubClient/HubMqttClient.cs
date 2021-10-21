@@ -58,7 +58,7 @@ namespace Rido.IoTHubClient
                 Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
                 OnMqttClientDisconnected?.Invoke(this, e);
 
-                if (DeviceConnectionString.RetryInterval>0)
+                if (DeviceConnectionString.RetryInterval > 0)
                 {
                     try
                     {
@@ -88,39 +88,94 @@ namespace Rido.IoTHubClient
         public static async Task<IHubMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
            await CreateFromDCSAsync(new DeviceConnectionString() { HostName = hostName, DeviceId = deviceId, ModuleId = moduleId, SharedAccessKey = sasKey, ModelId = modelId });
 
-        private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
+        public static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
-            if (string.IsNullOrEmpty(dcs.HostName) && !string.IsNullOrEmpty(dcs.IdScope))
+            await ProvisionIfNeeded(dcs);
+            Console.WriteLine(dcs);
+
+            var client = new HubMqttClient();
+            MqttClientAuthenticateResult connAck = null;
+
+            if (dcs.Auth == "X509")
             {
-                var dpsResult = await DpsClient.ProvisionWithSasAsync(dcs.IdScope, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId);
+                var segments = dcs.X509Key.Split('|');
+                string pfxpath = segments[0];
+                string pfxpwd = segments[1];
+                X509Certificate2 cert = new X509Certificate2(pfxpath, pfxpwd);
+                var cid = cert.Subject[3..];
+                string deviceId = cid;
+                string moduleId = string.Empty;
+
+                if (cid.Contains("/")) // is a module
+                {
+                    var segmentsId = cid.Split('/');
+                    dcs.DeviceId = segmentsId[0];
+                    dcs.ModuleId = segmentsId[1];
+                   
+                }
+                connAck = await client.mqttClient.ConnectWithX509Async(dcs.HostName, cert, dcs.ModelId);
+                if (connAck.ResultCode == MqttClientConnectResultCode.Success)
+                {
+                    client.DeviceConnectionString = dcs;
+                }    
+            }
+
+            if (dcs.Auth == "SAS")
+            {
+                if (string.IsNullOrEmpty(dcs.ModuleId))
+                {
+                    connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
+                }
+                else
+                {
+                    connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
+                }
+
+                if (connAck?.ResultCode == MqttClientConnectResultCode.Success)
+                {
+
+                    client.DeviceConnectionString = dcs;
+                    timerTokenRenew = new Timer(client.ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
+                }
+                else
+                {
+                    throw new ApplicationException($"Error connecting: {connAck.ResultCode} {connAck.ReasonString}");
+                }
+            }
+
+            return client;
+        }
+
+        private static async Task ProvisionIfNeeded(DeviceConnectionString dcs)
+        {
+            if (!string.IsNullOrEmpty(dcs.IdScope))
+            {
+                DpsStatus dpsResult;
+                if (!string.IsNullOrEmpty(dcs.SharedAccessKey))
+                {
+                    dpsResult = await DpsClient.ProvisionWithSasAsync(dcs.IdScope, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId);
+                }
+                else if (!string.IsNullOrEmpty(dcs.X509Key))
+                {
+                    var segments = dcs.X509Key.Split('|');
+                    string pfxpath = segments[0];
+                    string pfxpwd = segments[1];
+                    dpsResult = await DpsClient.ProvisionWithCertAsync(dcs.IdScope, pfxpath, pfxpwd, dcs.ModelId);
+                }
+                else
+                {
+                    throw new ApplicationException("No Key found to provision");
+                }
+
                 if (!string.IsNullOrEmpty(dpsResult.registrationState.assignedHub))
                 {
                     dcs.HostName = dpsResult.registrationState.assignedHub;
                 }
+                else
+                {
+                    throw new ApplicationException("DPS Provision failed: " + dpsResult.status);
+                }
             }
-
-            var client = new HubMqttClient();
-            MqttClientAuthenticateResult connAck;
-            if (string.IsNullOrEmpty(dcs.ModuleId))
-            {
-                connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
-            }
-            else
-            {
-                connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
-            }
-
-            if (connAck.ResultCode == MqttClientConnectResultCode.Success)
-            {
-                timerTokenRenew = new Timer(client.ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
-            }
-            else
-            {
-                throw new ApplicationException($"Error connecting: {connAck.ResultCode} {connAck.ReasonString}");
-            }
-
-            client.DeviceConnectionString = dcs;
-            return client;
         }
 
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, X509Certificate2 cert, string modelId = "")
@@ -281,7 +336,7 @@ namespace Rido.IoTHubClient
                 }
             });
 
-           
+
 
             mqttClient.UseApplicationMessageReceivedHandler(e =>
             {
