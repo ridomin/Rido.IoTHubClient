@@ -13,6 +13,7 @@ namespace Rido.IoTHubClient
         public string ModuleId { get; set; }
         public string Auth { get; set; } = "SAS";
         public int SasMinutes { get; set; } = 60;
+        public int RetryInterval { get; set; }
 
 
         public DeviceConnectionString() { }
@@ -47,12 +48,22 @@ namespace Rido.IoTHubClient
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
             this.ModuleId = GetConnectionStringValue(map, nameof(this.ModuleId), false);
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
-            this.ModelId = GetConnectionStringValue(map, nameof(this.ModelId));
+            this.ModelId = GetConnectionStringValue(map, nameof(this.ModelId), false);
             this.Auth = GetConnectionStringValue(map, nameof(this.Auth), false);
             var sasMinutesValue = GetConnectionStringValue(map, nameof(this.SasMinutes), false);
             if (!string.IsNullOrEmpty(sasMinutesValue))
             {
                 this.SasMinutes = Convert.ToInt32(sasMinutesValue);
+            }
+            var retryInterval = GetConnectionStringValue(map, nameof(this.RetryInterval), false);
+            if (!string.IsNullOrEmpty(retryInterval))
+            {
+                var intRetryInterval =  Convert.ToInt32(retryInterval);
+                if (intRetryInterval > 0)
+                {
+                    this.RetryInterval = intRetryInterval;
+                } 
+                    
             }
         }
 
@@ -70,13 +81,14 @@ namespace Rido.IoTHubClient
             {
                 result += $";ModelId={ModelId}";
             }
-            if (Auth == "SAS")
+            if (Auth == "X509")
+            {
+                result += $";Auth={Auth}";
+            }
+            else 
             {
                 result += $";SharedAccessKey=***";
-                result += $";SasMinutes={SasMinutes};Auth={Auth}";
-            }
-            else
-            {
+                result += $";SasMinutes={SasMinutes}";
                 result += $";Auth={Auth}";
             }
 
