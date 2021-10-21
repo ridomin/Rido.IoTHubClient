@@ -6,6 +6,7 @@ namespace Rido.IoTHubClient
 {
     public class DeviceConnectionString
     {
+        public string IdScope { get; set; }    
         public string HostName { get; set; }
         public string DeviceId { get; set; }
         public string SharedAccessKey { get; set; }
@@ -34,6 +35,7 @@ namespace Rido.IoTHubClient
             }
 
             IDictionary<string, string> map = cs.ToDictionary(';', '=');
+            this.IdScope = GetConnectionStringValue(map, nameof(this.IdScope));
             this.HostName = GetConnectionStringValue(map, nameof(this.HostName));
             this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
             this.ModuleId = GetConnectionStringValue(map, nameof(this.ModuleId), false);

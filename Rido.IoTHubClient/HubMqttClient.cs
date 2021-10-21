@@ -90,6 +90,15 @@ namespace Rido.IoTHubClient
 
         private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
+            if (string.IsNullOrEmpty(dcs.HostName) && !string.IsNullOrEmpty(dcs.IdScope))
+            {
+                var dpsResult = await DpsClient.ProvisionWithSasAsync(dcs.IdScope, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId);
+                if (!string.IsNullOrEmpty(dpsResult.registrationState.assignedHub))
+                {
+                    dcs.HostName = dpsResult.registrationState.assignedHub;
+                }
+            }
+
             var client = new HubMqttClient();
             MqttClientAuthenticateResult connAck;
             if (string.IsNullOrEmpty(dcs.ModuleId))
