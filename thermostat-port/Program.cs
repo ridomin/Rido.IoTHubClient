@@ -10,19 +10,13 @@ Thermostat thermostat = new(connectionString);
 await thermostat.Report_maxTempSinceLastReboot(maxTemp);
 Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
 
-thermostat.OntargetTemperatureUpdated += (o, m) =>
+thermostat.Command_getMaxMinReportHanlder = req =>
 {
-    Console.WriteLine("<- w: targetTemperature received " + m.targetTemperature);
-    double targetTemp = m.targetTemperature;
-};
-
-thermostat.OngetMaxMinReportCalled += (o, m) =>
-{
-    Console.WriteLine("<- c: getMaxMinReport " + m.since);
+    Console.WriteLine("<- c: getMaxMinReport " + req.since);
     Dictionary<DateTimeOffset, double> filteredReadings = readings
-                                           .Where(i => i.Key > m.since)
+                                           .Where(i => i.Key > req.since)
                                            .ToDictionary(i => i.Key, i => i.Value);
-    var report = new
+    return new Command_getMaxMinResponse
     {
         maxTemp = filteredReadings.Values.Max<double>(),
         minTemp = filteredReadings.Values.Min<double>(),
@@ -31,6 +25,23 @@ thermostat.OngetMaxMinReportCalled += (o, m) =>
         endTime = filteredReadings.Keys.Max(),
     };
 };
+
+
+thermostat.OntargetTemperatureUpdated += async (o, m) =>
+{
+    Console.WriteLine("<- w: targetTemperature received " + m.targetTemperature);
+    await thermostat.Ack_TargetTemperature(temperature, 202, m.version);
+    double step = (m.targetTemperature - temperature) / 5d;
+    for (int i = 1; i <= 2; i++)
+    {
+        temperature = Math.Round(temperature + step, 1);
+        await Task.Delay(6 * 1000);
+    }
+    await thermostat.Ack_TargetTemperature(temperature, 200, m.version);
+};
+
+
+
 
 
 while (true)
