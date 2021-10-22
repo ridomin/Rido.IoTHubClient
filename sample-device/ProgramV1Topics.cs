@@ -69,8 +69,7 @@ namespace sample_device
                 }
                 else
                 {
-                    System.Console.WriteLine("missed messages " + missedMessages);
-                    missedMessages++;
+                    System.Console.WriteLine("missed messages " + missedMessages++);
                 }
                 await Task.Delay(2000);
             }

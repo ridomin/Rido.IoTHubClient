@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
+    //TODO : Hide MQTTNet Types
     public interface IHubMqttClient
     {
         bool IsConnected { get; }

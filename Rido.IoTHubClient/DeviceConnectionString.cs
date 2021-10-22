@@ -4,6 +4,8 @@ using System.Diagnostics;
 
 namespace Rido.IoTHubClient
 {
+    // TODO : Extend with an interface to allow custom settings from consumers
+
     public class DeviceConnectionString
     {
         public string HostName { get; set; }
@@ -43,6 +45,7 @@ namespace Rido.IoTHubClient
             var sasMinutesValue = GetConnectionStringValue(map, nameof(this.SasMinutes), false);
             if (!string.IsNullOrEmpty(sasMinutesValue))
             {
+                // TODO : check for negative
                 this.SasMinutes = Convert.ToInt32(sasMinutesValue);
             }
             var retryInterval = GetConnectionStringValue(map, nameof(this.RetryInterval), false);

@@ -58,6 +58,7 @@ namespace Rido.IoTHubClient
                 Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
                 OnMqttClientDisconnected?.Invoke(this, e);
 
+                // TODO : Add MaxRetries
                 if (DeviceConnectionString.RetryInterval>0)
                 {
                     try
@@ -92,6 +93,8 @@ namespace Rido.IoTHubClient
         {
             var client = new HubMqttClient();
             MqttClientAuthenticateResult connAck;
+
+            // TODO: Is this the right place to check for module?
             if (string.IsNullOrEmpty(dcs.ModuleId))
             {
                 connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
@@ -167,6 +170,7 @@ namespace Rido.IoTHubClient
         {
             var tcs = new TaskCompletionSource<string>();
             var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            // TODO : Check RID for correlation
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 twin_cb = s => tcs.TrySetResult(s);
@@ -294,6 +298,7 @@ namespace Rido.IoTHubClient
                     msg = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                 }
 
+                //TODO : Refactor topic names to a common place with descriptive names
                 //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
                 if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
                 {
@@ -325,21 +330,25 @@ namespace Rido.IoTHubClient
                         CommandRequestMessageJson = msg
                     });
                 }
+                else
+                {
+                    Trace.TraceInformation("Received unknown topic: " + e.ApplicationMessage.Topic);
+                }
             });
         }
 
         void ReconnectWithToken(object state)
         {
+            // TODO : mutex?? semaphonre??
             lock (this)
             {
                 reconnecting = true;
                 Trace.TraceWarning("*** REFRESHING TOKEN *** ");
                 timerTokenRenew.Dispose();
                 CloseAsync().Wait();
-                var dcs = DeviceConnectionString;
-                this.mqttClient = CreateFromDCSAsync(dcs).Result.mqttClient;
+                this.mqttClient = CreateFromDCSAsync(DeviceConnectionString).Result.mqttClient;
                 reconnecting = false;
-                timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
+                timerTokenRenew = new Timer(ReconnectWithToken, null, (DeviceConnectionString.SasMinutes - 1) * 60 * 1000, 0);
             }
         }
 

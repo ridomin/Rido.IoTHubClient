@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
+    //TODO : Condider make those internal
     public static class IMqttClientExtensions
     {
         public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, string modelId = "", int minutes = 60)
