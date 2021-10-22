@@ -54,24 +54,32 @@ namespace Rido.IoTHubClient
                CancellationToken.None);
         }
 
-        public static IMqttClient CreateMqttClientWithLogger(TextWriter writer)
+        public static IMqttClient CreateMqttClientWithLogger(TextWriter writer = null)
         {
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
-            Trace.Listeners.Add(new TextWriterTraceListener(writer));
-            Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
-
-            MqttNetLogger logger = new MqttNetLogger();
-            logger.LogMessagePublished += (s, e) =>
+            IMqttClient client;
+            if (writer == null)
             {
-                var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
-                if (e.LogMessage.Exception != null)
-                {
-                    trace += Environment.NewLine + e.LogMessage.Exception.ToString();
-                }
+                client = new MqttFactory().CreateMqttClient();
+            }
+            else
+            {
+                Trace.Listeners.Add(new TextWriterTraceListener(writer));
+                Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-                Trace.TraceInformation(trace);
-            };
-            IMqttClient client = new MqttFactory(logger).CreateMqttClient();
+                MqttNetLogger logger = new MqttNetLogger();
+                logger.LogMessagePublished += (s, e) =>
+                {
+                    var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
+                    if (e.LogMessage.Exception != null)
+                    {
+                        trace += Environment.NewLine + e.LogMessage.Exception.ToString();
+                    }
+
+                    Trace.TraceInformation(trace);
+                };
+                client = new MqttFactory(logger).CreateMqttClient();
+            }
             return client;
         }
     }

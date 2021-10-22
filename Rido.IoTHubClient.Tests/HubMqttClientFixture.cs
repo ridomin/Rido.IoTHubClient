@@ -14,8 +14,8 @@ namespace Rido.IoTHubClient.Tests
         readonly RegistryManager rm;
         const string hubConnectionString = "HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=";
         const string hubName = "tests.azure-devices.net";
-        string deviceId = String.Empty;
-        Device device;
+        readonly string deviceId = String.Empty;
+        readonly Device device;
 
         private readonly ITestOutputHelper output;
 
@@ -86,7 +86,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task SendTelemetry_X509Module()
         {
-            var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
+            await GetOrCreateModuleAsync("xd01", "xmod01", true);
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"));
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
             Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
@@ -97,7 +97,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task SendTelemetry_X509Module_PnP()
         {
-            var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
+            await GetOrCreateModuleAsync("xd01", "xmod01", true);
             var modelId = "dtmi:test:module;1";
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"), modelId);
             var puback = await client.SendTelemetryAsync(new { temp = 2 }, "comp1");

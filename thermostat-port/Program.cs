@@ -26,8 +26,7 @@ thermostat.Command_getMaxMinReport = req =>
     };
 };
 
-
-thermostat.OntargetTemperatureUpdated += async (o, m) =>
+thermostat.OntargetTemperatureUpdated = async m =>
 {
     Console.WriteLine("<- w: targetTemperature received " + m.targetTemperature);
     await thermostat.Ack_TargetTemperature(temperature, 202, m.version);
@@ -39,10 +38,6 @@ thermostat.OntargetTemperatureUpdated += async (o, m) =>
     }
     await thermostat.Ack_TargetTemperature(temperature, 200, m.version);
 };
-
-
-
-
 
 while (true)
 {

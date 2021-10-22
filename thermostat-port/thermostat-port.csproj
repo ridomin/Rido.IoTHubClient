@@ -12,4 +12,11 @@
     <ProjectReference Include="..\Rido.IoTHubClient\Rido.IoTHubClient.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<Compile Update="thermostat-1.g.cs">
+			<DependentUpon>thermostat-1.json</DependentUpon>
+		</Compile>
+	</ItemGroup>
+	
+	
 </Project>
