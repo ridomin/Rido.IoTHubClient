@@ -15,12 +15,12 @@ public class TargetTemperatureArgs : EventArgs
     public int version { get; set; }
 }
 
-public class Command_getMaxMinRequest
+public class Command_getMaxMinReport_Request
 {
     public DateTime since { get; set; }
 }
 
-public class Command_getMaxMinResponse
+public class Command_getMaxMinReport_Response
 {
     public double maxTemp { get; set; }
     public double minTemp { get; set; }
@@ -38,11 +38,10 @@ public class Thermostat
     DeviceConnectionString? dcs = null;
 
     public event EventHandler<TargetTemperatureArgs>? OntargetTemperatureUpdated = null;
+    
+    public Func<Command_getMaxMinReport_Request, Command_getMaxMinReport_Response>? Command_getMaxMinReport = null;
 
     
-    public Func<Command_getMaxMinRequest, Command_getMaxMinResponse>? Command_getMaxMinReportHanlder = null;
-
-    Action<int>? Callback_maxTempSinceLastReboot = null;
 
     public Thermostat(string cs)
     {
@@ -104,11 +103,12 @@ public class Thermostat
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/getMaxMinReport"))
             {
                 msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
-                Command_getMaxMinReportHanlder?.Invoke(new Command_getMaxMinRequest { since = JsonSerializer.Deserialize<DateTime>(msg) });
+                Command_getMaxMinReport?.Invoke(new Command_getMaxMinReport_Request { since = JsonSerializer.Deserialize<DateTime>(msg) });
             }
         });
     }
 
+    Action<int>? Callback_maxTempSinceLastReboot = null;
     public async Task<int> Report_maxTempSinceLastReboot(double temperature)
     {
         var tcs = new TaskCompletionSource<int>();

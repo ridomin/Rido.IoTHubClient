@@ -10,13 +10,13 @@ Thermostat thermostat = new(connectionString);
 await thermostat.Report_maxTempSinceLastReboot(maxTemp);
 Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
 
-thermostat.Command_getMaxMinReportHanlder = req =>
+thermostat.Command_getMaxMinReport = req =>
 {
     Console.WriteLine("<- c: getMaxMinReport " + req.since);
     Dictionary<DateTimeOffset, double> filteredReadings = readings
                                            .Where(i => i.Key > req.since)
                                            .ToDictionary(i => i.Key, i => i.Value);
-    return new Command_getMaxMinResponse
+    return new Command_getMaxMinReport_Response
     {
         maxTemp = filteredReadings.Values.Max<double>(),
         minTemp = filteredReadings.Values.Min<double>(),
