@@ -3,18 +3,22 @@ double temperature = 0d;
 double maxTemp = 0d;
 Dictionary<DateTimeOffset, double> readings = new();
 
-string? cs = Environment.GetEnvironmentVariable("cs");
-Thermostat thermostat = new Thermostat(cs ?? "");
+string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
+
+Thermostat thermostat = new(connectionString);
+
+await thermostat.Report_maxTempSinceLastReboot(maxTemp);
+Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
 
 thermostat.OntargetTemperatureUpdated += (o, m) =>
 {
-    Console.WriteLine("<- w: targetTemperature received: " + m.targetTemperature);
+    Console.WriteLine("<- w: targetTemperature received " + m.targetTemperature);
     double targetTemp = m.targetTemperature;
 };
 
 thermostat.OngetMaxMinReportCalled += (o, m) =>
 {
-    Console.WriteLine("<- c: getMaxMinReport");
+    Console.WriteLine("<- c: getMaxMinReport " + m.since);
     Dictionary<DateTimeOffset, double> filteredReadings = readings
                                            .Where(i => i.Key > m.since)
                                            .ToDictionary(i => i.Key, i => i.Value);
@@ -38,12 +42,12 @@ while (true)
     {
         maxTemp = readings.Values.Max<double>();
         await thermostat.Report_maxTempSinceLastReboot(maxTemp);
-        Console.WriteLine("-> r: maxTempSinceLastReboot");
+        Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
     }
 
     await thermostat.Send_temperature(temperature);
-    Console.WriteLine("-> t: temperature");
-    await Task.Delay(2000);
+    Console.WriteLine("-> t: temperature " + temperature);
+    await Task.Delay(2000); 
 }
 
 
