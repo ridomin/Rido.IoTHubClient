@@ -9,8 +9,16 @@ using Rido.IoTHubClient;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Web;
 
+public class CommandResponse
+{
+    [JsonIgnore]
+    public int _status { get; set; }
+    [JsonIgnore]
+    public int _rid { get; set; }
+}
 
 public class TargetTemperature 
 {
@@ -21,17 +29,16 @@ public class TargetTemperature
 public class Command_getMaxMinReport_Request
 {
     public DateTime since { get; set; }
+    public int _rid { get; set; }
 }
 
-public class Command_getMaxMinReport_Response
+public class Command_getMaxMinReport_Response : CommandResponse
 {
     public double maxTemp { get; set; }
     public double minTemp { get; set; }
     public double avgTemp { get; set; }
     public DateTimeOffset startTime { get; set; }
     public DateTimeOffset endTime { get; set; }
-
-
 }
 
 public class Thermostat
@@ -75,7 +82,7 @@ public class Thermostat
             throw new ApplicationException("Error subscribing to system topics");
         }
 
-        client.UseApplicationMessageReceivedHandler(m =>
+        client.UseApplicationMessageReceivedHandler(async m =>
         {
             var segments = m.ApplicationMessage.Topic.Split('/');
             int rid = 0;
@@ -105,7 +112,9 @@ public class Thermostat
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/getMaxMinReport"))
             {
                 msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
-                Command_getMaxMinReport?.Invoke(new Command_getMaxMinReport_Request { since = JsonSerializer.Deserialize<DateTime>(msg) });
+                var resp = Command_getMaxMinReport?.Invoke(
+                    new Command_getMaxMinReport_Request { since = JsonSerializer.Deserialize<DateTime>(msg), _rid = rid });
+                await client.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={resp?._rid}", JsonSerializer.Serialize(resp));
             }
         });
     }

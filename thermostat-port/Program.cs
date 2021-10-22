@@ -23,6 +23,8 @@ thermostat.Command_getMaxMinReport = req =>
         avgTemp = filteredReadings.Values.Average(),
         startTime = filteredReadings.Keys.Min(),
         endTime = filteredReadings.Keys.Max(),
+        _rid = req._rid,
+        _status = 200
     };
 };
 
