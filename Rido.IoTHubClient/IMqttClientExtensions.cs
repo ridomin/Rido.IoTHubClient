@@ -1,7 +1,12 @@
-﻿using MQTTnet.Client;
+﻿using MQTTnet;
+using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Options;
+using MQTTnet.Diagnostics;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -47,6 +52,27 @@ namespace Rido.IoTHubClient
                    })
                    .Build(),
                CancellationToken.None);
+        }
+
+        public static IMqttClient CreateMqttClientWithLogger(TextWriter writer)
+        {
+            Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
+            Trace.Listeners.Add(new TextWriterTraceListener(writer));
+            Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
+
+            MqttNetLogger logger = new MqttNetLogger();
+            logger.LogMessagePublished += (s, e) =>
+            {
+                var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
+                if (e.LogMessage.Exception != null)
+                {
+                    trace += Environment.NewLine + e.LogMessage.Exception.ToString();
+                }
+
+                Trace.TraceInformation(trace);
+            };
+            IMqttClient client = new MqttFactory(logger).CreateMqttClient();
+            return client;
         }
     }
 }

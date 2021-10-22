@@ -296,7 +296,7 @@ namespace Rido.IoTHubClient
 
                 //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
                 if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
-                {
+                {   
                     twin_cb(msg);
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
