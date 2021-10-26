@@ -5,8 +5,12 @@ using System.Text;
 
 namespace Rido.IoTHubClient
 {
-    public class DeviceConnectionString
+    public class ConnectionSettings
     {
+        const int Default_SasMinutes = 60;
+        const int Default_RetryInterval = 0;
+        const int Default_MaxRetries = 10;
+
         public string IdScope { get; set; }    
         public string HostName { get; set; }
         public string DeviceId { get; set; }
@@ -14,44 +18,60 @@ namespace Rido.IoTHubClient
         public string X509Key { get; set; } //paht-to.pfx|pfxpwd
         public string ModelId { get; set; }
         public string ModuleId { get; set; }
-        public string Auth { get; set; } = "SAS";
-        public int SasMinutes { get; set; } = 60;
+        public string Auth { get; set; }
+        public int SasMinutes { get; set; }
         public int RetryInterval { get; set; }
-            
+        public int MaxRetries { get; set; }
 
-        public DeviceConnectionString() { }
-        public DeviceConnectionString(string cs) => ParseConnectionString(cs);
+        private ConnectionSettings(string cs) => ParseConnectionString(cs);
+        public ConnectionSettings() 
+        {
+            this.SasMinutes = Default_SasMinutes;
+            this.RetryInterval = Default_RetryInterval;
+            this.MaxRetries = Default_RetryInterval;
+        }
+        public static ConnectionSettings FromConnectionString(string cs) => new ConnectionSettings(cs);
 
         private void ParseConnectionString(string cs)
         {
-            static string GetConnectionStringValue(IDictionary<string, string> dict, string propertyName, bool warnIfNotFound = true)
+            static string GetConnectionStringValue(IDictionary<string, string> dict, string propertyName, bool logIfNotFound = false)
             {
                 if (!dict.TryGetValue(propertyName, out string value))
                 {
-                    if (warnIfNotFound)
+                    if (logIfNotFound)
                     {
-                        Trace.TraceWarning($"The connection string is missing the property: {propertyName}");
+                        Trace.TraceInformation($"The connection string is missing the property: {propertyName}");
                     }
                 }
                 return value;
             }
 
             IDictionary<string, string> map = cs.ToDictionary(';', '=');
-            this.IdScope = GetConnectionStringValue(map, nameof(this.IdScope));
-            this.HostName = GetConnectionStringValue(map, nameof(this.HostName));
-            this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId));
+            this.IdScope = GetConnectionStringValue(map, nameof(this.IdScope), true);
+            this.HostName = GetConnectionStringValue(map, nameof(this.HostName), true);
+            this.DeviceId = GetConnectionStringValue(map, nameof(this.DeviceId), true);
             this.SharedAccessKey = GetConnectionStringValue(map, nameof(this.SharedAccessKey));
-            this.ModuleId = GetConnectionStringValue(map, nameof(this.ModuleId), false);
-            this.X509Key = GetConnectionStringValue(map, nameof(this.X509Key), false);
-            this.ModelId = GetConnectionStringValue(map, nameof(this.ModelId), false);
-            this.Auth = GetConnectionStringValue(map, nameof(this.Auth), false);
-            var sasMinutesValue = GetConnectionStringValue(map, nameof(this.SasMinutes), false);
-            if (!string.IsNullOrEmpty(sasMinutesValue))
+            this.ModuleId = GetConnectionStringValue(map, nameof(this.ModuleId));
+            this.X509Key = GetConnectionStringValue(map, nameof(this.X509Key));
+            this.ModelId = GetConnectionStringValue(map, nameof(this.ModelId));
+            this.Auth = GetConnectionStringValue(map, nameof(this.Auth));
+
+            var sasMinutesValue = GetConnectionStringValue(map, nameof(this.SasMinutes));
+            if (string.IsNullOrEmpty(sasMinutesValue))
             {
-                this.SasMinutes = Convert.ToInt32(sasMinutesValue);
+                this.SasMinutes = Default_SasMinutes;
             }
-            var retryInterval = GetConnectionStringValue(map, nameof(this.RetryInterval), false);
-            if (!string.IsNullOrEmpty(retryInterval))
+            else
+            {
+                this.SasMinutes =  Convert.ToInt32(sasMinutesValue);
+            }
+
+            var retryInterval = GetConnectionStringValue(map, nameof(this.RetryInterval));
+            if (string.IsNullOrEmpty(retryInterval))
+            {
+                this.RetryInterval = Default_RetryInterval;
+            }
+            else
             {
                 var intRetryInterval =  Convert.ToInt32(retryInterval);
                 if (intRetryInterval > 0)
@@ -59,6 +79,22 @@ namespace Rido.IoTHubClient
                     this.RetryInterval = intRetryInterval;
                 } 
             }
+
+            var maxRetries = GetConnectionStringValue(map, nameof(this.MaxRetries));
+            if (string.IsNullOrEmpty(maxRetries))
+            {
+                this.MaxRetries= Default_MaxRetries;
+            }
+            else
+            {
+                var intMaxRetries = Convert.ToInt32(maxRetries);
+                if (intMaxRetries > 0)
+                {
+                    this.RetryInterval = intMaxRetries;
+                }
+            }
+
+
             if (!string.IsNullOrEmpty(this.SharedAccessKey))
             {
                 this.Auth = "SAS";
@@ -71,7 +107,7 @@ namespace Rido.IoTHubClient
 
         public override string ToString()
         {
-            void AppendIfNotEmpty(StringBuilder sb, string name, string val)
+            static void AppendIfNotEmpty(StringBuilder sb, string name, string val)
             {
                 if (!string.IsNullOrEmpty(val))
                 {

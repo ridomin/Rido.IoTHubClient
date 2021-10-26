@@ -2,13 +2,13 @@
 
 namespace Rido.IoTHubClient.Tests
 {
-    public class DeviceConnectionStringTests
+    public class ConnectionSettingsFixture
     {
         [Fact]
         public void ParseConnectionString()
         {
             string cs = "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;SharedAccessKey=<SasKey>";
-            DeviceConnectionString dcs = new DeviceConnectionString(cs);
+            ConnectionSettings dcs = ConnectionSettings.FromConnectionString(cs);
             Assert.Equal("<hubname>.azure-devices.net", dcs.HostName);
             Assert.Equal("<deviceId>", dcs.DeviceId);
             Assert.Equal("<SasKey>", dcs.SharedAccessKey);
@@ -18,7 +18,7 @@ namespace Rido.IoTHubClient.Tests
         public void ParseConnectionStringWithModule()
         {
             string cs = "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;ModuleId=<moduleId>;SharedAccessKey=<SasKey>";
-            DeviceConnectionString dcs = new DeviceConnectionString(cs);
+            ConnectionSettings dcs = ConnectionSettings.FromConnectionString(cs);
             Assert.Equal("<hubname>.azure-devices.net", dcs.HostName);
             Assert.Equal("<deviceId>", dcs.DeviceId);
             Assert.Equal("<moduleId>", dcs.ModuleId);
@@ -28,7 +28,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public void ToStringReturnConnectionString()
         {
-            DeviceConnectionString dcs = new DeviceConnectionString()
+            ConnectionSettings dcs = new()
             {
                 HostName = "h",
                 DeviceId = "d",
@@ -42,7 +42,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public void ToStringReturnConnectionStringWithModule()
         {
-            DeviceConnectionString dcs = new DeviceConnectionString()
+            ConnectionSettings dcs = new()
             {
                 HostName = "h",
                 DeviceId = "d",
@@ -56,7 +56,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public void DefaultValues()
         {
-            var dcs = new DeviceConnectionString();
+            var dcs = new ConnectionSettings();
             Assert.Equal(60, dcs.SasMinutes);
         }
     }
