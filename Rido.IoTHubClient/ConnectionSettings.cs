@@ -8,7 +8,7 @@ namespace Rido.IoTHubClient
     public class ConnectionSettings
     {
         const int Default_SasMinutes = 60;
-        const int Default_RetryInterval = 0;
+        const int Default_RetryInterval = 5;
         const int Default_MaxRetries = 10;
 
         public string IdScope { get; set; }    
@@ -28,7 +28,8 @@ namespace Rido.IoTHubClient
         {
             this.SasMinutes = Default_SasMinutes;
             this.RetryInterval = Default_RetryInterval;
-            this.MaxRetries = Default_RetryInterval;
+            this.MaxRetries = Default_MaxRetries;
+            this.Auth = "SAS";
         }
         public static ConnectionSettings FromConnectionString(string cs) => new ConnectionSettings(cs);
 
@@ -94,7 +95,6 @@ namespace Rido.IoTHubClient
                 }
             }
 
-
             if (!string.IsNullOrEmpty(this.SharedAccessKey))
             {
                 this.Auth = "SAS";
@@ -131,6 +131,7 @@ namespace Rido.IoTHubClient
             AppendIfNotEmpty(result, nameof(this.ModelId), ModelId);
             AppendIfNotEmpty(result, nameof(this.SasMinutes), SasMinutes.ToString());
             AppendIfNotEmpty(result, nameof(this.RetryInterval), RetryInterval.ToString());
+            AppendIfNotEmpty(result, nameof(this.MaxRetries), MaxRetries.ToString());
             AppendIfNotEmpty(result, nameof(this.X509Key), X509Key);
             AppendIfNotEmpty(result, nameof(this.Auth), Auth);
             return result.ToString();

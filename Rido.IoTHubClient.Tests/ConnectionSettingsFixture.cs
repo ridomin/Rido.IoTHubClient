@@ -35,7 +35,7 @@ namespace Rido.IoTHubClient.Tests
                 SharedAccessKey = "sas",
                 ModelId = "dtmi"
             };
-            string expected = "DeviceId=d;HostName=h;SharedAccessKey=***;ModelId=dtmi;SasMinutes=60;RetryInterval=0;Auth=SAS";
+            string expected = "DeviceId=d;HostName=h;SharedAccessKey=***;ModelId=dtmi;SasMinutes=60;RetryInterval=5;MaxRetries=10;Auth=SAS";
             Assert.Equal(expected, dcs.ToString());
         }
 
@@ -49,7 +49,7 @@ namespace Rido.IoTHubClient.Tests
                 ModuleId = "m",
                 SharedAccessKey = "sas"
             };
-            string expected = "DeviceId=d;HostName=h;ModuleId=m;SharedAccessKey=***;SasMinutes=60;RetryInterval=0;Auth=SAS";
+            string expected = "DeviceId=d;HostName=h;ModuleId=m;SharedAccessKey=***;SasMinutes=60;RetryInterval=5;MaxRetries=10;Auth=SAS";
             Assert.Equal(expected, dcs.ToString());
         }
 
@@ -58,6 +58,9 @@ namespace Rido.IoTHubClient.Tests
         {
             var dcs = new ConnectionSettings();
             Assert.Equal(60, dcs.SasMinutes);
+            Assert.Equal(5, dcs.RetryInterval);
+            Assert.Equal(10, dcs.MaxRetries);
+            Assert.Equal("SAS", dcs.Auth);
         }
     }
 }
