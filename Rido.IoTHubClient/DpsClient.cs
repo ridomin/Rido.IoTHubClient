@@ -36,7 +36,7 @@ namespace Rido.IoTHubClient
             mqttClient = factory.CreateMqttClient();
         }
 
-        public static async Task<DpsStatus> ProvisionWithCertAsync(string idScope, string pfxPath, string pfxPwd)
+        public static async Task<DpsStatus> ProvisionWithCertAsync(string idScope, string pfxPath, string pfxPwd, string modelId = "")
         {
             if (mqttClient.IsConnected)
             {
@@ -70,12 +70,12 @@ namespace Rido.IoTHubClient
 
             var suback = await mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
-            await ConfigureDPSFlowAsync(registrationId, tcs);
+            await ConfigureDPSFlowAsync(registrationId, modelId,  tcs);
 
             return tcs.Task.Result;
         }
 
-        public static async Task<DpsStatus> ProvisionWithSasAsync(string idScope, string registrationId, string sasKey)
+        public static async Task<DpsStatus> ProvisionWithSasAsync(string idScope, string registrationId, string sasKey, string modelId = "")
         {
             if (mqttClient.IsConnected)
             {
@@ -103,12 +103,12 @@ namespace Rido.IoTHubClient
 
             var suback = await mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
-            await ConfigureDPSFlowAsync(registrationId, tcs);
+            await ConfigureDPSFlowAsync(registrationId, modelId, tcs);
             return tcs.Task.Result;
 
         }
 
-        private static async Task ConfigureDPSFlowAsync(string registrationId, TaskCompletionSource<DpsStatus> tcs)
+        private static async Task ConfigureDPSFlowAsync(string registrationId, string modelId, TaskCompletionSource<DpsStatus> tcs)
         {
             string msg = string.Empty;
             mqttClient.UseApplicationMessageReceivedHandler(async e =>
@@ -145,7 +145,8 @@ namespace Rido.IoTHubClient
 
             var putTopic = $"$dps/registrations/PUT/iotdps-register/?$rid={rid}";
             var puback = await mqttClient.PublishAsync(putTopic,
-                "{ \"registrationId\" : \"" + registrationId + "\"}");
+                JsonSerializer.Serialize(new { registrationId = registrationId, payload = new { modelId = modelId } }));
+                
         }
     }
 }
