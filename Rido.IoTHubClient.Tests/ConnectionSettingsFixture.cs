@@ -5,6 +5,17 @@ namespace Rido.IoTHubClient.Tests
     public class ConnectionSettingsFixture
     {
         [Fact]
+        public void DefaultValues()
+        {
+            var dcs = new ConnectionSettings();
+            Assert.Equal(60, dcs.SasMinutes);
+            Assert.Equal(5, dcs.RetryInterval);
+            Assert.Equal(10, dcs.MaxRetries);
+            Assert.Equal("SAS", dcs.Auth);
+            Assert.Equal("SasMinutes=60;RetryInterval=5;MaxRetries=10;Auth=SAS", dcs.ToString());
+        }
+
+        [Fact]
         public void ParseConnectionString()
         {
             string cs = "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;SharedAccessKey=<SasKey>";
@@ -15,7 +26,21 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public void ParseConnectionStringWithModule()
+        public void InvalidValuesUseDefaults()
+        {
+            string cs = "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;SharedAccessKey=<SasKey>;MaxRetries=-2;SasMinutes=aa;RetryInterval=4.3";
+            ConnectionSettings dcs = ConnectionSettings.FromConnectionString(cs);
+            Assert.Equal("<hubname>.azure-devices.net", dcs.HostName);
+            Assert.Equal("<deviceId>", dcs.DeviceId);
+            Assert.Equal("<SasKey>", dcs.SharedAccessKey);
+            Assert.Equal(60, dcs.SasMinutes);
+            Assert.Equal(5, dcs.RetryInterval);
+            Assert.Equal(10, dcs.MaxRetries);
+        }
+
+
+        [Fact]
+        public void ParseConnectionStringWithDefaultValues()
         {
             string cs = "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;ModuleId=<moduleId>;SharedAccessKey=<SasKey>";
             ConnectionSettings dcs = ConnectionSettings.FromConnectionString(cs);
@@ -23,6 +48,23 @@ namespace Rido.IoTHubClient.Tests
             Assert.Equal("<deviceId>", dcs.DeviceId);
             Assert.Equal("<moduleId>", dcs.ModuleId);
             Assert.Equal("<SasKey>", dcs.SharedAccessKey);
+            Assert.Equal(10, dcs.MaxRetries);
+            Assert.Equal(60, dcs.SasMinutes);
+            Assert.Equal(5, dcs.RetryInterval);
+        }
+
+        [Fact]
+        public void ParseConnectionStringWithAllValues()
+        {
+            string cs = "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;ModuleId=<moduleId>;SharedAccessKey=<SasKey>;RetryInterval=2;MaxRetries=2;SasMinutes=2";
+            ConnectionSettings dcs = ConnectionSettings.FromConnectionString(cs);
+            Assert.Equal("<hubname>.azure-devices.net", dcs.HostName);
+            Assert.Equal("<deviceId>", dcs.DeviceId);
+            Assert.Equal("<moduleId>", dcs.ModuleId);
+            Assert.Equal("<SasKey>", dcs.SharedAccessKey);
+            Assert.Equal(2, dcs.MaxRetries);
+            Assert.Equal(2, dcs.SasMinutes);
+            Assert.Equal(2, dcs.RetryInterval);
         }
 
         [Fact]
@@ -35,7 +77,7 @@ namespace Rido.IoTHubClient.Tests
                 SharedAccessKey = "sas",
                 ModelId = "dtmi"
             };
-            string expected = "DeviceId=d;HostName=h;SharedAccessKey=***;ModelId=dtmi;SasMinutes=60;RetryInterval=5;MaxRetries=10;Auth=SAS";
+            string expected = "HostName=h;DeviceId=d;SharedAccessKey=***;ModelId=dtmi;SasMinutes=60;RetryInterval=5;MaxRetries=10;Auth=SAS";
             Assert.Equal(expected, dcs.ToString());
         }
 
@@ -49,18 +91,8 @@ namespace Rido.IoTHubClient.Tests
                 ModuleId = "m",
                 SharedAccessKey = "sas"
             };
-            string expected = "DeviceId=d;HostName=h;ModuleId=m;SharedAccessKey=***;SasMinutes=60;RetryInterval=5;MaxRetries=10;Auth=SAS";
+            string expected = "HostName=h;DeviceId=d;ModuleId=m;SharedAccessKey=***;SasMinutes=60;RetryInterval=5;MaxRetries=10;Auth=SAS";
             Assert.Equal(expected, dcs.ToString());
-        }
-
-        [Fact]
-        public void DefaultValues()
-        {
-            var dcs = new ConnectionSettings();
-            Assert.Equal(60, dcs.SasMinutes);
-            Assert.Equal(5, dcs.RetryInterval);
-            Assert.Equal(10, dcs.MaxRetries);
-            Assert.Equal("SAS", dcs.Auth);
         }
     }
 }
