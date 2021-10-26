@@ -122,7 +122,8 @@ This library implements a compatible *connection string* with Azure IoT SDK Devi
 
 - `HostName` Azure IoT Hub hostname (FQDN)
 - `DeviceId` Device Identity 
-- `SharedAccessKey` Device Shared Access Key in Base64
+- `SharedAccessKey` Device Shared Access Key
+- `X509Key` <pathtopfx>|<pfxpassword>
 - `ModelId` DTDL Model ID in DTMI format to create PnP Devices
 - `ModuleId` Device Module Identity
 - `Auth` Device Authentication: [SAS, X509]

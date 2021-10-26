@@ -58,7 +58,7 @@ namespace Rido.IoTHubClient
                 Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
                 OnMqttClientDisconnected?.Invoke(this, e);
 
-                if (DeviceConnectionString.RetryInterval>0)
+                if (DeviceConnectionString.RetryInterval > 0)
                 {
                     try
                     {
@@ -88,8 +88,11 @@ namespace Rido.IoTHubClient
         public static async Task<IHubMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
            await CreateFromDCSAsync(new DeviceConnectionString() { HostName = hostName, DeviceId = deviceId, ModuleId = moduleId, SharedAccessKey = sasKey, ModelId = modelId });
 
-        private static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
+        public static async Task<HubMqttClient> CreateFromDCSAsync(DeviceConnectionString dcs)
         {
+            await ProvisionIfNeeded(dcs);
+            Console.WriteLine(dcs);
+
             var client = new HubMqttClient();
             MqttClientAuthenticateResult connAck;
             connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
@@ -101,17 +104,51 @@ namespace Rido.IoTHubClient
             //   connAck = await client.mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
             //}
 
-            if (connAck.ResultCode == MqttClientConnectResultCode.Success)
-            {
-                timerTokenRenew = new Timer(client.ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
-            }
-            else
-            {
-                throw new ApplicationException($"Error connecting: {connAck.ResultCode} {connAck.ReasonString}");
+                if (connAck?.ResultCode == MqttClientConnectResultCode.Success)
+                {
+
+                    client.DeviceConnectionString = dcs;
+                    timerTokenRenew = new Timer(client.ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
+                }
+                else
+                {
+                    throw new ApplicationException($"Error connecting: {connAck.ResultCode} {connAck.ReasonString}");
+                }
             }
 
-            client.DeviceConnectionString = dcs;
             return client;
+        }
+
+        private static async Task ProvisionIfNeeded(DeviceConnectionString dcs)
+        {
+            if (!string.IsNullOrEmpty(dcs.IdScope))
+            {
+                DpsStatus dpsResult;
+                if (!string.IsNullOrEmpty(dcs.SharedAccessKey))
+                {
+                    dpsResult = await DpsClient.ProvisionWithSasAsync(dcs.IdScope, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId);
+                }
+                else if (!string.IsNullOrEmpty(dcs.X509Key))
+                {
+                    var segments = dcs.X509Key.Split('|');
+                    string pfxpath = segments[0];
+                    string pfxpwd = segments[1];
+                    dpsResult = await DpsClient.ProvisionWithCertAsync(dcs.IdScope, pfxpath, pfxpwd, dcs.ModelId);
+                }
+                else
+                {
+                    throw new ApplicationException("No Key found to provision");
+                }
+
+                if (!string.IsNullOrEmpty(dpsResult.registrationState.assignedHub))
+                {
+                    dcs.HostName = dpsResult.registrationState.assignedHub;
+                }
+                else
+                {
+                    throw new ApplicationException("DPS Provision failed: " + dpsResult.status);
+                }
+            }
         }
 
         public static async Task<HubMqttClient> CreateWithClientCertsAsync(string hostname, X509Certificate2 cert, string modelId = "")
@@ -275,7 +312,7 @@ namespace Rido.IoTHubClient
                 }
             });
 
-           
+
 
             mqttClient.UseApplicationMessageReceivedHandler(e =>
             {
