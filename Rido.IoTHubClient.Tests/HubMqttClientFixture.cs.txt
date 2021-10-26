@@ -12,9 +12,9 @@ namespace Rido.IoTHubClient.Tests
     public class HubMqttClientFixture
     {
         readonly RegistryManager rm;
-        const string hubConnectionString = "HostName=broker.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=HbdIWLOaSHdaL5xmF0OhiC0kmDHPinOyI0kISxZ0Rt0=";
-        const string hubName = "broker.azure-devices.net";
-        readonly string deviceId = "d" + new Random().Next(10);
+        const string hubConnectionString = "HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=";
+        const string hubName = "tests.azure-devices.net";
+        readonly string deviceId = String.Empty;
         readonly Device device;
 
         private readonly ITestOutputHelper output;
@@ -34,8 +34,11 @@ namespace Rido.IoTHubClient.Tests
             await GetOrCreateDeviceAsync("testdevice", true);
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("testdevice.pfx", "1234"));
             Assert.True(client.IsConnected);
+
             var t = await client.GetTwinAsync();
             Assert.StartsWith("{", t);
+            string expectedCS = $"HostName={hubName};DeviceId=testdevice;Auth=X509"; ;
+            Assert.Equal(expectedCS, client.DeviceConnectionString.ToString());
             await client.CloseAsync();
         }
 
@@ -83,7 +86,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task SendTelemetry_X509Module()
         {
-            var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
+            await GetOrCreateModuleAsync("xd01", "xmod01", true);
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"));
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
             Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
@@ -94,7 +97,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task SendTelemetry_X509Module_PnP()
         {
-            var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
+            await GetOrCreateModuleAsync("xd01", "xmod01", true);
             var modelId = "dtmi:test:module;1";
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"), modelId);
             var puback = await client.SendTelemetryAsync(new { temp = 2 }, "comp1");
@@ -198,7 +201,6 @@ namespace Rido.IoTHubClient.Tests
         public async Task AnnounceModelIdWithX509()
         {
             string modelId = "dtmi:rido:test;1";
-            await GetOrCreateDeviceAsync("testdevice", true);
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("testdevice.pfx", "1234"), modelId);
             Assert.True(client.IsConnected);
             var deviceRecord = await rm.GetTwinAsync("testdevice");
@@ -206,7 +208,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact(Skip="Modules")]
+        [Fact]
         public async Task ConnectModuleWithSas()
         {
             var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
@@ -216,7 +218,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact(Skip = "Modules")]
+        [Fact]
         public async Task ConnectModuleWithModelIDWithSas()
         {
             string modelId = "dtmi:rido:tests;1";
@@ -233,7 +235,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact(Skip = "Modules")]
+        [Fact]
         public async Task ConnectModuleDCSWithSas()
         {
             var module = await GetOrCreateModuleAsync(device.Id, "moduleOne");
@@ -243,7 +245,7 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact(Skip = "Modules")]
+        [Fact]
         public async Task ConnectModuleWithModelIdDCSWithSas()
         {
             string modelId = "dtmi:rido:tests;1";
@@ -256,16 +258,18 @@ namespace Rido.IoTHubClient.Tests
             await client.CloseAsync();
         }
 
-        [Fact(Skip = "Modules")]
+        [Fact]
         public async Task ConnectModuleWithCert()
         {
             await GetOrCreateModuleAsync("xd01", "xmod01", true);
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"));
             Assert.True(client.IsConnected);
+            string expectedCS = $"HostName={hubName};DeviceId=xd01;ModuleId=xmod01;Auth=X509";
+            Assert.Equal(expectedCS, client.DeviceConnectionString.ToString());
             await client.CloseAsync();
         }
 
-        [Fact(Skip = "Modules")]
+        [Fact]
         public async Task ConnectModuleWithCertAndModelId()
         {
             string modelId = "dtmi:rido:tests;1";
