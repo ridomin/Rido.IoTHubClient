@@ -5,6 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>thermostat_port</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
+	<IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
