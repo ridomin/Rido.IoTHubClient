@@ -99,5 +99,15 @@ namespace Rido.IoTHubClient
             AppendIfNotEmpty(result, nameof(this.Auth), Auth);
             return result.ToString();
         }
+
+        public static DeviceConnectionString CreateWithDefaultKey(string hub, string did)
+        {
+            return new DeviceConnectionString
+            {
+                HostName = hub.Contains("azure-devices.net") ? hub : hub + ".azure-devices.net",
+                DeviceId = did,
+                SharedAccessKey = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")))
+            };
+        }
     }
 }

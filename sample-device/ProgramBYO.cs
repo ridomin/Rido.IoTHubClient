@@ -16,7 +16,8 @@ namespace sample_device
         static async Task Main_BYO(string[] args)
         {
             var mqttClient = new MqttFactory().CreateMqttClient(); //CreateMqttClientWithDiagnostics();  
-            var dcs = DeviceConnectionString.CreateWithDefaultKey("broker", "d4"); 
+            //var dcs = DeviceConnectionString.CreateWithDefaultKey("broker", "d4"); 
+            var dcs = new DeviceConnectionString();
             System.Console.WriteLine(dcs);
 
             var connack = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);

@@ -114,7 +114,7 @@ namespace Rido.IoTHubClient
                 {
                     throw new ApplicationException($"Error connecting: {connAck.ResultCode} {connAck.ReasonString}");
                 }
-            }
+            
 
             return client;
         }
