@@ -16,7 +16,12 @@ namespace sample_device
         static async Task Main(string[] args)
         {
             var mqttClient = new MqttFactory().CreateMqttClient(); //CreateMqttClientWithDiagnostics();  
-            var dcs = DeviceConnectionString.CreateWithDefaultKey("broker", "d4"); 
+            var dcs = new ConnectionSettings
+            {
+                HostName = "broker.azure-devices.net",
+                DeviceId = "d4",
+                SharedAccessKey = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")))
+            }; 
             System.Console.WriteLine(dcs);
 
             var connack = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
@@ -72,7 +77,7 @@ namespace sample_device
         static async Task RunAppWithReservedTopics(IHubMqttClient client)
         {
             Console.WriteLine();
-            Console.WriteLine(client.DeviceConnectionString);
+            Console.WriteLine(client.ConnectionSettings);
             Console.WriteLine();
 
             client.OnMqttClientDisconnected += (s, e) =>

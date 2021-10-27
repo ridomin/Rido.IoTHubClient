@@ -45,7 +45,7 @@ public class Thermostat
 {
     int lastRid = 0;
     IMqttClient? client = null;
-    DeviceConnectionString? dcs = null;
+    ConnectionSettings? dcs = null;
 
     public Action<TargetTemperature>? OntargetTemperatureUpdated = null;
     
@@ -55,13 +55,13 @@ public class Thermostat
     public Thermostat(string cs)
     {
         client = IMqttClientExtensions.CreateMqttClientWithLogger(Console.Out);
-        dcs = new DeviceConnectionString(cs);
+        dcs = ConnectionSettings.FromConnectionString(cs);
         var connack = client.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, "dtmi:com:example:Thermostat;1", 5).Result;
         Console.WriteLine(connack.ResultCode);
         Configure().Wait();
     }
 
-    public Thermostat(IMqttClient c, DeviceConnectionString cs)
+    public Thermostat(IMqttClient c, ConnectionSettings cs)
     {
         client = c;
         dcs = cs ?? throw new ArgumentNullException(nameof(cs));

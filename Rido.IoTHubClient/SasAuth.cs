@@ -62,12 +62,12 @@ namespace Rido.IoTHubClient
             return (username, password);
         }
 
-        //internal static (string username, byte[] password) GenerateHubSasCredentials(string hostName, string deviceId, string moduleId, string sasKey, string modelId, int minutes)
-        //{
-        //    var expiry = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeMilliseconds().ToString();
-        //    string username = GetUserName(hostName, deviceId, moduleId, expiry, modelId, AuthType.SAS);
-        //    byte[] password = CreateSasToken($"{hostName}\n{deviceId}/{moduleId}", sasKey, expiry);
-        //    return (username, password);
-        //}
+        internal static (string username, byte[] password) GenerateHubSasCredentials(string hostName, string deviceId, string moduleId, string sasKey, string modelId, int minutes)
+        {
+            var expiry = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeMilliseconds().ToString();
+            string username = GetUserName(hostName, deviceId, moduleId, expiry, modelId, AuthType.SAS);
+            byte[] password = CreateSasToken($"{hostName}\n{deviceId}/{moduleId}", sasKey, expiry);
+            return (username, password);
+        }
     }
 }
