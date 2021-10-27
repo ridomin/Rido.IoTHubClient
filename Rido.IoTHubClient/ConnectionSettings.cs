@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace Rido.IoTHubClient
@@ -44,15 +42,15 @@ namespace Rido.IoTHubClient
                 return result;
             }
 
-            static int GetPositiveIntValueOrDefault(IDictionary<string,string> dict, string propertyName, int defaultValue)
+            static int GetPositiveIntValueOrDefault(IDictionary<string, string> dict, string propertyName, int defaultValue)
             {
                 int result = defaultValue;
                 if (dict.TryGetValue(propertyName, out string stringValue))
                 {
                     if (int.TryParse(stringValue, out int intValue))
                     {
-                        if (intValue>0)
-                        { 
+                        if (intValue > 0)
+                        {
                             result = intValue;
                         }
                     }
@@ -70,13 +68,13 @@ namespace Rido.IoTHubClient
             this.ModelId = GetStringValue(map, nameof(this.ModelId));
             this.Auth = GetStringValue(map, nameof(this.Auth), "SAS");
             this.SasMinutes = GetPositiveIntValueOrDefault(map, nameof(this.SasMinutes), Default_SasMinutes);
-            this.RetryInterval= GetPositiveIntValueOrDefault(map, nameof(this.RetryInterval), Default_RetryInterval);
-            this.MaxRetries= GetPositiveIntValueOrDefault(map, nameof(this.MaxRetries), Default_MaxRetries);
+            this.RetryInterval = GetPositiveIntValueOrDefault(map, nameof(this.RetryInterval), Default_RetryInterval);
+            this.MaxRetries = GetPositiveIntValueOrDefault(map, nameof(this.MaxRetries), Default_MaxRetries);
         }
 
         public override string ToString()
         {
-            void AppendIfNotEmpty(StringBuilder sb, string name, string val)
+            static void AppendIfNotEmpty(StringBuilder sb, string name, string val)
             {
                 if (!string.IsNullOrEmpty(val))
                 {

@@ -52,7 +52,7 @@ namespace Rido.IoTHubClient.Tests
         {
             IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
-            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.Equal(PubResult.Success, puback);
             Assert.True(client.IsConnected);
             await client.CloseAsync();
         }
@@ -63,7 +63,7 @@ namespace Rido.IoTHubClient.Tests
             var module = await GetOrCreateModuleAsync("deviceWithModules", "ModuleSas");
             IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, module.DeviceId, module.Id,  module.Authentication.SymmetricKey.PrimaryKey, string.Empty);
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
-            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.Equal(PubResult.Success, puback);
             Assert.True(client.IsConnected);
             await client.CloseAsync();
         }
@@ -75,7 +75,7 @@ namespace Rido.IoTHubClient.Tests
             var modelId = "dtmi:test:module;1";
             IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, module.DeviceId, module.Id, module.Authentication.SymmetricKey.PrimaryKey, modelId);
             var puback = await client.SendTelemetryAsync(new { temp = 2 }, "comp1");
-            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.Equal(PubResult.Success, puback);
             Assert.True(client.IsConnected);
             await client.CloseAsync();
         }
@@ -86,7 +86,7 @@ namespace Rido.IoTHubClient.Tests
             var module = await GetOrCreateModuleAsync("xd01", "xmod01", true);
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"));
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
-            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.Equal(PubResult.Success, puback);
             Assert.True(client.IsConnected);
             await client.CloseAsync();
         }
@@ -98,7 +98,7 @@ namespace Rido.IoTHubClient.Tests
             var modelId = "dtmi:test:module;1";
             IHubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"), modelId);
             var puback = await client.SendTelemetryAsync(new { temp = 2 }, "comp1");
-            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.Equal(PubResult.Success, puback);
             Assert.True(client.IsConnected);
             await client.CloseAsync();
         }
@@ -109,7 +109,7 @@ namespace Rido.IoTHubClient.Tests
             IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             Assert.True(client.IsConnected);
             var puback = await client.SendTelemetryAsync(new { temp = 2 }, "mycomponent");
-            Assert.Equal(MqttClientPublishReasonCode.Success, puback.ReasonCode);
+            Assert.Equal(PubResult.Success, puback);
             await client.CloseAsync();
         }
 
@@ -287,7 +287,7 @@ namespace Rido.IoTHubClient.Tests
             client1.OnMqttClientDisconnected += (o, e) => hasDisconnected = true;
             var client2 = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             Assert.True(client2.IsConnected);
-            await Task.Delay(500);
+            await Task.Delay(300);
             Assert.True(hasDisconnected);
         }
         private async Task<Device> GetOrCreateDeviceAsync(string deviceId, bool x509 = false)
