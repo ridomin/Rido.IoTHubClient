@@ -8,7 +8,7 @@ namespace Rido.IoTHubClient
     public interface IHubMqttClient
     {
         bool IsConnected { get; }
-        DeviceConnectionString DeviceConnectionString { get; }
+        ConnectionSettings ConnectionSettings { get; }
         Task<MqttClientPublishResult> SendTelemetryAsync(object payload, string dtdlComponentName = "");
         Task<string> GetTwinAsync();
         Task<int> UpdateTwinAsync(object payload);
