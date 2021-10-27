@@ -110,7 +110,7 @@ namespace Rido.IoTHubClient
                 var cid = cert.Subject[3..];
                 string deviceId = cid;
                 string moduleId = string.Empty;
-
+                    
                 if (cid.Contains("/")) // is a module
                 {
                     var segmentsId = cid.Split('/');

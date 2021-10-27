@@ -17,7 +17,13 @@ namespace m2m_sample
             };
 
             MqttClient client = new MqttClient(conn.HostName, 8883,true, MqttSslProtocols.TLSv1_2, null, null);
-            (string username, string password) = SasAuth.GenerateHubSasCredentials(conn.HostName, conn.DeviceId, conn.SharedAccessKey, "dtmi:rido:m2m;22", conn.SasMinutes);
+            (string username, string password) = SasAuth.GenerateHubSasCredentials(
+                conn.HostName, 
+                conn.DeviceId, 
+                conn.SharedAccessKey, 
+                "dtmi:rido:m2m;22", 
+                conn.SasMinutes);
+
             client.Connect(conn.DeviceId, username, password);
             Console.WriteLine(client.IsConnected);
             client.MqttMsgPublishReceived += (o, e) =>
