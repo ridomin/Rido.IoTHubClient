@@ -128,7 +128,8 @@ This library implements a compatible *connection string* with Azure IoT SDK Devi
 - `ModuleId` Device Module Identity
 - `Auth` Device Authentication: [SAS, X509]
 - `SasMinutes` SasToken expire time in minutes
-- `RetryInterval` Wait before connection retries in seconds. 0 to disable automatic reconnects.
+- `RetryInterval` Wait before connection retries in seconds. 0 to disable automatic reconnects
+- `MaxRetries` Max number of retries in case of automatic reconnect
 
 Sample Connection String
 
