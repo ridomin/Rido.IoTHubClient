@@ -46,7 +46,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ConnectModuleWithSaSAndModelId()
         {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, "dtmi:rido:module;1");
+            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "mod1", DefaultKey, "dtmi:rido:module;1");
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
