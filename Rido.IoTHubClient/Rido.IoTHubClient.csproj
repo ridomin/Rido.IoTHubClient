@@ -18,6 +18,7 @@
 	<Deterministic>true</Deterministic>
 	<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     <PackageReleaseNotes>
+		0.0.3 ConnectionSettings with IdScope
 		0.0.2 Expose Disconnect event, 
 		      Add component name to telemetry
 			  Reconnects
