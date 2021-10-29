@@ -96,7 +96,6 @@ namespace Rido.IoTHubClient
         public static async Task<HubMqttClient> CreateFromDCSAsync(ConnectionSettings dcs)
         {
             await ProvisionIfNeeded(dcs);
-            Console.WriteLine(dcs);
 
             var client = new HubMqttClient();
             MqttClientAuthenticateResult connAck = null;

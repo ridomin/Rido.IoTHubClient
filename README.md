@@ -121,6 +121,7 @@ client.OnCommandReceived += async (s, e) =>
 This library implements a compatible *connection string* with Azure IoT SDK Device Client, and adds some new properties:
 
 - `HostName` Azure IoT Hub hostname (FQDN)
+- `IdScope` DPS IdScope 
 - `DeviceId` Device Identity 
 - `SharedAccessKey` Device Shared Access Key
 - `X509Key` <pathtopfx>|<pfxpassword>
