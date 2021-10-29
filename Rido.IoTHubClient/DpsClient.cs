@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
-
     public class DpsClient
     {
         static readonly IMqttClient mqttClient;
@@ -70,7 +69,7 @@ namespace Rido.IoTHubClient
 
             var suback = await mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
-            await ConfigureDPSFlowAsync(registrationId, modelId,  tcs);
+            await ConfigureDPSFlowAsync(registrationId, modelId, tcs);
 
             return tcs.Task.Result;
         }
@@ -146,7 +145,7 @@ namespace Rido.IoTHubClient
             var putTopic = $"$dps/registrations/PUT/iotdps-register/?$rid={rid}";
             var puback = await mqttClient.PublishAsync(putTopic,
                 JsonSerializer.Serialize(new { registrationId = registrationId, payload = new { modelId = modelId } }));
-                
+
         }
     }
 }

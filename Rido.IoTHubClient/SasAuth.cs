@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Rido.IoTHubClient
 {
-    internal class SasAuth
+    public class SasAuth
     {
         const string apiversion_2020_09_30 = "2020-09-30";
         internal static string GetUserName(string hostName, string deviceId, string modelId = "") =>
@@ -20,7 +20,7 @@ namespace Rido.IoTHubClient
             return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}";
         }
 
-        internal static (string username, string password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, string modelId, int minutes = 60) =>
+        public static (string username, string password) GenerateHubSasCredentials(string hostName, string deviceId, string sasKey, string modelId, int minutes = 60) =>
             (GetUserName(hostName, deviceId, modelId), CreateSasToken($"{hostName}/devices/{deviceId}", sasKey, minutes));
     }
 }

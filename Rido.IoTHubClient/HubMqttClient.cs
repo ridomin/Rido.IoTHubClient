@@ -1,7 +1,6 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
-using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics;
@@ -23,7 +22,7 @@ namespace Rido.IoTHubClient
         public bool IsConnected => mqttClient.IsConnected;
         public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
-        public event EventHandler<MqttClientDisconnectedEventArgs> OnMqttClientDisconnected;
+        public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
 
         public ConnectionSettings ConnectionSettings { get; private set; }
 
@@ -56,7 +55,13 @@ namespace Rido.IoTHubClient
             {
                 Trace.TraceError("## DISCONNECT ##");
                 Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
-                OnMqttClientDisconnected?.Invoke(this, e);
+                OnMqttClientDisconnected?.Invoke(this,
+                    new DisconnectEventArgs()
+                    {
+                        Exception = e.Exception,
+                        DisconnectReason = (DisconnectReason)e.Reason
+                        //ResultCode = (ConnResultCode)e.AuthenticateResult?.ResultCode
+                    });
 
                 if (ConnectionSettings.RetryInterval > 0)
                 {
@@ -105,19 +110,19 @@ namespace Rido.IoTHubClient
                 var cid = cert.Subject[3..];
                 string deviceId = cid;
                 string moduleId = string.Empty;
-
+                    
                 if (cid.Contains("/")) // is a module
                 {
                     var segmentsId = cid.Split('/');
                     dcs.DeviceId = segmentsId[0];
                     dcs.ModuleId = segmentsId[1];
-                   
+
                 }
                 connAck = await client.mqttClient.ConnectWithX509Async(dcs.HostName, cert, dcs.ModelId);
                 if (connAck.ResultCode == MqttClientConnectResultCode.Success)
                 {
                     client.ConnectionSettings = dcs;
-                }    
+                }
             }
 
             if (dcs.Auth == "SAS")
@@ -207,7 +212,7 @@ namespace Rido.IoTHubClient
             return client;
         }
 
-        public async Task<MqttClientPublishResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")
+        public async Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")
         {
             string topic = $"devices/{ConnectionSettings.DeviceId}";
 
@@ -221,7 +226,9 @@ namespace Rido.IoTHubClient
             {
                 topic += $"$.sub={dtdlComponentname}";
             }
-            return await PublishAsync(topic, payload);
+            var pubAck = await PublishAsync(topic, payload);
+            var pubResult = (PubResult)pubAck.ReasonCode;
+            return pubResult;
         }
 
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
