@@ -165,13 +165,19 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ReceiveCommand()
         {
-            IHubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
+            HubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             bool commandInvoked = false;
-            client.OnCommandReceived += async (s, e) =>
+
+            client.OnCommand = req =>
             {
-                Console.WriteLine($"Processing Command {e.CommandName}");
-                await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
+                Console.WriteLine($"Processing Command {req.CommandName}");
                 commandInvoked = true;
+                return new CommandResponse()
+                {
+                    _status = 200,
+                    _rid = req._rid,
+                    CommandResponsePayload = new { myResponse = "ok" }
+                };
             };
 
             ServiceClient sc = ServiceClient.CreateFromConnectionString(hubConnectionString);

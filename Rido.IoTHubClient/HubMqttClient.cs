@@ -20,7 +20,9 @@ namespace Rido.IoTHubClient
     public class HubMqttClient : IHubMqttClient, IDisposable
     {
         public bool IsConnected => mqttClient.IsConnected;
-        public event EventHandler<CommandEventArgs> OnCommandReceived;
+
+        public Func<CommandRequest, CommandResponse> OnCommand;
+        //public event EventHandler<CommandEventArgs> OnCommandReceived;
         public event EventHandler<PropertyEventArgs> OnPropertyReceived;
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
 
@@ -84,10 +86,10 @@ namespace Rido.IoTHubClient
             });
         }
 
-        public static async Task<IHubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
+        public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
             await CreateFromDCSAsync(ConnectionSettings.FromConnectionString(connectionString));
 
-        public static async Task<IHubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey, string modelId = "") =>
+        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey, string modelId = "") =>
             await CreateFromDCSAsync(new ConnectionSettings() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey, ModelId = modelId });
 
         // TODO: Review overloads, easy to conflict with the optional param
@@ -345,7 +347,7 @@ namespace Rido.IoTHubClient
 
 
 
-            mqttClient.UseApplicationMessageReceivedHandler(e =>
+            mqttClient.UseApplicationMessageReceivedHandler(async e =>
             {
                 string msg = string.Empty;
 
@@ -387,14 +389,22 @@ namespace Rido.IoTHubClient
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
                 {
                     var cmdName = segments[3];
-                    //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic} {cmdName} {e.ApplicationMessage.Payload.Length} Bytes");
-                    OnCommandReceived?.Invoke(this, new CommandEventArgs()
+                    var resp = OnCommand?.Invoke(new CommandRequest() 
                     {
-                        Topic = e.ApplicationMessage.Topic,
-                        Rid = rid.ToString(),
+                        _rid = rid.ToString(),
                         CommandName = cmdName,
-                        CommandRequestMessageJson = msg
+                        CommandPayload = msg
                     });
+                    await CommandResponseAsync(resp._rid, cmdName, resp._status.ToString(), resp.CommandResponsePayload);
+
+                    //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic} {cmdName} {e.ApplicationMessage.Payload.Length} Bytes");
+                    // OnCommandReceived?.Invoke(this, new CommandEventArgs()
+                    // {
+                    //     Topic = e.ApplicationMessage.Topic,
+                    //     Rid = rid.ToString(),
+                    //     CommandName = cmdName,
+                    //     CommandRequestMessageJson = msg
+                    // });
                 }
             });
         }

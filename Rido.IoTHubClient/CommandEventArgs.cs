@@ -1,12 +1,22 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 
 namespace Rido.IoTHubClient
 {
-    public class CommandEventArgs : EventArgs
+    public class CommandResponse
     {
-        public string Rid { get; set; }
+        [JsonIgnore]
+        public int _status { get; set; }
+        [JsonIgnore]
+        public string _rid { get; set; }
         public string CommandName { get; set; }
-        public string CommandRequestMessageJson { get; set; }
-        public string Topic { get; set; }
+        public object CommandResponsePayload { get; set; }
+    }
+
+    public class CommandRequest
+    {
+        public string _rid { get; set; }
+        public string CommandName { get; set; }
+        public string CommandPayload { get; set; }
     }
 }

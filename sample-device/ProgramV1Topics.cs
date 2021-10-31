@@ -35,12 +35,25 @@ namespace sample_device
                 Console.WriteLine("Client Disconnected");
             };
 
-            client.OnCommandReceived += async (s, e) =>
+            client.OnCommand = req => 
             {
-                Console.WriteLine($"Processing Command {e.CommandName}");
-                await Task.Delay(500);
-                await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
+                System.Console.WriteLine($"<- Received Command {req.CommandName}");
+                string payload = req.CommandPayload;
+                System.Console.WriteLine(payload);
+                return new CommandResponse
+                {
+                    _rid = req._rid,
+                    _status = 200,
+                    CommandResponsePayload = new { myResponse = "all good"}
+                };
             };
+
+            // client.OnCommandReceived += async (s, e) =>
+            // {
+            //     Console.WriteLine($"Processing Command {e.CommandName}");
+            //     await Task.Delay(500);
+            //     await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
+            // };
 
             client.OnPropertyReceived += async (s, e) =>
             {
