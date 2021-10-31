@@ -17,15 +17,18 @@ namespace sample_device
 
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
-            Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Information);
+            Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
             //string modelId = "dtmi:com:demos;1";
             //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234", modelId);
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("csm"));
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
 
             Console.WriteLine();
             Console.WriteLine(client.ConnectionSettings);
             Console.WriteLine();
+
+            var t = await client.GetTwinAsync();
+            Console.WriteLine("Twin REPLY 1" + t);
 
             client.OnMqttClientDisconnected += (s, e) =>
             {
@@ -52,8 +55,6 @@ namespace sample_device
             await Task.Delay(500);
             await client.SendTelemetryAsync(new { temperature = 1 });
 
-            var t = await client.GetTwinAsync();
-            Console.WriteLine("Twin REPLY 1" + t);
 
             var v = await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount });
             Console.WriteLine("Twin PATCHED version: " + v);

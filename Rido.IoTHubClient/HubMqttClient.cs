@@ -245,7 +245,7 @@ namespace Rido.IoTHubClient
             {
                 twin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin GET: {s}"));
             }
-            return tcs.Task.Result;
+            return tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5)).Result;
         }
 
         public async Task<int> UpdateTwinAsync(object payload)
