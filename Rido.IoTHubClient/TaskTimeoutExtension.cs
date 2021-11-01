@@ -7,22 +7,13 @@ namespace Rido.IoTHubClient
 {
     public static class TaskTimeoutExtension
     {
-        public static async Task<TResult> TimeoutAfter<TResult>(this Task<TResult> task, TimeSpan timeout)
+        public static async Task<T> TimeoutAfter<T>(this Task<T> source, TimeSpan timeout)
         {
-            using (var timeoutCancellationTokenSource = new CancellationTokenSource())
+            if (await Task.WhenAny(source,Task.Delay(timeout)) != source)
             {
-                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
-                if (completedTask == task)
-                {
-                    timeoutCancellationTokenSource.Cancel();
-                    return await task;
-                }
-                else
-                {
-                    throw new TimeoutException($"{nameof(TimeoutAfter)}: The operation has timed out after {timeout:mm\\:ss}");
-                }
+                throw new TimeoutException();
             }
-
+            return await source;
         }
     }
 }
