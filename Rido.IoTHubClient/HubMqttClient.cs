@@ -33,7 +33,6 @@ namespace Rido.IoTHubClient
         const int twinOperationTimeoutSeconds = 5;
         IMqttClient mqttClient;
         static Timer timerTokenRenew;
-        const int twinOperationTimeoutSeconds = 5;
 
         static Action<string> twin_cb;
         static Action<int> patch_cb;
