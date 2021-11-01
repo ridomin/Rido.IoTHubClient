@@ -28,6 +28,7 @@ namespace Rido.IoTHubClient
 
         IMqttClient mqttClient;
         static Timer timerTokenRenew;
+        const int twinOperationTimeoutSeconds = 5;
 
         static Action<string> twin_cb;
         static Action<int> patch_cb;
@@ -245,7 +246,7 @@ namespace Rido.IoTHubClient
             {
                 twin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin GET: {s}"));
             }
-            return tcs.Task.Result;
+            return tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds)).Result;
         }
 
         public async Task<int> UpdateTwinAsync(object payload)
@@ -260,7 +261,7 @@ namespace Rido.IoTHubClient
             {
                 patch_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
             }
-            return tcs.Task.Result;
+            return tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds)).Result;
         }
 
         public async Task CloseAsync()
