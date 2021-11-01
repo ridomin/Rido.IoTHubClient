@@ -80,7 +80,7 @@ namespace Rido.IoTHubClient
             {
                 await mqttClient.DisconnectAsync();
             }
-            var tcs = new TaskCompletionSource<DpsStatus>();
+            var tcs = new TaskCompletionSource<DpsStatus>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var resource = $"{idScope}/registrations/{registrationId}";
             var username = $"{resource}/api-version=2019-03-31";
@@ -103,7 +103,7 @@ namespace Rido.IoTHubClient
             var suback = await mqttClient.SubscribeAsync("$dps/registrations/res/#");
             suback.Items.ToList().ForEach(x => Trace.TraceWarning($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             await ConfigureDPSFlowAsync(registrationId, modelId, tcs);
-            return tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5)).Result;
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
 
         }
 

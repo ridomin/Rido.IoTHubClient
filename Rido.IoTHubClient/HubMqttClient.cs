@@ -236,7 +236,7 @@ namespace Rido.IoTHubClient
 
         public async Task<string> GetTwinAsync()
         {
-            var tcs = new TaskCompletionSource<string>();
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             var puback = await PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
@@ -246,12 +246,12 @@ namespace Rido.IoTHubClient
             {
                 twin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin GET: {s}"));
             }
-            return tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds)).Result;
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds));
         }
 
         public async Task<int> UpdateTwinAsync(object payload)
         {
-            var tcs = new TaskCompletionSource<int>();
+            var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
             var puback = await PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
@@ -261,7 +261,7 @@ namespace Rido.IoTHubClient
             {
                 patch_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
             }
-            return tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds)).Result;
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds));
         }
 
         public async Task CloseAsync()
