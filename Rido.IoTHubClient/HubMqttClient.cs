@@ -17,14 +17,16 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient : IHubMqttClient, IDisposable
+    public class HubMqttClient : IDisposable
+    //: IHubMqttClient, IDisposable
     {
         public bool IsConnected => mqttClient.IsConnected;
 
         public Func<CommandRequest, CommandResponse> OnCommand;
-        //public event EventHandler<CommandEventArgs> OnCommandReceived;
-        public event EventHandler<PropertyEventArgs> OnPropertyReceived;
-        public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
+        public Func<PropertyReceived, PropertyAck> OnPropertyChange;
+
+        //public event EventHandler<PropertyEventArgs> OnPropertyReceived;
+        public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;    
 
         public ConnectionSettings ConnectionSettings { get; private set; }
 
@@ -38,8 +40,9 @@ namespace Rido.IoTHubClient
         bool reconnecting = false;
         private bool disposedValue;
 
-        private HubMqttClient()
+        private HubMqttClient(ConnectionSettings cs)
         {
+            ConnectionSettings = cs;
             MqttNetLogger logger = new MqttNetLogger();
             logger.LogMessagePublished += (s, e) =>
             {
@@ -62,7 +65,7 @@ namespace Rido.IoTHubClient
                     new DisconnectEventArgs()
                     {
                         Exception = e.Exception,
-                        DisconnectReason = (DisconnectReason)e.Reason
+                        DisconnectReason = (DisconnectReason)e.Reason,
                         //ResultCode = (ConnResultCode)e.AuthenticateResult?.ResultCode
                     });
 
@@ -93,14 +96,14 @@ namespace Rido.IoTHubClient
             await CreateFromDCSAsync(new ConnectionSettings() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey, ModelId = modelId });
 
         // TODO: Review overloads, easy to conflict with the optional param
-        public static async Task<IHubMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
+        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
            await CreateFromDCSAsync(new ConnectionSettings() { HostName = hostName, DeviceId = deviceId, ModuleId = moduleId, SharedAccessKey = sasKey, ModelId = modelId });
 
         public static async Task<HubMqttClient> CreateFromDCSAsync(ConnectionSettings dcs)
         {
             await ProvisionIfNeeded(dcs);
 
-            var client = new HubMqttClient();
+            var client = new HubMqttClient(dcs);
             MqttClientAuthenticateResult connAck = null;
 
             if (dcs.Auth == "X509")
@@ -112,7 +115,7 @@ namespace Rido.IoTHubClient
                 var cid = cert.Subject[3..];
                 string deviceId = cid;
                 string moduleId = string.Empty;
-                    
+
                 if (cid.Contains("/")) // is a module
                 {
                     var segmentsId = cid.Split('/');
@@ -200,13 +203,9 @@ namespace Rido.IoTHubClient
                 moduleId = segments[1];
             }
 
-            var client = new HubMqttClient();
+            var client = new HubMqttClient(ConnectionSettings.FromConnectionString($"HostName={hostname};DeviceId={deviceId};ModuleId={moduleId};Auth=X509"));
             var connack = await client.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
-            if (connack.ResultCode == MqttClientConnectResultCode.Success)
-            {
-                client.ConnectionSettings = ConnectionSettings.FromConnectionString($"HostName={hostname};DeviceId={deviceId};ModuleId={moduleId};Auth=X509");
-            }
-            else
+            if (connack.ResultCode != MqttClientConnectResultCode.Success)
             {
                 throw new ApplicationException($"Error connecting: {connack.ResultCode} {connack.ReasonString}");
             }
@@ -378,33 +377,33 @@ namespace Rido.IoTHubClient
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                 {
-                    OnPropertyReceived?.Invoke(this, new PropertyEventArgs()
+                    var ack = OnPropertyChange?.Invoke(new PropertyReceived()
                     {
-                        Topic = e.ApplicationMessage.Topic,
                         Rid = rid.ToString(),
-                        PropertyMessageJson = TwinProperties.RemoveVersion(msg),
+                        Topic = e.ApplicationMessage.Topic,
+                        PropertyMessageJson = msg,
                         Version = twinVersion
                     });
+                    await UpdateTwinAsync(ack.BuildAck()); 
+
+                    //OnPropertyReceived?.Invoke(this, new PropertyEventArgs()
+                    //{
+                    //    Topic = e.ApplicationMessage.Topic,
+                    //    Rid = rid.ToString(),
+                    //    PropertyMessageJson = TwinProperties.RemoveVersion(msg),
+                    //    Version = twinVersion
+                    //});
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
                 {
                     var cmdName = segments[3];
-                    var resp = OnCommand?.Invoke(new CommandRequest() 
+                    var resp = OnCommand?.Invoke(new CommandRequest()
                     {
                         _rid = rid.ToString(),
                         CommandName = cmdName,
                         CommandPayload = msg
                     });
                     await CommandResponseAsync(resp._rid, cmdName, resp._status.ToString(), resp.CommandResponsePayload);
-
-                    //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic} {cmdName} {e.ApplicationMessage.Payload.Length} Bytes");
-                    // OnCommandReceived?.Invoke(this, new CommandEventArgs()
-                    // {
-                    //     Topic = e.ApplicationMessage.Topic,
-                    //     Rid = rid.ToString(),
-                    //     CommandName = cmdName,
-                    //     CommandRequestMessageJson = msg
-                    // });
                 }
             });
         }
