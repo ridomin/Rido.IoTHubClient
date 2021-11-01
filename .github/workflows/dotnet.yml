@@ -23,6 +23,6 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build
+      run: dotnet test --no-build --blame-hang-timeout 5m --blame-hang-dump-type full
     - name: Pack
       run: dotnet pack
