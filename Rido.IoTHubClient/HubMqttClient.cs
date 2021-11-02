@@ -219,7 +219,6 @@ namespace Rido.IoTHubClient
             {
                 topic += $"/modules/{ConnectionSettings.ModuleId}";
             }
-            topic += "/messages/events/";
 
             if (!string.IsNullOrEmpty(dtdlComponentname))
             {

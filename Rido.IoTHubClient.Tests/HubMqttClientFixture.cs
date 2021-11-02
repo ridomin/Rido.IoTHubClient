@@ -12,8 +12,8 @@ namespace Rido.IoTHubClient.Tests
     public class HubMqttClientFixture
     {
         readonly RegistryManager rm;
-        const string hubConnectionString = "HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=";
-        const string hubName = "tests.azure-devices.net";
+        const string hubConnectionString = "HostName=broker.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=HbdIWLOaSHdaL5xmF0OhiC0kmDHPinOyI0kISxZ0Rt0=";
+        const string hubName = "broker.azure-devices.net";
         readonly string deviceId = String.Empty;
         readonly Device device;
 
@@ -37,8 +37,6 @@ namespace Rido.IoTHubClient.Tests
 
             var t = await client.GetTwinAsync();
             Assert.StartsWith("{", t);
-            string expectedCS = $"HostName={hubName};DeviceId=testdevice;Auth=X509"; ;
-            Assert.Equal(expectedCS, client.ConnectionSettings.ToString());
             await client.CloseAsync();
         }
 
@@ -173,8 +171,8 @@ namespace Rido.IoTHubClient.Tests
             var expAck = new
             {
                 ac = 200,
-                av = updatedVersion,
                 ad = "test update",
+                av = updatedVersion,
                 value = 2
             };
             Assert.Equal(JsonSerializer.Serialize(expAck), updatedProp.ToJson());
@@ -239,6 +237,13 @@ namespace Rido.IoTHubClient.Tests
                     CommandResponsePayload = new { myResponse = "ok" }
                 };
             };
+
+            int retries = 0;
+            while (!client.IsConnected && retries++ < 10)
+            {
+                output.WriteLine(client.IsConnected.ToString());
+                await Task.Delay(100);
+            }
 
             ServiceClient sc = ServiceClient.CreateFromConnectionString(hubConnectionString);
             CloudToDeviceMethod c2dMethod = new("TestMethod");

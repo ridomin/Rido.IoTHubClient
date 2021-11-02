@@ -13,7 +13,7 @@ namespace sample_device
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static async Task Main__(string[] args)
         {
             var mqttClient = new MqttFactory().CreateMqttClient(); //CreateMqttClientWithDiagnostics();  
             var dcs = new ConnectionSettings

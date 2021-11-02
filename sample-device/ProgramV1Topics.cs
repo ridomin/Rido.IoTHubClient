@@ -7,7 +7,7 @@ namespace sample_device
 {
     class ProgramV1
     {
-        static async Task Main__(string[] args)
+        static async Task Main(string[] args)
         {
             //var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne00385995", "paad", "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
             //Console.WriteLine(dpsRes.registrationState.assignedHub);
