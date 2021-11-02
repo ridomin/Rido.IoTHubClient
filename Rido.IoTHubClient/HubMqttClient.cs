@@ -17,16 +17,15 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient : IDisposable
-    //: IHubMqttClient, IDisposable
+    public class HubMqttClient : IHubMqttClient, IDisposable
     {
         public bool IsConnected => mqttClient.IsConnected;
 
-        public Func<CommandRequest, CommandResponse> OnCommand;
-        public Func<PropertyReceived, PropertyAck> OnPropertyChange;
+        public Func<CommandRequest, CommandResponse> OnCommand { get; set; }
+        public Func<PropertyReceived, PropertyAck> OnPropertyChange { get; set; }
 
         //public event EventHandler<PropertyEventArgs> OnPropertyReceived;
-        public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;    
+        public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
 
         public ConnectionSettings ConnectionSettings { get; private set; }
 
@@ -384,15 +383,7 @@ namespace Rido.IoTHubClient
                         PropertyMessageJson = msg,
                         Version = twinVersion
                     });
-                    await UpdateTwinAsync(ack.BuildAck()); 
-
-                    //OnPropertyReceived?.Invoke(this, new PropertyEventArgs()
-                    //{
-                    //    Topic = e.ApplicationMessage.Topic,
-                    //    Rid = rid.ToString(),
-                    //    PropertyMessageJson = TwinProperties.RemoveVersion(msg),
-                    //    Version = twinVersion
-                    //});
+                    await UpdateTwinAsync(ack.BuildAck());
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
                 {

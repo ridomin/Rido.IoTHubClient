@@ -147,10 +147,6 @@ namespace Rido.IoTHubClient.Tests
             client.OnPropertyChange = e =>
             {
                 output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
-                //await Task.Delay(500);
-                //var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
-                //var v = await client.UpdateTwinAsync(ack);
-                //Console.WriteLine("PATCHED ACK: " + v);
                 propertyReceived = true;
                 return new PropertyAck
                 {
@@ -161,7 +157,7 @@ namespace Rido.IoTHubClient.Tests
                 };
             };
             var twin = await rm.GetTwinAsync(deviceId);
-            twin.Properties.Desired["myDProp"] = "some value";
+            twin.Properties.Desired["myDProp"] = 2;
             await rm.UpdateTwinAsync(deviceId, twin, twin.ETag);
             await Task.Delay(2000);
             Assert.True(propertyReceived);

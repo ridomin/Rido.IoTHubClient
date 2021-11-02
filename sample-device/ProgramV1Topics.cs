@@ -48,24 +48,14 @@ namespace sample_device
                 };
             };
 
-            // client.OnCommandReceived += async (s, e) =>
-            // {
-            //     Console.WriteLine($"Processing Command {e.CommandName}");
-            //     await Task.Delay(500);
-            //     await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
-            // };
-
             client.OnPropertyChange = e =>
             {
                 Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
-                //await Task.Delay(500);
-                // todo parse property
-                //var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
-                //var v = await client.UpdateTwinAsync(ack);
-                //Console.WriteLine("PATCHED ACK: " + v);
                 return new PropertyAck()
                 {
                     Version = e.Version,
+                    Status = 200,
+                    Description = "testing acks",
                     Value = e.PropertyMessageJson
                 };
             };

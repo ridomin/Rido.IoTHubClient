@@ -36,7 +36,29 @@ namespace Rido.IoTHubClient
                     writer.WriteNumber("ac", Status);
                     writer.WriteNumber("av", Version);
                     writer.WriteString("ad", Description);
-                    writer.WriteString("value", el.Value.ToString());
+                    //writer.WriteStartObject("value");
+                    switch (el.Value.ValueKind)
+                    {
+                        case JsonValueKind.String:
+                            writer.WriteString("value", el.Value.ToString());
+                            break;
+                        case JsonValueKind.Number:
+                            writer.WriteNumber("value", el.Value.GetDouble());
+                            break;
+                        case JsonValueKind.True:
+                        case JsonValueKind.False:
+                            writer.WriteBoolean("value", el.Value.GetBoolean());
+                            break;
+                        case JsonValueKind.Object:
+                            writer.WriteStartObject("value");
+                            foreach (var so in el.Value.EnumerateObject())
+                            {
+                                so.WriteTo(writer);
+                            }
+                            writer.WriteEndObject();
+                            break;
+                    }
+                    //writer.WriteEndObject();
                     writer.WriteEndObject();
                 }
             }
