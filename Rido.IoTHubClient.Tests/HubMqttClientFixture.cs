@@ -38,7 +38,7 @@ namespace Rido.IoTHubClient.Tests
             var t = await client.GetTwinAsync();
             Assert.StartsWith("{", t);
             string expectedCS = $"HostName={hubName};DeviceId=testdevice;Auth=X509"; ;
-            Assert.Equal(expectedCS, client.DeviceConnectionString.ToString());
+            Assert.Equal(expectedCS, client.ConnectionSettings.ToString());
             await client.CloseAsync();
         }
 
@@ -328,7 +328,7 @@ namespace Rido.IoTHubClient.Tests
             HubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"));
             Assert.True(client.IsConnected);
             string expectedCS = $"HostName={hubName};DeviceId=xd01;ModuleId=xmod01;Auth=X509";
-            Assert.Equal(expectedCS, client.DeviceConnectionString.ToString());
+            Assert.Equal(expectedCS, client.ConnectionSettings.ToString());
             await client.CloseAsync();
         }
 
