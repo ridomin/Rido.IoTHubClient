@@ -4,6 +4,7 @@ using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics;
+using MQTTnet.Diagnostics.Logger;
 using MQTTnet.Protocol;
 using System;
 using System.Diagnostics;
@@ -42,7 +43,7 @@ namespace Rido.IoTHubClient
         private HubMqttClient(ConnectionSettings cs)
         {
             ConnectionSettings = cs;
-            MqttNetLogger logger = new MqttNetLogger();
+            var logger = new MqttNetEventLogger();
             logger.LogMessagePublished += (s, e) =>
             {
                 var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
@@ -102,7 +103,7 @@ namespace Rido.IoTHubClient
             await ProvisionIfNeeded(dcs);
 
             var client = new HubMqttClient(dcs);
-            MqttClientAuthenticateResult connAck = null;
+            MqttClientConnectResult connAck = null;
 
             if (dcs.Auth == "X509")
             {
@@ -314,13 +315,13 @@ namespace Rido.IoTHubClient
                 {
                     Trace.TraceError($"Connected?: {mqttClient.IsConnected} Reconnecting?:{reconnecting}");
                     Trace.TraceError(" !!!!!  Failed one message " + ex);
-                    return null;
+                    return new MqttClientPublishResult() {ReasonCode = MqttClientPublishReasonCode.UnspecifiedError };
                 }
             }
             else
             {
                 Trace.TraceWarning(" !!!!!  Missing one message ");
-                return null;
+                return new MqttClientPublishResult() { ReasonCode = MqttClientPublishReasonCode.UnspecifiedError};
             }
         }
 
@@ -341,8 +342,6 @@ namespace Rido.IoTHubClient
                     throw new ApplicationException("Error subscribing to system topics");
                 }
             });
-
-
 
             mqttClient.UseApplicationMessageReceivedHandler(async e =>
             {
