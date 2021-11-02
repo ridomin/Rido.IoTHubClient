@@ -314,13 +314,13 @@ namespace Rido.IoTHubClient
                 {
                     Trace.TraceError($"Connected?: {mqttClient.IsConnected} Reconnecting?:{reconnecting}");
                     Trace.TraceError(" !!!!!  Failed one message " + ex);
-                    return null;
+                    return new MqttClientPublishResult() {ReasonCode = MqttClientPublishReasonCode.UnspecifiedError };
                 }
             }
             else
             {
                 Trace.TraceWarning(" !!!!!  Missing one message ");
-                return null;
+                return new MqttClientPublishResult() { ReasonCode = MqttClientPublishReasonCode.UnspecifiedError};
             }
         }
 
@@ -341,8 +341,6 @@ namespace Rido.IoTHubClient
                     throw new ApplicationException("Error subscribing to system topics");
                 }
             });
-
-
 
             mqttClient.UseApplicationMessageReceivedHandler(async e =>
             {
