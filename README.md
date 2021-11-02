@@ -53,7 +53,7 @@ The client will trigger the event ` event EventHandler<MqttClientDisconnectedEve
 
 You can also connect with the MQTTNet client by using the extension methods:
 
-```
+```cs
 var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, sasKey);
 var connack = await mqttClient.ConnectWithX509Async(hostname, certificate);
 ```
