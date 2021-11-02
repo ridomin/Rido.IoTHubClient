@@ -3,6 +3,7 @@ using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Options;
 using MQTTnet.Diagnostics;
+using MQTTnet.Diagnostics.Logger;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,7 +17,7 @@ namespace Rido.IoTHubClient
 {
     public static class IMqttClientExtensions
     {
-        public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, string modelId = "", int minutes = 60)
+        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, string modelId = "", int minutes = 60)
         {
             (string username, byte[] password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, sasKey, modelId, minutes);
             return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
@@ -31,7 +32,7 @@ namespace Rido.IoTHubClient
                  .Build());
         }
 
-        public static async Task<MqttClientAuthenticateResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, string modelId = "", int minutes = 60)
+        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, string modelId = "", int minutes = 60)
         {
             (string username, byte[] password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, moduleId, sasKey, modelId, minutes);
             return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
@@ -46,7 +47,7 @@ namespace Rido.IoTHubClient
                  .Build());
         }
 
-        public static async Task<MqttClientAuthenticateResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, string modelId = "")
+        public static async Task<MqttClientConnectResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, string modelId = "")
         {
             var cid = cert.Subject[3..];
             string deviceId = cid;
@@ -92,7 +93,7 @@ namespace Rido.IoTHubClient
                 Trace.Listeners.Add(new TextWriterTraceListener(writer));
                 Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-                MqttNetLogger logger = new MqttNetLogger();
+                var logger = new MqttNetEventLogger();
                 logger.LogMessagePublished += (s, e) =>
                 {
                     var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
