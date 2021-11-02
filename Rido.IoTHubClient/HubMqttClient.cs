@@ -214,12 +214,7 @@ namespace Rido.IoTHubClient
         public async Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")
         {
             string topic = $"$az/iot/telemetry";
-
-            //if (!string.IsNullOrEmpty(ConnectionSettings.ModuleId))
-            //{
-            //    topic += $"/modules/{ConnectionSettings.ModuleId}";
-            //}
-
+        
             if (!string.IsNullOrEmpty(dtdlComponentname))
             {
                 topic += $"/?dts={dtdlComponentname}";
@@ -228,8 +223,7 @@ namespace Rido.IoTHubClient
             var pubResult = (PubResult)pubAck.ReasonCode;
             return pubResult;
         }
-
-        // TODO: review topic for cmd response
+                
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
           await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
 

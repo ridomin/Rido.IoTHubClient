@@ -72,9 +72,10 @@ public class Thermostat
     async Task Configure()
     {
         var subres = await client.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
-                                                   .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                   .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                   .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
+                                                   .WithTopicFilter("$az/iot/methods/+/+", MqttQualityOfServiceLevel.AtLeastOnce)
+                                                   .WithTopicFilter("$az/iot/twin/get/response/+", MqttQualityOfServiceLevel.AtLeastOnce)
+                                                   .WithTopicFilter("$az/iot/twin/patch/response/+", MqttQualityOfServiceLevel.AtLeastOnce)
+                                                   .WithTopicFilter("$az/iot/twin/events/desired-changed/+", MqttQualityOfServiceLevel.AtLeastOnce)
                                                    .Build());
         subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
 
@@ -92,12 +93,12 @@ public class Thermostat
             {
                 // parse qs to extract the rid
                 var qs = HttpUtility.ParseQueryString(segments[^1]);
-                rid = Convert.ToInt32(qs["$rid"]);
-                twinVersion = Convert.ToInt32(qs["$version"]);
+                rid = Convert.ToInt32(qs["rid"]);
+                twinVersion = Convert.ToInt32(qs["v"]);
             }
 
             string msg = string.Empty;
-            if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
+            if (m.ApplicationMessage.Topic.StartsWith("$az/iot/twin/events/desired-changed"))
             {
                 msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                 JsonElement targetTemperature = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature");
@@ -105,18 +106,18 @@ public class Thermostat
                 if (ack != null) await this.Report_targetTemperatureACK(ack);
             }
 
-            if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
+            if (m.ApplicationMessage.Topic.StartsWith("$az/iot/twin/patch/response/"))
             {
                 msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                 Callback_maxTempSinceLastReboot?.Invoke(twinVersion);
             }
 
-            if (m.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/getMaxMinReport"))
+            if (m.ApplicationMessage.Topic.StartsWith("$az/iot/methods/getMaxMinReport"))
             {
                 msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                 var resp = Command_getMaxMinReport?.Invoke(
                     new Command_getMaxMinReport_Request { since = JsonSerializer.Deserialize<DateTime>(msg), _rid = rid });
-                await client.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={resp?._rid}", JsonSerializer.Serialize(resp));
+                await client.PublishAsync($"$az/iot/methods/getMaxMinReport/response/?rid={resp?._rid}&rc={resp?._status}", JsonSerializer.Serialize(resp));
             }
         });
     }
@@ -128,7 +129,7 @@ public class Thermostat
     {
         var tcs = new TaskCompletionSource<int>();
         var puback = await client.PublishAsync(
-            $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
+            $"$az/iot/twin/patch/reported/?rid={lastRid++}",
             JsonSerializer.Serialize(new { maxTempSinceLastReboot = temperature }));
         if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
         {
@@ -144,7 +145,7 @@ public class Thermostat
     public async Task<MqttClientPublishResult> Send_temperature(double temperature)
     {
         return await client.PublishAsync(
-            $"devices/{dcs?.DeviceId}/messages/events/",
+            $"$az/iot/telemetry",
             JsonSerializer.Serialize(new { temperature }));
     }
 
@@ -152,7 +153,7 @@ public class Thermostat
     public async Task Report_targetTemperatureACK(PropertyAck ack)
     {
         var puback = await client.PublishAsync(
-           $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.BuildAck());
+           $"$az/iot/twin/patch/reported/?rid={lastRid++}", ack.BuildAck());
     }
 }
 

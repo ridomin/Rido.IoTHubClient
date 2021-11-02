@@ -1,10 +1,14 @@
 ﻿using Rido.IoTHubClient;
+using System.Diagnostics;
 using System.Text.Json;
 
 Random random = new();
 double temperature = 0d;
 double maxTemp = 0d;
 Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxTemp } };
+
+Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
+Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
 string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
 Console.WriteLine(connectionString);
