@@ -2,6 +2,7 @@
 using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using MQTTnet.Diagnostics;
+using MQTTnet.Diagnostics.Logger;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,7 +21,7 @@ namespace Rido.IoTHubClient
         static int rid = 1;
         static DpsClient()
         {
-            MqttNetLogger logger = new MqttNetLogger();
+            var logger = new MqttNetEventLogger();
             logger.LogMessagePublished += (s, e) =>
             {
                 var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
