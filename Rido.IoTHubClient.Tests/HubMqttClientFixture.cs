@@ -211,8 +211,8 @@ namespace Rido.IoTHubClient.Tests
             var expAck = new
             {
                 ac = 200,
-                av = updatedVersion,
                 ad = "test update",
+                av = updatedVersion,
                 value = new { aComplexPerson = new { withName = "rido" } }
             };
             Assert.Equal(JsonSerializer.Serialize(expAck), updatedProp.ToJson());
@@ -332,8 +332,6 @@ namespace Rido.IoTHubClient.Tests
             await GetOrCreateModuleAsync("xd01", "xmod01", true);
             HubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("xd01_xmod01.pfx", "1234"));
             Assert.True(client.IsConnected);
-            string expectedCS = $"HostName={hubName};DeviceId=xd01;ModuleId=xmod01;Auth=X509";
-            Assert.Equal(expectedCS, client.ConnectionSettings.ToString());
             await client.CloseAsync();
         }
 

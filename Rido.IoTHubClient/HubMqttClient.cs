@@ -215,14 +215,14 @@ namespace Rido.IoTHubClient
         {
             string topic = $"$az/iot/telemetry";
 
-            if (!string.IsNullOrEmpty(ConnectionSettings.ModuleId))
-            {
-                topic += $"/modules/{ConnectionSettings.ModuleId}";
-            }
+            //if (!string.IsNullOrEmpty(ConnectionSettings.ModuleId))
+            //{
+            //    topic += $"/modules/{ConnectionSettings.ModuleId}";
+            //}
 
             if (!string.IsNullOrEmpty(dtdlComponentname))
             {
-                topic += $"$.sub={dtdlComponentname}";
+                topic += $"/?dts={dtdlComponentname}";
             }
             var pubAck = await PublishAsync(topic, payload);
             var pubResult = (PubResult)pubAck.ReasonCode;
@@ -231,7 +231,7 @@ namespace Rido.IoTHubClient
 
         // TODO: review topic for cmd response
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-          await PublishAsync($"$az/iot/methods/res/{status}/?rid={rid}", payload);
+          await PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
 
         public async Task<string> GetTwinAsync()
         {
