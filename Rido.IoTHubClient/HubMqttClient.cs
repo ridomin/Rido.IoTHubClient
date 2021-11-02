@@ -58,8 +58,7 @@ namespace Rido.IoTHubClient
             ConfigureReservedTopics();
             mqttClient.UseDisconnectedHandler(async e =>
             {
-                Trace.TraceError("## DISCONNECT ##");
-                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
+                Trace.TraceError($"## DISCONNECT ## {e.ClientWasConnected} {e.Reason}");
                 OnMqttClientDisconnected?.Invoke(this,
                     new DisconnectEventArgs()
                     {
@@ -390,11 +389,10 @@ namespace Rido.IoTHubClient
                     var cmdName = segments[3];
                     var resp = OnCommand?.Invoke(new CommandRequest()
                     {
-                        _rid = rid.ToString(),
                         CommandName = cmdName,
                         CommandPayload = msg
                     });
-                    await CommandResponseAsync(resp._rid, cmdName, resp._status.ToString(), resp.CommandResponsePayload);
+                    await CommandResponseAsync(rid.ToString(), cmdName, resp._status.ToString(), resp.CommandResponsePayload);
                 }
             });
         }

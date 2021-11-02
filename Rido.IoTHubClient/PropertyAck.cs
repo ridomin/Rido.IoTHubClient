@@ -5,14 +5,6 @@ using System.Text.Json.Serialization;
 
 namespace Rido.IoTHubClient
 {
-    public class PropertyReceived
-    {
-        public string Rid { get; set; }
-        public string PropertyMessageJson { get; set; }
-        public string Topic { get; set; }
-        public int Version { get; set; }
-
-    }
 
     public class PropertyAck
     {
@@ -36,7 +28,6 @@ namespace Rido.IoTHubClient
                     writer.WriteNumber("ac", Status);
                     writer.WriteNumber("av", Version);
                     writer.WriteString("ad", Description);
-                    //writer.WriteStartObject("value");
                     switch (el.Value.ValueKind)
                     {
                         case JsonValueKind.String:
@@ -58,7 +49,6 @@ namespace Rido.IoTHubClient
                             writer.WriteEndObject();
                             break;
                     }
-                    //writer.WriteEndObject();
                     writer.WriteEndObject();
                 }
             }
@@ -68,14 +58,5 @@ namespace Rido.IoTHubClient
             using StreamReader sr = new StreamReader(ms);
             return sr.ReadToEnd();
         }
-    }
-
-
-    public class PropertyEventArgs : EventArgs
-    {
-        public string Rid { get; set; }
-        public string PropertyMessageJson { get; set; }
-        public string Topic { get; set; }
-        public int Version { get; set; }
     }
 }

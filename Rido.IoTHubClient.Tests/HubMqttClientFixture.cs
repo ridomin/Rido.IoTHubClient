@@ -61,7 +61,7 @@ namespace Rido.IoTHubClient.Tests
         public async Task SendTelemetry_SaSModule()
         {
             var module = await GetOrCreateModuleAsync("deviceWithModules", "ModuleSas");
-            HubMqttClient client = await HubMqttClient.CreateAsync(hubName, module.DeviceId, module.Id,  module.Authentication.SymmetricKey.PrimaryKey, string.Empty);
+            HubMqttClient client = await HubMqttClient.CreateAsync(hubName, module.DeviceId, module.Id, module.Authentication.SymmetricKey.PrimaryKey, string.Empty);
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
             Assert.Equal(PubResult.Success, puback);
             Assert.True(client.IsConnected);
@@ -144,10 +144,12 @@ namespace Rido.IoTHubClient.Tests
         {
             HubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             bool propertyReceived = false;
+            var updatedVersion = 0;
             client.OnPropertyChange = e =>
             {
                 output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 propertyReceived = true;
+                updatedVersion = e.Version;
                 return new PropertyAck
                 {
                     Description = "test update",
@@ -161,6 +163,59 @@ namespace Rido.IoTHubClient.Tests
             await rm.UpdateTwinAsync(deviceId, twin, twin.ETag);
             await Task.Delay(2000);
             Assert.True(propertyReceived);
+
+            var updatedTwin = await rm.GetTwinAsync(deviceId);
+            Microsoft.Azure.Devices.Shared.TwinCollection updatedProp = updatedTwin.Properties.Reported["myDProp"];
+
+            var expAck = new
+            {
+                ac = 200,
+                av = updatedVersion,
+                ad = "test update",
+                value = 2
+            };
+            Assert.Equal(JsonSerializer.Serialize(expAck), updatedProp.ToJson());
+
+            await client.CloseAsync();
+        }
+
+        [Fact]
+        public async Task ReceivePropertyUpdateWithComplexObject()
+        {
+            HubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
+            bool propertyReceived = false;
+            var updatedVersion = 0;
+            client.OnPropertyChange = e =>
+            {
+                output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
+                propertyReceived = true;
+                updatedVersion = e.Version;
+                return new PropertyAck
+                {
+                    Description = "test update",
+                    Status = 200,
+                    Version = e.Version,
+                    Value = e.PropertyMessageJson
+                };
+            };
+            var twin = await rm.GetTwinAsync(deviceId);
+            twin.Properties.Desired["myDProp"] = new { aComplexPerson = new { withName = "rido" } };
+            await rm.UpdateTwinAsync(deviceId, twin, twin.ETag);
+            await Task.Delay(2000);
+            Assert.True(propertyReceived);
+
+            var updatedTwin = await rm.GetTwinAsync(deviceId);
+            Microsoft.Azure.Devices.Shared.TwinCollection updatedProp = updatedTwin.Properties.Reported["myDProp"];
+
+            var expAck = new
+            {
+                ac = 200,
+                av = updatedVersion,
+                ad = "test update",
+                value = new { aComplexPerson = new { withName = "rido" } }
+            };
+            Assert.Equal(JsonSerializer.Serialize(expAck), updatedProp.ToJson());
+
             await client.CloseAsync();
         }
 
@@ -178,7 +233,6 @@ namespace Rido.IoTHubClient.Tests
                 return new CommandResponse()
                 {
                     _status = 200,
-                    _rid = req._rid,
                     CommandResponsePayload = new { myResponse = "ok" }
                 };
             };
@@ -289,7 +343,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ConnectSameDeviceTwiceTriggersDisconnect()
         {
-            var device= await GetOrCreateDeviceAsync("fakeDevice");
+            var device = await GetOrCreateDeviceAsync("fakeDevice");
             var client1 = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             Assert.True(client1.IsConnected);
             bool hasDisconnected = false;

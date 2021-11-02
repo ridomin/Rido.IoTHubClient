@@ -42,7 +42,6 @@ namespace sample_device
                 System.Console.WriteLine(payload);
                 return new CommandResponse
                 {
-                    _rid = req._rid,
                     _status = 200,
                     CommandResponsePayload = new { myResponse = "all good"}
                 };

@@ -8,6 +8,7 @@ namespace Rido.IoTHubClient.Tests
         public void BuildAckFromSimpleValues()
         {
             var inJson = "{\"$version\":1,\"tool\":\"test\"}";
+            
             var ack = new PropertyAck()
             {
                 Description = "ack description",
