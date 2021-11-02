@@ -3,19 +3,19 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
-
     public interface IHubMqttClient
     {
-        bool IsConnected { get; }
         ConnectionSettings ConnectionSettings { get; }
-        Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentName = "");
-        Task<string> GetTwinAsync();
-        Task<int> UpdateTwinAsync(object payload);
-        event EventHandler<PropertyEventArgs> OnPropertyReceived;
-        event EventHandler<CommandEventArgs> OnCommandReceived;
-        event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
-        Task CommandResponseAsync(string rid, string cmdName, string status, object payload);
-        Task CloseAsync();
-    }
+        bool IsConnected { get; }
+        Func<CommandRequest, CommandResponse> OnCommand { get; set; }
+        Func<PropertyReceived, PropertyAck> OnPropertyChange { get; set; }
 
+        event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
+        Task CloseAsync();
+        Task CommandResponseAsync(string rid, string cmdName, string status, object payload);
+        void Dispose();
+        Task<string> GetTwinAsync();
+        Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "");
+        Task<int> UpdateTwinAsync(object payload);
+    }
 }

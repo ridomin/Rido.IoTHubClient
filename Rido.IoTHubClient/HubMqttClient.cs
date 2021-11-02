@@ -20,15 +20,18 @@ namespace Rido.IoTHubClient
     public class HubMqttClient : IHubMqttClient, IDisposable
     {
         public bool IsConnected => mqttClient.IsConnected;
-        public event EventHandler<CommandEventArgs> OnCommandReceived;
-        public event EventHandler<PropertyEventArgs> OnPropertyReceived;
+
+        public Func<CommandRequest, CommandResponse> OnCommand { get; set; }
+        public Func<PropertyReceived, PropertyAck> OnPropertyChange { get; set; }
+
+        //public event EventHandler<PropertyEventArgs> OnPropertyReceived;
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
 
         public ConnectionSettings ConnectionSettings { get; private set; }
 
+        const int twinOperationTimeoutSeconds = 5;
         IMqttClient mqttClient;
         static Timer timerTokenRenew;
-        const int twinOperationTimeoutSeconds = 5;
 
         static Action<string> twin_cb;
         static Action<int> patch_cb;
@@ -36,8 +39,9 @@ namespace Rido.IoTHubClient
         bool reconnecting = false;
         private bool disposedValue;
 
-        private HubMqttClient()
+        private HubMqttClient(ConnectionSettings cs)
         {
+            ConnectionSettings = cs;
             MqttNetLogger logger = new MqttNetLogger();
             logger.LogMessagePublished += (s, e) =>
             {
@@ -54,13 +58,12 @@ namespace Rido.IoTHubClient
             ConfigureReservedTopics();
             mqttClient.UseDisconnectedHandler(async e =>
             {
-                Trace.TraceError("## DISCONNECT ##");
-                Trace.TraceError($"** {e.ClientWasConnected} {e.Reason}");
+                Trace.TraceError($"## DISCONNECT ## {e.ClientWasConnected} {e.Reason}");
                 OnMqttClientDisconnected?.Invoke(this,
                     new DisconnectEventArgs()
                     {
                         Exception = e.Exception,
-                        DisconnectReason = (DisconnectReason)e.Reason
+                        DisconnectReason = (DisconnectReason)e.Reason,
                         //ResultCode = (ConnResultCode)e.AuthenticateResult?.ResultCode
                     });
 
@@ -84,21 +87,21 @@ namespace Rido.IoTHubClient
             });
         }
 
-        public static async Task<IHubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
+        public static async Task<HubMqttClient> CreateFromConnectionStringAsync(string connectionString) =>
             await CreateFromDCSAsync(ConnectionSettings.FromConnectionString(connectionString));
 
-        public static async Task<IHubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey, string modelId = "") =>
+        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string sasKey, string modelId = "") =>
             await CreateFromDCSAsync(new ConnectionSettings() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey, ModelId = modelId });
 
         // TODO: Review overloads, easy to conflict with the optional param
-        public static async Task<IHubMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
+        public static async Task<HubMqttClient> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
            await CreateFromDCSAsync(new ConnectionSettings() { HostName = hostName, DeviceId = deviceId, ModuleId = moduleId, SharedAccessKey = sasKey, ModelId = modelId });
 
         public static async Task<HubMqttClient> CreateFromDCSAsync(ConnectionSettings dcs)
         {
             await ProvisionIfNeeded(dcs);
 
-            var client = new HubMqttClient();
+            var client = new HubMqttClient(dcs);
             MqttClientAuthenticateResult connAck = null;
 
             if (dcs.Auth == "X509")
@@ -110,7 +113,7 @@ namespace Rido.IoTHubClient
                 var cid = cert.Subject[3..];
                 string deviceId = cid;
                 string moduleId = string.Empty;
-                    
+
                 if (cid.Contains("/")) // is a module
                 {
                     var segmentsId = cid.Split('/');
@@ -198,13 +201,9 @@ namespace Rido.IoTHubClient
                 moduleId = segments[1];
             }
 
-            var client = new HubMqttClient();
+            var client = new HubMqttClient(ConnectionSettings.FromConnectionString($"HostName={hostname};DeviceId={deviceId};ModuleId={moduleId};Auth=X509"));
             var connack = await client.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
-            if (connack.ResultCode == MqttClientConnectResultCode.Success)
-            {
-                client.ConnectionSettings = ConnectionSettings.FromConnectionString($"HostName={hostname};DeviceId={deviceId};ModuleId={moduleId};Auth=X509");
-            }
-            else
+            if (connack.ResultCode != MqttClientConnectResultCode.Success)
             {
                 throw new ApplicationException($"Error connecting: {connack.ResultCode} {connack.ReasonString}");
             }
@@ -349,7 +348,7 @@ namespace Rido.IoTHubClient
 
 
 
-            mqttClient.UseApplicationMessageReceivedHandler(e =>
+            mqttClient.UseApplicationMessageReceivedHandler(async e =>
             {
                 string msg = string.Empty;
 
@@ -380,25 +379,24 @@ namespace Rido.IoTHubClient
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/events/desired-changed"))
                 {
-                    OnPropertyReceived?.Invoke(this, new PropertyEventArgs()
+                    var ack = OnPropertyChange?.Invoke(new PropertyReceived()
                     {
-                        Topic = e.ApplicationMessage.Topic,
                         Rid = rid.ToString(),
-                        PropertyMessageJson = TwinProperties.RemoveVersion(msg),
+                        Topic = e.ApplicationMessage.Topic,
+                        PropertyMessageJson = msg,
                         Version = twinVersion
                     });
+                    await UpdateTwinAsync(ack.BuildAck());
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/methods"))
                 {
                     var cmdName = segments[3];
-                    //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic} {cmdName} {e.ApplicationMessage.Payload.Length} Bytes");
-                    OnCommandReceived?.Invoke(this, new CommandEventArgs()
+                    var resp = OnCommand?.Invoke(new CommandRequest()
                     {
-                        Topic = e.ApplicationMessage.Topic,
-                        Rid = rid.ToString(),
                         CommandName = cmdName,
-                        CommandRequestMessageJson = msg
+                        CommandPayload = msg
                     });
+                    await CommandResponseAsync(rid.ToString(), cmdName, resp._status.ToString(), resp.CommandResponsePayload);
                 }
             });
         }
