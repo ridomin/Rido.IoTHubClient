@@ -35,9 +35,10 @@ namespace sample_device
                 Console.WriteLine("Client Disconnected");
             };
 
-            client.OnCommand = req => 
+            client.OnCommand = async req => 
             {
                 System.Console.WriteLine($"<- Received Command {req.CommandName}");
+                await Task.Delay(100);
                 string payload = req.CommandPayload;
                 System.Console.WriteLine(payload);
                 return new CommandResponse
@@ -47,9 +48,10 @@ namespace sample_device
                 };
             };
 
-            client.OnPropertyChange = e =>
+            client.OnPropertyChange = async e =>
             {
-                Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
+                System.Console.WriteLine($"<- Received property {e.PropertyMessageJson}");
+                await Task.Delay(100);
                 return new PropertyAck()
                 {
                     Version = e.Version,

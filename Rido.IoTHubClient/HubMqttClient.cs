@@ -22,10 +22,9 @@ namespace Rido.IoTHubClient
     {
         public bool IsConnected => mqttClient.IsConnected;
 
-        public Func<CommandRequest, CommandResponse> OnCommand { get; set; }
-        public Func<PropertyReceived, PropertyAck> OnPropertyChange { get; set; }
+        public Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
+        public Func<PropertyReceived, Task<PropertyAck>> OnPropertyChange { get; set; }
 
-        //public event EventHandler<PropertyEventArgs> OnPropertyReceived;
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
 
         public ConnectionSettings ConnectionSettings { get; private set; }
@@ -374,7 +373,7 @@ namespace Rido.IoTHubClient
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                 {
-                    var ack = OnPropertyChange?.Invoke(new PropertyReceived()
+                    var ack = await OnPropertyChange?.Invoke(new PropertyReceived()
                     {
                         Rid = rid.ToString(),
                         Topic = e.ApplicationMessage.Topic,
@@ -386,7 +385,7 @@ namespace Rido.IoTHubClient
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
                 {
                     var cmdName = segments[3];
-                    var resp = OnCommand?.Invoke(new CommandRequest()
+                    var resp = await OnCommand?.Invoke(new CommandRequest()
                     {
                         CommandName = cmdName,
                         CommandPayload = msg
