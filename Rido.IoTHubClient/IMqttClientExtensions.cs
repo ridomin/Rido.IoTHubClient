@@ -60,7 +60,7 @@ namespace Rido.IoTHubClient
                 moduleId = segments[1];
             }
                                  
-            string username = SasAuth.GetUserName(hostName, deviceId, moduleId, string.Empty, modelId, AuthType.X509);
+            string username = SasAuth.GetUserName(hostName, deviceId, moduleId, string.Empty, modelId, "X509");
             
             return await mqttClient.ConnectAsync(
                new MqttClientOptionsBuilder()
