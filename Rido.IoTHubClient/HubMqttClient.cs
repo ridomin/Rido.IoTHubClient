@@ -390,7 +390,7 @@ namespace Rido.IoTHubClient
                         CommandName = cmdName,
                         CommandPayload = msg
                     });
-                    await CommandResponseAsync(rid.ToString(), cmdName, resp._status.ToString(), resp.CommandResponsePayload);
+                    await CommandResponseAsync(rid.ToString(), cmdName, resp.Status.ToString(), resp.CommandResponsePayload);
                 }
             });
         }

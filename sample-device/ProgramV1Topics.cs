@@ -43,7 +43,7 @@ namespace sample_device
                 System.Console.WriteLine(payload);
                 return new CommandResponse
                 {
-                    _status = 200,
+                    Status = 200,
                     CommandResponsePayload = new { myResponse = "all good"}
                 };
             };

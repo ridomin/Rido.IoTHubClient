@@ -233,7 +233,7 @@ namespace Rido.IoTHubClient.Tests
                 commandInvoked = true;
                 return await Task.FromResult(new CommandResponse()
                 {
-                    _status = 200,
+                    Status = 200,
                     CommandResponsePayload = new { myResponse = "ok" }
                 });
             };
