@@ -96,7 +96,7 @@ Console.WriteLine("Twin PATCHED version: " + version));
 ### Respond to Twin updates (Desired Properties)
 
 ```cs
-client.OnPropertyChange = e =>
+client.OnPropertyChange = async e =>
 {
     Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
     return new PropertyAck()
@@ -112,14 +112,14 @@ client.OnPropertyChange = e =>
 ### Respond to Commands
 
 ```cs
-client.OnCommand = req => 
+client.OnCommand = async req => 
 {
     System.Console.WriteLine($"<- Received Command {req.CommandName}");
     string payload = req.CommandPayload;
     System.Console.WriteLine(payload);
     return new CommandResponse
     {
-        _status = 200,
+        Status = 200,
         CommandResponsePayload = new { myResponse = "all good"}
     };
 };
@@ -177,7 +177,7 @@ System.Console.WriteLine(dcs);
 var connack = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
 Console.WriteLine($"{nameof(mqttClient.IsConnected)}:{mqttClient.IsConnected} . {connack.ResultCode}");
 
- var topic = $"vehicles";
+var topic = $"vehicles";
 var subAck = await mqttClient.SubscribeAsync(topic + $"/+/telemetry");
 subAck.Items.ForEach(x => Console.WriteLine($"{x.TopicFilter}{x.ResultCode}"));
 
