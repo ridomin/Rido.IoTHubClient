@@ -3,6 +3,7 @@ using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Options;
 using MQTTnet.Diagnostics;
+using MQTTnet.Diagnostics.Logger;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -67,7 +68,7 @@ namespace Rido.IoTHubClient
                 Trace.Listeners.Add(new TextWriterTraceListener(writer));
                 Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-                MqttNetLogger logger = new MqttNetLogger();
+                MqttNetEventLogger logger = new MqttNetEventLogger();
                 logger.LogMessagePublished += (s, e) =>
                 {
                     var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";

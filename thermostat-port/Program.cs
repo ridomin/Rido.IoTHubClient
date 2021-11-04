@@ -1,4 +1,6 @@
-﻿Random random = new();
+﻿using System.Text.Json;
+
+Random random = new();
 double temperature = 0d;
 double maxTemp = 0d;
 Dictionary<DateTimeOffset, double> readings = new();
@@ -28,17 +30,22 @@ thermostat.Command_getMaxMinReport = req =>
     };
 };
 
-thermostat.OntargetTemperatureUpdated = async m =>
+thermostat.OntargetTemperatureUpdated = m =>
 {
     Console.WriteLine("<- w: targetTemperature received " + m.targetTemperature);
-    await thermostat.Ack_TargetTemperature(temperature, 202, m.version);
+    //await thermostat.Ack_TargetTemperature(temperature, 202, m.version);
     double step = (m.targetTemperature - temperature) / 5d;
     for (int i = 1; i <= 2; i++)
     {
         temperature = Math.Round(temperature + step, 1);
-        await Task.Delay(6 * 1000);
+        Task.Delay(6 * 1000);
     }
-    await thermostat.Ack_TargetTemperature(temperature, 200, m.version);
+    return new Rido.IoTHubClient.PropertyAck()
+    {
+        Status = 200,
+        Value = JsonSerializer.Serialize(new { temperature }),
+        Version = m.version
+    };
 };
 
 while (true)
