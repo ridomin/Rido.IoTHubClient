@@ -1,12 +1,11 @@
-﻿using System;
-
-namespace Rido.IoTHubClient
+﻿namespace Rido.IoTHubClient
 {
-    public class PropertyEventArgs : EventArgs
+    public class PropertyReceived
     {
         public string Rid { get; set; }
         public string PropertyMessageJson { get; set; }
         public string Topic { get; set; }
         public int Version { get; set; }
+
     }
 }

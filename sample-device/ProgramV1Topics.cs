@@ -17,43 +17,53 @@ namespace sample_device
 
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
-            Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Information);
+            Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-            string modelId = "dtmi:com:demos;1";
+            //string modelId = "dtmi:com:demos;1";
             //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234", modelId);
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs") + $";ModuleId=m1;ModelId={modelId}");
+            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
 
             Console.WriteLine();
-            Console.WriteLine(client.DeviceConnectionString);
+            Console.WriteLine(client.ConnectionSettings);
             Console.WriteLine();
+
+            var t = await client.GetTwinAsync();
+            Console.WriteLine("Twin REPLY 1" + t);
 
             client.OnMqttClientDisconnected += (s, e) =>
             {
                 Console.WriteLine("Client Disconnected");
             };
 
-            client.OnCommandReceived += async (s, e) =>
+            client.OnCommand = async req => 
             {
-                Console.WriteLine($"Processing Command {e.CommandName}");
-                await Task.Delay(500);
-                await client.CommandResponseAsync(e.Rid, e.CommandName, "200", new { myResponse = "ok" });
+                System.Console.WriteLine($"<- Received Command {req.CommandName}");
+                await Task.Delay(100);
+                string payload = req.CommandPayload;
+                System.Console.WriteLine(payload);
+                return new CommandResponse
+                {
+                    Status = 200,
+                    CommandResponsePayload = new { myResponse = "all good"}
+                };
             };
 
-            client.OnPropertyReceived += async (s, e) =>
+            client.OnPropertyChange = async e =>
             {
-                Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
-                await Task.Delay(500);
-                // todo parse property
-                var ack = TwinProperties.BuildAck(e.PropertyMessageJson, e.Version, 200, "update ok");
-                var v = await client.UpdateTwinAsync(ack);
-                Console.WriteLine("PATCHED ACK: " + v);
+                System.Console.WriteLine($"<- Received property {e.PropertyMessageJson}");
+                await Task.Delay(100);
+                return new PropertyAck()
+                {
+                    Version = e.Version,
+                    Status = 200,
+                    Description = "testing acks",
+                    Value = e.PropertyMessageJson
+                };
             };
-
+            
             await Task.Delay(500);
             await client.SendTelemetryAsync(new { temperature = 1 });
 
-            var t = await client.GetTwinAsync();
-            Console.WriteLine("Twin REPLY 1" + t);
 
             var v = await client.UpdateTwinAsync(new { tool = "from mqttnet22 " + System.Environment.TickCount });
             Console.WriteLine("Twin PATCHED version: " + v);

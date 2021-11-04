@@ -8,11 +8,11 @@ Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](htt
 
 ## Features
 
-- Device Auth for Devices and Modules, X509 + SaS with refresh tokens
+- Device Auth for Devices and Modules, X509 + SaS with token refresh and configurable reconnect
 - V1 support in master (V2 available in the `preview` branch, enabling Pub/Sub to MQTT Broker)
 - DPS Client
 - Telemetry, Properties and Commands using reserved topics for v1 and v2
-- Extended Connection String support
+- Single entry point for DPS, Hub and Central by using a common `ConnectionSettings`
 
 ## Connect to IoTHub
 
@@ -53,7 +53,7 @@ The client will trigger the event ` event EventHandler<MqttClientDisconnectedEve
 
 You can also connect with the MQTTNet client by using the extension methods:
 
-```
+```cs
 var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, sasKey);
 var connack = await mqttClient.ConnectWithX509Async(hostname, certificate);
 ```
@@ -96,24 +96,33 @@ Console.WriteLine("Twin PATCHED version: " + version));
 ### Respond to Twin updates (Desired Properties)
 
 ```cs
-client.OnPropertyReceived += async (s, e) => 
+client.OnPropertyChange = e =>
 {
     Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
-    await Task.Delay(500);
-    var puback = await client.UpdateTwinAsync(new { tool = new { ac = 200, av = e.Version, ad = "updated", value = "put value here" } });
+    return new PropertyAck()
+    {
+        Version = e.Version,
+        Status = 200,
+        Description = "testing acks",
+        Value = e.PropertyMessageJson
+    };
 };
 ```
 
 ### Respond to Commands
 
 ```cs
-client.OnCommandReceived += async (s, e) =>
+client.OnCommand = req => 
 {
-    Console.WriteLine($"Processing Command {e.CommandName}");
-    await Task.Delay(500);
-    await client.CommandResponseAsync(e.Rid, e.CommandName, new { myResponse = "ok" }, "200");
+    System.Console.WriteLine($"<- Received Command {req.CommandName}");
+    string payload = req.CommandPayload;
+    System.Console.WriteLine(payload);
+    return new CommandResponse
+    {
+        _status = 200,
+        CommandResponsePayload = new { myResponse = "all good"}
+    };
 };
-
 ```
 
 # Connection Settings Reference
@@ -121,13 +130,16 @@ client.OnCommandReceived += async (s, e) =>
 This library implements a compatible *connection string* with Azure IoT SDK Device Client, and adds some new properties:
 
 - `HostName` Azure IoT Hub hostname (FQDN)
+- `IdScope` DPS IdScope 
 - `DeviceId` Device Identity 
-- `SharedAccessKey` Device Shared Access Key in Base64
+- `SharedAccessKey` Device Shared Access Key
+- `X509Key` <pathtopfx>|<pfxpassword>
 - `ModelId` DTDL Model ID in DTMI format to create PnP Devices
 - `ModuleId` Device Module Identity
 - `Auth` Device Authentication: [SAS, X509]
 - `SasMinutes` SasToken expire time in minutes
-- `RetryInterval` Wait before connection retries in seconds. 0 to disable automatic reconnects.
+- `RetryInterval` Wait before connection retries in seconds. 0 to disable automatic reconnects
+- `MaxRetries` Max number of retries in case of automatic reconnect
 
 Sample Connection String
 
@@ -153,25 +165,38 @@ When connected to a MQTTBroker enabled hub, this library allows to pub/sub to to
 
 Using MQTTNet directly
 ```cs
-var connack = await mqttClient.ConnectV2WithSasAsync(hostname, deviceId, sasKey);
-```
-
-With the Client implementing v2 reserved topics
-```cs
-var cs = Environment.GetEnvironmentVariable("cs");
-var client = await HubBrokerMqttClient.CreateFromConnectionStringAsync(cs);
-```
-
-```cs
-
-client.OnMessageReceived += (s, e) =>
+var mqttClient = new MqttFactory().CreateMqttClient(); 
+var dcs = new ConnectionSettings
 {
-    string payload = (e.ApplicationMessage.Topic);
-};
+    HostName = "broker.azure-devices.net",
+    DeviceId = "d4",
+    SharedAccessKey = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")))
+}; 
+System.Console.WriteLine(dcs);
 
-await client.SubscribeAsync("vehicles/#");
-await client.PublishAsync($"vehicles/{client.ClientId}/GPS/pos",
-                            new { lat = 23.32323, lon = 54.45454 });
+var connack = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
+Console.WriteLine($"{nameof(mqttClient.IsConnected)}:{mqttClient.IsConnected} . {connack.ResultCode}");
+
+ var topic = $"vehicles";
+var subAck = await mqttClient.SubscribeAsync(topic + $"/+/telemetry");
+subAck.Items.ForEach(x => Console.WriteLine($"{x.TopicFilter}{x.ResultCode}"));
+
+mqttClient.UseApplicationMessageReceivedHandler(e =>
+{
+    Console.Write($"<- {e.ApplicationMessage.Topic} {e.ApplicationMessage.Payload.Length} Bytes: ");
+    Console.WriteLine(Encoding.UTF8.GetString(e.ApplicationMessage.Payload));
+    //Console.Write('.');
+});
+
+while (true)
+{
+    string pubtopic = $"{topic}/{dcs.DeviceId}/telemetry";
+    var msg = Environment.TickCount64.ToString();
+    var pubAck = await mqttClient.PublishAsync(pubtopic, msg);
+    Console.WriteLine($"-> {pubtopic} {msg}. {pubAck.ReasonCode}");
+    await Task.Delay(1000);
+}
+
 ```
 
 To create topic spaces, use
