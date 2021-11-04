@@ -1,16 +1,20 @@
-﻿using System.Text.Json;
+﻿using Rido.IoTHubClient;
+using System.Text.Json;
 
 Random random = new();
 double temperature = 0d;
 double maxTemp = 0d;
-Dictionary<DateTimeOffset, double> readings = new();
+Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxTemp } };
 
 string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
 
 Thermostat thermostat = new(connectionString);
 
-await thermostat.Report_maxTempSinceLastReboot(maxTemp);
-Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
+var targetTemperature = await thermostat.GetTargetTemperature();
+if (targetTemperature?.targetTemperature != null)
+{
+    AdjustTempInSteps(targetTemperature.targetTemperature);
+}
 
 thermostat.Command_getMaxMinReport = req =>
 {
@@ -33,37 +37,52 @@ thermostat.Command_getMaxMinReport = req =>
 thermostat.OntargetTemperatureUpdated = m =>
 {
     Console.WriteLine("<- w: targetTemperature received " + m.targetTemperature);
-    //await thermostat.Ack_TargetTemperature(temperature, 202, m.version);
-    double step = (m.targetTemperature - temperature) / 5d;
-    for (int i = 1; i <= 2; i++)
+    Task.Run(async () => await thermostat.Report_targetTemperatureACK(new PropertyAck
     {
-        temperature = Math.Round(temperature + step, 1);
-        Task.Delay(6 * 1000);
-    }
-    return new Rido.IoTHubClient.PropertyAck()
+        Description = "updating",
+        Status = 202,
+        Version = m.version,
+        Value = JsonSerializer.Serialize(new { temperature })
+    }));
+
+    AdjustTempInSteps(m.targetTemperature);
+
+    return new PropertyAck()
     {
+        Description = "updated",
         Status = 200,
-        Value = JsonSerializer.Serialize(new { temperature }),
-        Version = m.version
+        Version = m.version,
+        Value = JsonSerializer.Serialize(new { temperature })
     };
 };
 
 while (true)
 {
-    temperature = Math.Round(random.NextDouble() * 40.0 + 5.0, 1);
-    readings.Add(DateTimeOffset.Now, temperature);
-
     if (readings.Values.Max<double>() > maxTemp)
     {
         maxTemp = readings.Values.Max<double>();
         await thermostat.Report_maxTempSinceLastReboot(maxTemp);
         Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
     }
-
     await thermostat.Send_temperature(temperature);
     Console.WriteLine("-> t: temperature " + temperature);
-    await Task.Delay(2000); 
+    await Task.Delay(2000);
 }
 
+void AdjustTempInSteps(double target)
+{
+    Console.WriteLine("adjusting temp to: " + target);
+    Task.Run(async () =>
+    {
+        double step = (target - temperature) / 10d;
+        for (int i = 1; i <= 10; i++)
+        {
+            temperature = Math.Round(temperature + step, 1);
+            readings.Add(DateTimeOffset.Now, temperature);
 
+
+            await Task.Delay(1000);
+        }
+    });
+}
 
