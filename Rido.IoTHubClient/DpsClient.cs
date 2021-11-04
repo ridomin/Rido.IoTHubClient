@@ -145,7 +145,7 @@ namespace Rido.IoTHubClient
 
             var putTopic = $"$dps/registrations/PUT/iotdps-register/?$rid={rid}";
             var puback = await mqttClient.PublishAsync(putTopic,
-                JsonSerializer.Serialize(new { registrationId = registrationId, payload = new { modelId = modelId } }));
+                JsonSerializer.Serialize(new { registrationId, payload = new { modelId } }));
 
         }
     }
