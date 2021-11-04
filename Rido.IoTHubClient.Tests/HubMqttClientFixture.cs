@@ -146,12 +146,13 @@ namespace Rido.IoTHubClient.Tests
             HubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             bool propertyReceived = false;
             var updatedVersion = 0;
-            client.OnPropertyChange = e =>
+            client.OnPropertyChange = async e =>
             {
                 output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
+                await Task.Delay(100);
                 propertyReceived = true;
                 updatedVersion = e.Version;
-                return new PropertyAck
+                return new PropertyAck()
                 {
                     Description = "test update",
                     Status = 200,
@@ -186,18 +187,18 @@ namespace Rido.IoTHubClient.Tests
             HubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             bool propertyReceived = false;
             var updatedVersion = 0;
-            client.OnPropertyChange = e =>
+            client.OnPropertyChange = async e =>
             {
                 output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 propertyReceived = true;
                 updatedVersion = e.Version;
-                return new PropertyAck
+                return await Task.FromResult(new PropertyAck
                 {
                     Description = "test update",
                     Status = 200,
                     Version = e.Version,
                     Value = e.PropertyMessageJson
-                };
+                });
             };
             var twin = await rm.GetTwinAsync(deviceId);
             twin.Properties.Desired["myDProp"] = new { aComplexPerson = new { withName = "rido" } };
@@ -227,15 +228,15 @@ namespace Rido.IoTHubClient.Tests
             HubMqttClient client = await HubMqttClient.CreateAsync(hubName, device.Id, device.Authentication.SymmetricKey.PrimaryKey);
             bool commandInvoked = false;
 
-            client.OnCommand = req =>
+            client.OnCommand = async req =>
             {
                 Console.WriteLine($"Processing Command {req.CommandName}");
                 commandInvoked = true;
-                return new CommandResponse()
+                return await Task.FromResult(new CommandResponse()
                 {
-                    _status = 200,
+                    Status = 200,
                     CommandResponsePayload = new { myResponse = "ok" }
-                };
+                });
             };
 
             int retries = 0;

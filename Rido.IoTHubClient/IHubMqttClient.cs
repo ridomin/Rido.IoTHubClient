@@ -7,8 +7,8 @@ namespace Rido.IoTHubClient
     {
         ConnectionSettings ConnectionSettings { get; }
         bool IsConnected { get; }
-        Func<CommandRequest, CommandResponse> OnCommand { get; set; }
-        Func<PropertyReceived, PropertyAck> OnPropertyChange { get; set; }
+        Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
+        Func<PropertyReceived, Task<PropertyAck>> OnPropertyChange { get; set; }
 
         event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         Task CloseAsync();
