@@ -86,24 +86,24 @@ namespace sample_device
                 Console.WriteLine("Client Disconnected");
             };
 
-            client.OnCommand = req =>
+            client.OnCommand = async req =>
             {
                 Console.WriteLine($"Processing Command {req.CommandName}");
-                //await Task.Delay(500);
+                await Task.Delay(100);
                 return new CommandResponse()
                 {
                     CommandName = req.CommandName,
-                    _status = 200,
+                    Status = 200,
                     CommandResponsePayload = new { myResponse = "ok" }
                 };
             };
 
-            client.OnPropertyChange = e =>
+            client.OnPropertyChange = async e =>
             {
                 Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
-                //await Task.Delay(500);
+                await Task.Delay(100);
                 // todo parse property
-                return new PropertyAck
+                return new PropertyAck()
                 {
                     Description ="updated",
                     Status = 200,
