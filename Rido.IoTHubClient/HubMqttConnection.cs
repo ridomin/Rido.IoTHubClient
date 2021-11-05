@@ -73,7 +73,7 @@ namespace Rido.IoTHubClient
             });
         }
 
-        public static async Task<HubMqttConnection> CreateFromDCSAsync(ConnectionSettings dcs)
+        public static async Task<HubMqttConnection> CreateAsync(ConnectionSettings dcs)
         {
             await ProvisionIfNeeded(dcs);
             var client = new HubMqttConnection(dcs);
@@ -129,7 +129,7 @@ namespace Rido.IoTHubClient
             return client;
         }
 
-        public static async Task<HubMqttConnection> CreateWithClientCertsAsync(string hostname, X509Certificate2 cert, string modelId = "")
+        public static async Task<HubMqttConnection> CreateAsync(string hostname, X509Certificate2 cert, string modelId = "")
         {
             string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
             Trace.TraceInformation(certInfo);
@@ -211,7 +211,7 @@ namespace Rido.IoTHubClient
                 timerTokenRenew.Dispose();
                 CloseAsync().Wait();
                 var dcs = ConnectionSettings;
-                MqttClient = CreateFromDCSAsync(dcs).Result.MqttClient;
+                MqttClient = CreateAsync(dcs).Result.MqttClient;
                 Trace.TraceWarning($"Refreshed Result: {MqttClient.IsConnected}");
                 reconnecting = false;
                 timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);

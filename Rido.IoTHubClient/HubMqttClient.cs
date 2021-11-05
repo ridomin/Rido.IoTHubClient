@@ -31,11 +31,14 @@ namespace Rido.IoTHubClient
 
         readonly HubMqttConnection connection;
 
+        public static async Task<IHubMqttClient> CreateAsync(string hostname, string deviceId, string deviceKey) => 
+            await CreateAsync(new ConnectionSettings { HostName = hostname, DeviceId = deviceId, SharedAccessKey = deviceKey });
+
         public static async Task<IHubMqttClient> CreateAsync(string cs) => await CreateAsync(ConnectionSettings.FromConnectionString(cs));
 
         public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs)
         {
-            var mqttConnection = await HubMqttConnection.CreateFromDCSAsync(cs);
+            var mqttConnection = await HubMqttConnection.CreateAsync(cs);
             var hubClient = new HubMqttClient(mqttConnection);
             hubClient.ConfigureReservedTopics();
             mqttConnection.OnMqttClientDisconnected += (o, e) => hubClient.OnMqttClientDisconnected?.Invoke(o, e);

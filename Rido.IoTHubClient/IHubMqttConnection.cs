@@ -9,6 +9,5 @@ namespace Rido.IoTHubClient
         bool IsConnected { get; }
         event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         Task CloseAsync();
-
     }
 }
