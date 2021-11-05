@@ -49,10 +49,7 @@ namespace Rido.IoTHubClient
                 {
                     if (int.TryParse(stringValue, out int intValue))
                     {
-                        if (intValue > 0)
-                        {
-                            result = intValue;
-                        }
+                        result = intValue;
                     }
                 }
                 return result;
