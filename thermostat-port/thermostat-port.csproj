@@ -5,6 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>thermostat_port</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,8 +19,8 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<Using Include="Rido.IoTHubClient "/>
-		<Using Include="System.Text.Json "/>
+		<Using Include="Rido.IoTHubClient " />
+		<Using Include="System.Text.Json " />
 	</ItemGroup>
 		
 	

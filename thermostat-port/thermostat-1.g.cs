@@ -97,7 +97,7 @@ public class Thermostat
                 JsonElement targetTemperatureEl = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature");
                 if (targetTemperatureEl.TryGetDouble(out double targetTempValue))
                 {
-                    var ack = await OntargetTemperatureUpdated.Invoke(
+                    PropertyAck ack = await OntargetTemperatureUpdated?.Invoke(
                         new TargetTemperature { 
                             targetTemperature = targetTempValue,
                             version = twinVersion });
@@ -159,7 +159,7 @@ public class Thermostat
     public async Task Report_targetTemperatureACK(PropertyAck ack)
     {
         var puback = await connection.PublishAsync(
-           $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.BuildAck());
+           $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack?.BuildAck());
     }
 
     Action<string>? getTwin_cb;

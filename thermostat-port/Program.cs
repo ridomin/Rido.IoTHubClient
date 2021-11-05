@@ -40,7 +40,7 @@ thermostat.OntargetTemperatureUpdated = async  m =>
         Description = "updating",
         Status = 202,
         Version = m.version,
-        Value = JsonSerializer.Serialize(new { temperature })
+        Value = JsonSerializer.Serialize(new { targetTemperature = temperature })
     });
 
     AdjustTempInSteps(m.targetTemperature);
@@ -50,7 +50,7 @@ thermostat.OntargetTemperatureUpdated = async  m =>
         Description = "updated",
         Status = 200,
         Version = m.version,
-        Value = JsonSerializer.Serialize(new { temperature })
+        Value = JsonSerializer.Serialize(new { targetTemperature = temperature })
     };
 };
 
