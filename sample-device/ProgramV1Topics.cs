@@ -21,11 +21,13 @@ namespace sample_device
 
             //string modelId = "dtmi:com:demos;1";
             //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234", modelId);
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            var client = await HubMqttClient.CreateAsync(ConnectionSettings.FromConnectionString(Environment.GetEnvironmentVariable("cs")));
 
             Console.WriteLine();
             Console.WriteLine(client.ConnectionSettings);
             Console.WriteLine();
+
+            await client.SendTelemetryAsync(new { temperature = 21 });
 
             var t = await client.GetTwinAsync();
             Console.WriteLine("Twin REPLY 1" + t);
@@ -71,7 +73,7 @@ namespace sample_device
             int missedMessages = 0;
             while (missedMessages < 10)
             {
-                if (client.IsConnected)
+                if (client.connection.IsConnected)
                 {
                     await client.SendTelemetryAsync(new { temperature = 21 });
                     Console.Write("t");
