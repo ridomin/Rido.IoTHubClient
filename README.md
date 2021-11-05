@@ -2,63 +2,50 @@
 
 Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](https://github.com/chkr1011/MQTTnet)
 
-[![.NET](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml/badge.svg)](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml)
+|master|preview|
+|--|--|
+|[![.NET](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml/badge.svg)](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml)|[![.NET](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml/badge.svg?branch=preview)](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml)|
 
-[![.NET](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml/badge.svg?branch=preview)](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml)
+# Features
 
-## Features
-
-- Device Auth for Devices and Modules, X509 + SaS with token refresh and configurable reconnect
-- V1 support in master (V2 available in the `preview` branch, enabling Pub/Sub to MQTT Broker)
+- Device Auth for Devices and Modules, X509 + SaS with token refresh and reconnects
+- ClassicHub support in master 
+- Broker-Enabled Hub available in the `preview` branch, with custom pub/sub support)
 - DPS Client
-- Telemetry, Properties and Commands using reserved topics for v1 and v2
+- Telemetry, Properties and Commands using reserved topics for classic and broker-enabled hubs
 - Single entry point for DPS, Hub and Central by using a common `ConnectionSettings`
 
-## Connect to IoTHub
+## Connect to IoT Hub
 
-Connect Device With SaS
+### Authentication
 
-```cs
-var client = await HubMqttClient.CreateAsync(hostname, device, sasKey);
-```
-
-Connect Module With SaS
+- X509 and SAS Authentication available as `IMqttClient` extension methods.
 
 ```cs
-var client = await HubMqttClient.CreateAsync(hostname, device, module, sasKey);
+mqttClient = MqttFactory().CreateMqttClient();
+connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, sasKey);
+connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, moduleId, sasKey);
+connack = await mqttClient.ConnectWithX509Async(hostname, certificate);
 ```
 
-Announce the model Id
+> Note: To connect with module identity, certificates, PnP, or other connection option use the
+ [connection settings ](#connection-settings-reference) overload.
+
+### Connection Management
+
+- The `HubMqttConnection` class handles Sas Token refresh and Reconnects, configurable using the `ConnectionSettings`.
+- Disconnects trigger the event ` event EventHandler<MqttClientDisconnectedEventArgs> OnMqttClientDisconnected;`
 
 ```cs
-var client = await HubMqttClient.CreateAsync(hostname, device, sasKey, modelId);
+var connection = await HubMqttConnection.CreateAsync(
+  ConnectionSettings.FromConnectionString(
+    Environment.GetEnvironmentVariable("cs")));
 ```
 
-Connect Device or Module with X509
-
-```cs
-var client = await HubMqttClient.CreateWithClientCertsAsync(hostname, certificate);
-```
-
-> Note: See [connection settings reference](#connection-settings-reference)
-
-### Disconnects
-
-The client will trigger the event ` event EventHandler<MqttClientDisconnectedEventArgs> OnMqttClientDisconnected;`
-
-(also visible in diagnostics traces)
-
-
-### MQTT Extensions
-
-You can also connect with the MQTTNet client by using the extension methods:
-
-```cs
-var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, sasKey);
-var connack = await mqttClient.ConnectWithX509Async(hostname, certificate);
-```
 
 ### DPS Support
+
+When using a connection setting with `IdSCope` the HubMqttConnection class will provision and set the assigned hub to the connection setting.
 
 ```cs
 var dpsRes = await DpsClient.ProvisionWithSasAsync("<IdScope>", "<deviceId>", "<deviceKey>");
@@ -70,30 +57,37 @@ var dpsRes = await DpsClient.ProvisionWithCertAsync("<IdScope>", certificate);
 Console.WriteLine(dpsRes.registrationState.assignedHub));
 ```
 
+### Reserved Topics Usage
 
-## Reserved Topics Usage
+Reserved topics to use Telemetry, Properties and Commands are implemented in the `HubMqttClient`.
 
-### Send Telemetry
+```cs
+var client = await HubMqttClient.CreateAsync(
+  ConnectionSettings.FromConnectionString(
+    Environment.GetEnvironmentVariable("cs")));
+```
+
+#### Send Telemetry
 
 ```cs
 await client.SendTelemetryAsync(new { temperature = 1 });
 ```
 
-### Read Twin
+#### Read Twin
 
 ```cs
 var twin = await client.GetTwinAsync();
 ```
 
 
-### Update Twin (Reported Properties)
+#### Update Twin (Reported Properties)
 
 ```cs
 var version = await client.UpdateTwinAsync(new { tool = "from Rido.IoTHubClient" }); 
 Console.WriteLine("Twin PATCHED version: " + version));
 ```
 
-### Respond to Twin updates (Desired Properties)
+#### Respond to Twin updates (Desired Properties)
 
 ```cs
 client.OnPropertyChange = async e =>
@@ -109,7 +103,7 @@ client.OnPropertyChange = async e =>
 };
 ```
 
-### Respond to Commands
+#### Respond to Commands
 
 ```cs
 client.OnCommand = async req => 
@@ -133,13 +127,13 @@ This library implements a compatible *connection string* with Azure IoT SDK Devi
 - `IdScope` DPS IdScope 
 - `DeviceId` Device Identity 
 - `SharedAccessKey` Device Shared Access Key
-- `X509Key` <pathtopfx>|<pfxpassword>
+- `X509Key` __pathtopfx>|<pfxpassword__
 - `ModelId` DTDL Model ID in DTMI format to create PnP Devices
 - `ModuleId` Device Module Identity
 - `Auth` Device Authentication: [SAS, X509]
-- `SasMinutes` SasToken expire time in minutes
-- `RetryInterval` Wait before connection retries in seconds. 0 to disable automatic reconnects
-- `MaxRetries` Max number of retries in case of automatic reconnect
+- `SasMinutes` SasToken expire time in minutes, default to `60`.
+- `RetryInterval` Wait before connection retries in seconds. 0 to disable automatic reconnects, default to `5`.
+- `MaxRetries` Max number of retries in case of automatic reconnect. default to `10`.
 
 Sample Connection String
 
@@ -157,23 +151,19 @@ Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
 Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 ```
 
-## Custom Topics Usage
+# Custom Topics Usage
 
-> Custom topics require IoTHub V2, available in the `preview` branch
+Using custom topics requires access tp an IoTHub enabled broker *actually in provate preview*. 
+Instructions available [here](https://github.com/Azure/IoTHubMQTTBrokerPreviewSamples#private-preview-program-information)
 
-When connected to a MQTTBroker enabled hub, this library allows to pub/sub to topics defined in the hub topic-space.
+The `preview` branch implements the Authentication scheme and reserved topics.
+
 
 Using MQTTNet directly
 ```cs
 var mqttClient = new MqttFactory().CreateMqttClient(); 
-var dcs = new ConnectionSettings
-{
-    HostName = "broker.azure-devices.net",
-    DeviceId = "d4",
-    SharedAccessKey = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")))
-}; 
+var dcs = ConnectionSettings.FromConnectionString(cs);
 System.Console.WriteLine(dcs);
-
 var connack = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey);
 Console.WriteLine($"{nameof(mqttClient.IsConnected)}:{mqttClient.IsConnected} . {connack.ResultCode}");
 
