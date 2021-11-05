@@ -1,18 +1,18 @@
-﻿Random random = new();
+﻿using System.Collections.Concurrent;
+
+Random random = new();
 double temperature = 0d;
 double maxTemp = 0d;
-Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxTemp } };
+ConcurrentDictionary<DateTimeOffset, double> readings = new();
+readings.TryAdd(DateTimeOffset.Now, 0);
 
-string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
-
+string connectionString = Environment.GetEnvironmentVariable("central") ?? throw new ArgumentException("Env Var 'cs' not found.");
 Thermostat thermostat = await Thermostat.CreateAsync(connectionString);
 Console.WriteLine(thermostat.connection.ConnectionSettings);
 
 var targetTemperature = await thermostat.GetTargetTemperature();
-if (targetTemperature?.targetTemperature != null)
-{
-    AdjustTempInSteps(targetTemperature.targetTemperature);
-}
+AdjustTempInSteps(targetTemperature.targetTemperature);
+
 
 thermostat.Command_getMaxMinReport = req =>
 {
@@ -32,16 +32,16 @@ thermostat.Command_getMaxMinReport = req =>
     };
 };
 
-thermostat.OntargetTemperatureUpdated = m =>
+thermostat.OntargetTemperatureUpdated = async  m =>
 {
     Console.WriteLine("<- w: targetTemperature received " + m.targetTemperature);
-    Task.Run(async () => await thermostat.Report_targetTemperatureACK(new PropertyAck
+    await thermostat.Report_targetTemperatureACK(new PropertyAck
     {
         Description = "updating",
         Status = 202,
         Version = m.version,
         Value = JsonSerializer.Serialize(new { temperature })
-    }));
+    });
 
     AdjustTempInSteps(m.targetTemperature);
 
@@ -76,9 +76,7 @@ void AdjustTempInSteps(double target)
         for (int i = 1; i <= 10; i++)
         {
             temperature = Math.Round(temperature + step, 1);
-            readings.Add(DateTimeOffset.Now, temperature);
-
-
+            readings.TryAdd(DateTimeOffset.Now, temperature);
             await Task.Delay(1000);
         }
     });

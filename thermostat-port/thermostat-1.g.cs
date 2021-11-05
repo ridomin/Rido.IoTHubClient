@@ -44,19 +44,21 @@ public class Thermostat
     int lastRid = 0;
     internal HubMqttConnection connection ;
 
-    public Func<TargetTemperature, PropertyAck>? OntargetTemperatureUpdated = null;
+    public Func<TargetTemperature, Task<PropertyAck>> OntargetTemperatureUpdated;
 
-    public Func<Command_getMaxMinReport_Request, Command_getMaxMinReport_Response>? Command_getMaxMinReport = null;
+    public Func<Command_getMaxMinReport_Request, Command_getMaxMinReport_Response> Command_getMaxMinReport;
 
     public static async Task<Thermostat> CreateAsync(string cs)
     {
-        var c = await HubMqttConnection.CreateAsync(ConnectionSettings.FromConnectionString(cs));
+        var conSettings = ConnectionSettings.FromConnectionString(cs);
+        conSettings.ModelId = "dtmi:com:example:Thermostat;1";
+        var c = await HubMqttConnection.CreateAsync(conSettings);
         Thermostat t = new Thermostat(c);
         await t.Configure();
         return t;
     }
 
-    public Thermostat(HubMqttConnection conn)
+    Thermostat(HubMqttConnection conn)
     {
         connection = conn;
     }
@@ -92,9 +94,17 @@ public class Thermostat
             string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
             {
-                JsonElement targetTemperature = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature");
-                var ack = OntargetTemperatureUpdated?.Invoke(new TargetTemperature { targetTemperature = targetTemperature.GetDouble(), version = twinVersion });
-                if (ack != null) await this.Report_targetTemperatureACK(ack);
+                JsonElement targetTemperatureEl = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature");
+                if (targetTemperatureEl.TryGetDouble(out double targetTempValue))
+                {
+                    var ack = await OntargetTemperatureUpdated.Invoke(
+                        new TargetTemperature { 
+                            targetTemperature = targetTempValue,
+                            version = twinVersion });
+
+                if (ack != null) await Report_targetTemperatureACK(ack);
+                }
+                    
             }
 
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
