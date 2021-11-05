@@ -33,7 +33,10 @@ namespace Rido.IoTHubClient.Tests
         {
             await GetOrCreateDeviceAsync("testdevice", true);
             //HubMqttClient client = await HubMqttClient.CreateWithClientCertsAsync(hubName, new X509Certificate2("testdevice.pfx", "1234"));
-            var client = await HubMqttClient.CreateAsync(new ConnectionSettings() { HostName = hubName, Auth = "X509", X509Key = "testdevice.pfx|1234" });
+            var client = await HubMqttClient.CreateAsync(new ConnectionSettings() { 
+                HostName = hubName, 
+                Auth = "X509", 
+                X509Key = "testdevice.pfx|1234" });
             Assert.True(client.IsConnected);
             var t = await client.GetTwinAsync();
             Assert.StartsWith("{", t);

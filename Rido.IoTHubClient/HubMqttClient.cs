@@ -12,7 +12,7 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient : IHubMqttClient
+    public class HubMqttClient : IHubMqttClient, IDisposable
     {
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         public Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
@@ -24,6 +24,7 @@ namespace Rido.IoTHubClient
         static Action<string> twin_cb;
         static Action<int> patch_cb;
         int lastRid = 1;
+        private bool disposedValue;
         readonly HubMqttConnection connection;
         public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
         public bool IsConnected => connection.IsConnected;
@@ -169,6 +170,25 @@ namespace Rido.IoTHubClient
                     await CommandResponseAsync(rid.ToString(), cmdName, resp.Status.ToString(), resp.CommandResponsePayload);
                 }
             });
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    connection?.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

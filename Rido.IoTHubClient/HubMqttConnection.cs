@@ -53,7 +53,7 @@ namespace Rido.IoTHubClient
                         //ResultCode = (ConnResultCode)e.AuthenticateResult?.ResultCode
                     });
 
-                if (ConnectionSettings.RetryInterval > 0)
+                if (ConnectionSettings.RetryInterval > 0 &&  !reconnecting)
                 {
                     try
                     {
@@ -68,7 +68,7 @@ namespace Rido.IoTHubClient
                 }
                 else
                 {
-                    Trace.TraceWarning($"*** Reconnecting Disabled {ConnectionSettings.RetryInterval}");
+                    Trace.TraceWarning($"*** Skipping Reconnect. reconnecting={reconnecting}  RetryInterval={ConnectionSettings.RetryInterval}");
                 }
             });
         }
@@ -187,14 +187,17 @@ namespace Rido.IoTHubClient
         }
         public async Task CloseAsync()
         {
-            var unsuback = await MqttClient.UnsubscribeAsync(new string[]
+            if (MqttClient.IsConnected)
             {
-                "$iothub/methods/POST/#",
-                "$iothub/twin/res/#",
-                "$iothub/twin/PATCH/properties/desired/#"
-            });
-            unsuback.Items.ToList().ForEach(i => Trace.TraceInformation($"- {i.TopicFilter} {i.ReasonCode}"));
-            await MqttClient.DisconnectAsync();
+                var unsuback = await MqttClient.UnsubscribeAsync(new string[]
+                {
+                    "$iothub/methods/POST/#",
+                    "$iothub/twin/res/#",
+                    "$iothub/twin/PATCH/properties/desired/#"
+                });
+                unsuback.Items.ToList().ForEach(i => Trace.TraceInformation($"- {i.TopicFilter} {i.ReasonCode}"));
+                await MqttClient.DisconnectAsync();
+            }
         }
 
         void ReconnectWithToken(object state)
@@ -206,7 +209,8 @@ namespace Rido.IoTHubClient
                 timerTokenRenew.Dispose();
                 CloseAsync().Wait();
                 var dcs = ConnectionSettings;
-                this.MqttClient = CreateFromDCSAsync(dcs).Result.MqttClient;
+                MqttClient = CreateFromDCSAsync(dcs).Result.MqttClient;
+                Trace.TraceWarning($"Refreshed Result: {MqttClient.IsConnected}");
                 reconnecting = false;
                 timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
             }
