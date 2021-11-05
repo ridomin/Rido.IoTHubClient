@@ -14,31 +14,32 @@ namespace Rido.IoTHubClient
 {
     public class HubMqttClient : IHubMqttClient, IDisposable
     {
+        public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
+        public bool IsConnected => connection.IsConnected;
+
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         public Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
         public Func<PropertyReceived, Task<PropertyAck>> OnPropertyChange { get; set; }
-        public Action<MqttApplicationMessageReceivedEventArgs> OnMessage { get; set; }
 
         const int twinOperationTimeoutSeconds = 5;
 
         static Action<string> twin_cb;
         static Action<int> patch_cb;
+
         int lastRid = 1;
         private bool disposedValue;
-        readonly HubMqttConnection connection;
-        public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
-        public bool IsConnected => connection.IsConnected;
 
-        public static async Task<IHubMqttClient> CreateAsync(string cs) =>
-            await CreateAsync(ConnectionSettings.FromConnectionString(cs));
+        readonly HubMqttConnection connection;
+
+        public static async Task<IHubMqttClient> CreateAsync(string cs) => await CreateAsync(ConnectionSettings.FromConnectionString(cs));
 
         public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs)
         {
             var mqttConnection = await HubMqttConnection.CreateFromDCSAsync(cs);
-            var instance = new HubMqttClient(mqttConnection);
-            instance.ConfigureReservedTopics();
-            mqttConnection.OnMqttClientDisconnected += (o, e) => instance.OnMqttClientDisconnected?.Invoke(o, e);
-            return instance;
+            var hubClient = new HubMqttClient(mqttConnection);
+            hubClient.ConfigureReservedTopics();
+            mqttConnection.OnMqttClientDisconnected += (o, e) => hubClient.OnMqttClientDisconnected?.Invoke(o, e);
+            return hubClient;
         }
 
         private HubMqttClient(HubMqttConnection conn)
