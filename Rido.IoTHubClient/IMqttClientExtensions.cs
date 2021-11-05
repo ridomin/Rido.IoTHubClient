@@ -24,6 +24,7 @@ namespace Rido.IoTHubClient
                  .WithClientId(deviceId)
                  .WithTcpServer(hostName, 8883)
                  .WithCredentials(username, password)
+                 .WithCommunicationTimeout(System.TimeSpan.FromSeconds(2))
                  .WithTls(new MqttClientOptionsBuilderTlsParameters
                  {
                      UseTls = true,
@@ -41,6 +42,7 @@ namespace Rido.IoTHubClient
                new MqttClientOptionsBuilder()
                    .WithClientId(cert.Subject[3..])
                    .WithTcpServer(hostName, 8883)
+                   .WithCommunicationTimeout(System.TimeSpan.FromSeconds(2))
                    .WithCredentials(new MqttClientCredentials()
                    {
                        Username = SasAuth.GetUserName(hostName, cert.Subject[3..], modelId)
