@@ -189,14 +189,16 @@ namespace Rido.IoTHubClient
         {
             if (MqttClient.IsConnected)
             {
-                var unsuback = await MqttClient.UnsubscribeAsync(new string[]
-                {
-                    "$iothub/methods/POST/#",
-                    "$iothub/twin/res/#",
-                    "$iothub/twin/PATCH/properties/desired/#"
-                });
-                unsuback.Items.ToList().ForEach(i => Trace.TraceInformation($"- {i.TopicFilter} {i.ReasonCode}"));
+                //var unsuback = await MqttClient.UnsubscribeAsync(new string[]
+                //{
+                //    "$iothub/methods/POST/#",
+                //    "$iothub/twin/res/#",
+                //    "$iothub/twin/PATCH/properties/desired/#"
+                //});
+                //unsuback.Items.ToList().ForEach(i => Trace.TraceInformation($"- {i.TopicFilter} {i.ReasonCode}"));
+                Trace.TraceWarning("Forced Diconnection");
                 await MqttClient.DisconnectAsync();
+
             }
         }
 
