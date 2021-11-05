@@ -1,14 +1,12 @@
-﻿using Rido.IoTHubClient;
-using System.Text.Json;
-
-Random random = new();
+﻿Random random = new();
 double temperature = 0d;
 double maxTemp = 0d;
 Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxTemp } };
 
 string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
 
-Thermostat thermostat = new(connectionString);
+Thermostat thermostat = await Thermostat.CreateAsync(connectionString);
+Console.WriteLine(thermostat.connection.ConnectionSettings);
 
 var targetTemperature = await thermostat.GetTargetTemperature();
 if (targetTemperature?.targetTemperature != null)
