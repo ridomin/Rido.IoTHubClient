@@ -5,6 +5,7 @@ Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](htt
 |master|preview|
 |--|--|
 |[![.NET](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml/badge.svg)](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml)|[![.NET](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml/badge.svg?branch=preview)](https://github.com/ridomin/Rido.IoTHubClient/actions/workflows/dotnet.yml)|
+|[![NuGet version (Rido.IoTHubClient)](https://img.shields.io/nuget/v/Rido.IoTHubClient.svg?style=flat-square)](https://www.nuget.org/packages/Rido.IoTHubClient)|N/A|
 
 # Features
 
