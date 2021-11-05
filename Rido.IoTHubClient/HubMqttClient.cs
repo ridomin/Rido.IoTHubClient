@@ -18,7 +18,7 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient 
+    public class HubMqttClient : IHubMqttClient
     {
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         public Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
@@ -30,10 +30,9 @@ namespace Rido.IoTHubClient
         static Action<string> twin_cb;
         static Action<int> patch_cb;
         int lastRid = 1;
-        public IHubMqttConnection connection;
+        readonly IHubMqttConnection connection;
         public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
-
-
+        public bool IsConnected => connection.IsConnected;
         public static async Task<HubMqttClient> CreateAsync(ConnectionSettings cs)
         {
             var mqttConnection = await HubMqttConnection.CreateFromDCSAsync(cs);
@@ -46,7 +45,7 @@ namespace Rido.IoTHubClient
         {
             connection = conn;
         }
-        
+
         public async Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")
         {
             string topic = $"devices/{connection.ConnectionSettings.DeviceId}";
@@ -105,7 +104,7 @@ namespace Rido.IoTHubClient
 
         void ConfigureReservedTopics()
         {
-            
+
             Trace.TraceWarning("### CONNECTED WITH SERVER ###");
             var subres = connection.MqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
                                                     .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
