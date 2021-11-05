@@ -1,18 +1,12 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
-using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
-using MQTTnet.Diagnostics;
-using MQTTnet.Diagnostics.Logger;
 using MQTTnet.Protocol;
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -33,17 +27,23 @@ namespace Rido.IoTHubClient
         readonly IHubMqttConnection connection;
         public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
         public bool IsConnected => connection.IsConnected;
-        public static async Task<HubMqttClient> CreateAsync(ConnectionSettings cs)
+        public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs)
         {
             var mqttConnection = await HubMqttConnection.CreateFromDCSAsync(cs);
             var instance = new HubMqttClient(mqttConnection);
-            instance.ConfigureReservedTopics();
+            instance.ConfigureReservedTopics(); 
             mqttConnection.OnMqttClientDisconnected += (o, e) => instance.OnMqttClientDisconnected?.Invoke(o, e);
             return instance;
         }
+
         private HubMqttClient(IHubMqttConnection conn)
         {
             connection = conn;
+        }
+
+        public async Task CloseAsync()
+        {
+            await connection.CloseAsync();
         }
 
         public async Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")

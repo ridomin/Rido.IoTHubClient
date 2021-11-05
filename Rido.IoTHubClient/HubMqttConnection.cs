@@ -4,12 +4,10 @@ using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Diagnostics.Logger;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -74,19 +72,8 @@ namespace Rido.IoTHubClient
                 }
             });
         }
-
-
-        //public static async Task<HubMqttClientBase> CreateFromConnectionStringAsync(string connectionString) =>
-        //    await CreateFromDCSAsync(ConnectionSettings.FromConnectionString(connectionString));
-
-        //public static async Task<HubMqttClientBase> CreateAsync(string hostName, string deviceId, string sasKey, string modelId = "") =>
-        //    await CreateFromDCSAsync(new ConnectionSettings() { DeviceId = deviceId, HostName = hostName, SharedAccessKey = sasKey, ModelId = modelId });
-
-        //// TODO: Review overloads, easy to conflict with the optional param
-        //public static async Task<HubMqttClientBase> CreateAsync(string hostName, string deviceId, string moduleId, string sasKey, string modelId = "") =>
-        //   await CreateFromDCSAsync(new ConnectionSettings() { HostName = hostName, DeviceId = deviceId, ModuleId = moduleId, SharedAccessKey = sasKey, ModelId = modelId });
-
-        public static async Task<HubMqttConnection> CreateFromDCSAsync(ConnectionSettings dcs, Action<MqttApplicationMessageReceivedEventArgs> configureCallBack = null)
+        
+        public static async Task<HubMqttConnection> CreateFromDCSAsync(ConnectionSettings dcs)
         {
             await ProvisionIfNeeded(dcs);
             var client = new HubMqttConnection(dcs);
@@ -131,8 +118,6 @@ namespace Rido.IoTHubClient
 
                 if (connAck?.ResultCode == MqttClientConnectResultCode.Success)
                 {
-
-                    //ConnectionSettings = dcs;
                     timerTokenRenew = new Timer(client.ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
                 }
                 else

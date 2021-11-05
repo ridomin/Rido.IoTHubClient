@@ -13,7 +13,7 @@ namespace Rido.IoTHubClient
         Func<PropertyReceived, Task<PropertyAck>> OnPropertyChange { get; set; }
 
         event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
-
+        Task CloseAsync();
         Task CommandResponseAsync(string rid, string cmdName, string status, object payload);
         Task<string> GetTwinAsync();
         Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "");
