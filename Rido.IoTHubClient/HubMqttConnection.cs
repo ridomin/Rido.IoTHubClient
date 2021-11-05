@@ -2,6 +2,7 @@
 using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Publishing;
+using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics.Logger;
 using System;
 using System.Diagnostics;
@@ -17,7 +18,7 @@ namespace Rido.IoTHubClient
     public class HubMqttConnection : IHubMqttConnection, IDisposable
     {
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
-        internal IMqttClient MqttClient { get; private set; }
+        public IMqttClient MqttClient { get; private set; }
         public bool IsConnected => MqttClient.IsConnected;
 
         public ConnectionSettings ConnectionSettings { get; internal set; }
