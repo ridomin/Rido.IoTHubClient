@@ -1,6 +1,4 @@
-﻿using MQTTnet.Client;
-using MQTTnet.Client.Publishing;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
@@ -11,7 +9,6 @@ namespace Rido.IoTHubClient
         bool IsConnected { get; }
         event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         Task CloseAsync();
-        IMqttClient MqttClient { get; }
-        Task<MqttClientPublishResult> PublishAsync(string topic, object payload);
+
     }
 }

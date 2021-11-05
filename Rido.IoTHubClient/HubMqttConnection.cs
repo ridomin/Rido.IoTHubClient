@@ -14,10 +14,10 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttConnection : IHubMqttConnection //, IDisposable
+    public class HubMqttConnection : IHubMqttConnection, IDisposable
     {
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
-        public IMqttClient MqttClient { get; private set; }
+        internal IMqttClient MqttClient { get; private set; }
         public bool IsConnected => MqttClient.IsConnected;
 
         public ConnectionSettings ConnectionSettings { get; internal set; }
@@ -26,7 +26,7 @@ namespace Rido.IoTHubClient
         bool disposedValue;
         static Timer timerTokenRenew;
 
-        protected HubMqttConnection(ConnectionSettings cs)
+        private HubMqttConnection(ConnectionSettings cs)
         {
             ConnectionSettings = cs;
             var logger = new MqttNetEventLogger();
@@ -72,12 +72,12 @@ namespace Rido.IoTHubClient
                 }
             });
         }
-        
+
         public static async Task<HubMqttConnection> CreateFromDCSAsync(ConnectionSettings dcs)
         {
             await ProvisionIfNeeded(dcs);
             var client = new HubMqttConnection(dcs);
-            
+
             MqttClientConnectResult connAck = null;
 
             if (dcs.Auth == "X509")
@@ -185,7 +185,7 @@ namespace Rido.IoTHubClient
                 }
             }
         }
-        public  async Task CloseAsync()
+        public async Task CloseAsync()
         {
             var unsuback = await MqttClient.UnsubscribeAsync(new string[]
             {

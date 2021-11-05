@@ -24,19 +24,23 @@ namespace Rido.IoTHubClient
         static Action<string> twin_cb;
         static Action<int> patch_cb;
         int lastRid = 1;
-        readonly IHubMqttConnection connection;
+        readonly HubMqttConnection connection;
         public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
         public bool IsConnected => connection.IsConnected;
+
+        public static async Task<IHubMqttClient> CreateAsync(string cs) =>
+            await CreateAsync(ConnectionSettings.FromConnectionString(cs));
+
         public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs)
         {
             var mqttConnection = await HubMqttConnection.CreateFromDCSAsync(cs);
             var instance = new HubMqttClient(mqttConnection);
-            instance.ConfigureReservedTopics(); 
+            instance.ConfigureReservedTopics();
             mqttConnection.OnMqttClientDisconnected += (o, e) => instance.OnMqttClientDisconnected?.Invoke(o, e);
             return instance;
         }
 
-        private HubMqttClient(IHubMqttConnection conn)
+        private HubMqttClient(HubMqttConnection conn)
         {
             connection = conn;
         }
@@ -71,7 +75,7 @@ namespace Rido.IoTHubClient
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.MqttClient.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            var puback = await connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 twin_cb = s => tcs.TrySetResult(s);
@@ -98,13 +102,8 @@ namespace Rido.IoTHubClient
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds));
         }
 
-
-
-
-
         void ConfigureReservedTopics()
         {
-
             Trace.TraceWarning("### CONNECTED WITH SERVER ###");
             var subres = connection.MqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
                                                     .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
