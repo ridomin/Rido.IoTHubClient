@@ -9,23 +9,29 @@ namespace sample_device
     {
         static async Task Main(string[] args)
         {
-            //var dpsRes = await DpsClient.ProvisionWithSasAsync("0ne00385995", "paad", "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
-            //Console.WriteLine(dpsRes.registrationState.assignedHub);
-            //var client1 = await HubMqttClient.CreateAsync(dpsRes.registrationState.assignedHub, dpsRes.registrationState.deviceId, "lD9e/S1YjubD2yRUdkzUI/uPME6KP4Es4Ulhh2Kyh1g=");
-            //var t1 = await client1.GetTwinAsync();
-            //Console.WriteLine("Twin1 REPLY 1" + t1);
-
             Trace.Listeners[0].Filter = new EventTypeFilter(SourceLevels.Information);
             Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-            //string modelId = "dtmi:com:demos;1";
-            //var client = await HubMqttClient.CreateWithClientCertsAsync("rido.azure-devices.net","../../../../.certs/devx1.pfx", "1234", modelId);
-            var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("cs"));
+            var conn = await HubMqttConnection.CreateAsync(
+                ConnectionSettings.FromConnectionString(Environment.GetEnvironmentVariable("cs")));
+
+            Console.WriteLine(conn.ConnectionSettings.ToString());
+            Console.WriteLine(conn.IsConnected);
+
+            conn.OnMqttClientDisconnected += (o, e) => Console.WriteLine(e.DisconnectReason);
+
+                double temp = new Random().NextDouble();
+                await conn.PublishAsync($"device/{conn.ConnectionSettings.DeviceId}/messages/events", new { temp });
+                Console.Write("-> t");
+
+            var client = await HubMqttClient.CreateAsync(ConnectionSettings.FromConnectionString(Environment.GetEnvironmentVariable("dps")));
 
             Console.WriteLine();
             Console.WriteLine(client.ConnectionSettings);
             Console.WriteLine();
+
+            await client.SendTelemetryAsync(new { temperature = 21 });
 
             var t = await client.GetTwinAsync();
             Console.WriteLine("Twin REPLY 1" + t);
@@ -35,7 +41,7 @@ namespace sample_device
                 Console.WriteLine("Client Disconnected");
             };
 
-            client.OnCommand = async req => 
+            client.OnCommand = async req =>
             {
                 System.Console.WriteLine($"<- Received Command {req.CommandName}");
                 await Task.Delay(100);
@@ -44,7 +50,7 @@ namespace sample_device
                 return new CommandResponse
                 {
                     Status = 200,
-                    CommandResponsePayload = new { myResponse = "all good"}
+                    CommandResponsePayload = new { myResponse = "all good" }
                 };
             };
 
@@ -60,7 +66,7 @@ namespace sample_device
                     Value = e.PropertyMessageJson
                 };
             };
-            
+
             await Task.Delay(500);
             await client.SendTelemetryAsync(new { temperature = 1 });
 

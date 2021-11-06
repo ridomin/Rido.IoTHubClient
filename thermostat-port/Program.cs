@@ -1,21 +1,18 @@
-﻿using Rido.IoTHubClient;
-using System.Diagnostics;
-using System.Text.Json;
-
-Random random = new();
+﻿Random random = new();
 double temperature = 0d;
 double maxTemp = 0d;
 Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxTemp } };
 
-Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
-Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
-
 string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
-Console.WriteLine(connectionString);
-Thermostat thermostat = new(connectionString);
 
-await thermostat.Report_maxTempSinceLastReboot(maxTemp);
-Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
+Thermostat thermostat = await Thermostat.CreateAsync(connectionString);
+Console.WriteLine(thermostat.connection.ConnectionSettings);
+
+var targetTemperature = await thermostat.GetTargetTemperature();
+if (targetTemperature?.targetTemperature != null)
+{
+    AdjustTempInSteps(targetTemperature.targetTemperature);
+}
 
 thermostat.Command_getMaxMinReport = req =>
 {
@@ -46,16 +43,9 @@ thermostat.OntargetTemperatureUpdated = m =>
         Value = JsonSerializer.Serialize(new { temperature })
     }));
 
-    double step = (m.targetTemperature - temperature) / 10d;
-    for (int i = 1; i <= 10; i++)
-    {
-        temperature = Math.Round(temperature + step, 1);
-        readings.Add(DateTimeOffset.Now, temperature);
+    AdjustTempInSteps(m.targetTemperature);
 
-
-        Task.Delay(1000).Wait();
-    }
-    return new PropertyAck
+    return new PropertyAck()
     {
         Description = "updated",
         Status = 200,
@@ -77,5 +67,20 @@ while (true)
     await Task.Delay(2000);
 }
 
+void AdjustTempInSteps(double target)
+{
+    Console.WriteLine("adjusting temp to: " + target);
+    Task.Run(async () =>
+    {
+        double step = (target - temperature) / 10d;
+        for (int i = 1; i <= 10; i++)
+        {
+            temperature = Math.Round(temperature + step, 1);
+            readings.Add(DateTimeOffset.Now, temperature);
 
+
+            await Task.Delay(1000);
+        }
+    });
+}
 

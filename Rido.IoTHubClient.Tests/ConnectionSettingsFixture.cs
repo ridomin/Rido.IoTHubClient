@@ -26,7 +26,7 @@ namespace Rido.IoTHubClient.Tests
         }
 
         [Fact]
-        public void InvalidValuesUseDefaults()
+        public void InvalidValuesDontUseDefaults()
         {
             string cs = "HostName=<hubname>.azure-devices.net;DeviceId=<deviceId>;SharedAccessKey=<SasKey>;MaxRetries=-2;SasMinutes=aa;RetryInterval=4.3";
             ConnectionSettings dcs = ConnectionSettings.FromConnectionString(cs);
@@ -35,7 +35,7 @@ namespace Rido.IoTHubClient.Tests
             Assert.Equal("<SasKey>", dcs.SharedAccessKey);
             Assert.Equal(60, dcs.SasMinutes);
             Assert.Equal(5, dcs.RetryInterval);
-            Assert.Equal(10, dcs.MaxRetries);
+            Assert.Equal(-2, dcs.MaxRetries);
         }
 
 
