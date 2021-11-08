@@ -19,12 +19,11 @@ namespace Rido.IoTHubClient
     {
         public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, string modelId = "", int minutes = 60)
         {
-            (string username, string password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, sasKey, modelId, minutes);
+            (string username, byte[] password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, sasKey, modelId, minutes);
             return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
                  .WithClientId(deviceId)
                  .WithTcpServer(hostName, 8883)
                  .WithCredentials(username, password)
-                 .WithCommunicationTimeout(System.TimeSpan.FromSeconds(2))
                  .WithTls(new MqttClientOptionsBuilderTlsParameters
                  {
                      UseTls = true,
@@ -33,19 +32,43 @@ namespace Rido.IoTHubClient
                  .Build());
         }
 
-        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, string modelId = "", int minutes = 60) =>
-            await ConnectWithSasAsync(mqttClient, hostName, $"{deviceId}/{moduleId}", sasKey, modelId, minutes);
+        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, string modelId = "", int minutes = 60)
+        {
+            (string username, byte[] password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, moduleId, sasKey, modelId, minutes);
+            return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
+                 .WithClientId($"{deviceId}/{moduleId}")
+                 .WithTcpServer(hostName, 8883)
+                 .WithCredentials(username, password)
+                 .WithTls(new MqttClientOptionsBuilderTlsParameters
+                 {
+                     UseTls = true,
+                     SslProtocol = SslProtocols.Tls12
+                 })
+                 .Build());
+        }
 
         public static async Task<MqttClientConnectResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, string modelId = "")
         {
+            var cid = cert.Subject[3..];
+            string deviceId = cid;
+            string moduleId = string.Empty;
+            
+            if (cid.Contains("/")) // is a module
+            {
+                var segments = cid.Split('/');
+                deviceId = segments[0];
+                moduleId = segments[1];
+            }
+                                 
+            string username = SasAuth.GetUserName(hostName, deviceId, moduleId, string.Empty, modelId, "X509");
+            
             return await mqttClient.ConnectAsync(
                new MqttClientOptionsBuilder()
-                   .WithClientId(cert.Subject[3..])
+                   .WithClientId(cid)
                    .WithTcpServer(hostName, 8883)
-                   .WithCommunicationTimeout(System.TimeSpan.FromSeconds(2))
                    .WithCredentials(new MqttClientCredentials()
                    {
-                       Username = SasAuth.GetUserName(hostName, cert.Subject[3..], modelId)
+                       Username = username
                    })
                    .WithTls(new MqttClientOptionsBuilderTlsParameters
                    {
@@ -70,7 +93,7 @@ namespace Rido.IoTHubClient
                 Trace.Listeners.Add(new TextWriterTraceListener(writer));
                 Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
-                MqttNetEventLogger logger = new MqttNetEventLogger();
+                var logger = new MqttNetEventLogger();
                 logger.LogMessagePublished += (s, e) =>
                 {
                     var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";

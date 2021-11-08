@@ -25,7 +25,7 @@ namespace sample_device
                 await conn.PublishAsync($"device/{conn.ConnectionSettings.DeviceId}/messages/events", new { temp });
                 Console.Write("-> t");
 
-            var client = await HubMqttClient.CreateAsync(Environment.GetEnvironmentVariable("dps"));
+            var client = await HubMqttClient.CreateAsync(ConnectionSettings.FromConnectionString(Environment.GetEnvironmentVariable("dps")));
 
             Console.WriteLine();
             Console.WriteLine(client.ConnectionSettings);

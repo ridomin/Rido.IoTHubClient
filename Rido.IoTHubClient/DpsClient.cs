@@ -76,6 +76,18 @@ namespace Rido.IoTHubClient
 
         public static async Task<DpsStatus> ProvisionWithSasAsync(string idScope, string registrationId, string sasKey, string modelId = "")
         {
+            static string CreateDpsSasToken(string resource, string sasKey, int minutes)
+            {
+                static string Sign(string requestString, string key)
+                {
+                    using var algorithm = new System.Security.Cryptography.HMACSHA256(Convert.FromBase64String(key));
+                    return Convert.ToBase64String(algorithm.ComputeHash(Encoding.UTF8.GetBytes(requestString)));
+                }
+                var expiry = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeMilliseconds().ToString();
+                var sig = System.Net.WebUtility.UrlEncode(Sign($"{resource}\n{expiry}", sasKey));
+                return $"SharedAccessSignature sr={resource}&sig={sig}&se={expiry}";
+            }
+
             if (mqttClient.IsConnected)
             {
                 await mqttClient.DisconnectAsync();
@@ -84,7 +96,7 @@ namespace Rido.IoTHubClient
 
             var resource = $"{idScope}/registrations/{registrationId}";
             var username = $"{resource}/api-version=2019-03-31";
-            var password = SasAuth.CreateSasToken(resource, sasKey, 5);
+            var password = CreateDpsSasToken(resource, sasKey, 5);
 
             var options = new MqttClientOptionsBuilder()
                 .WithClientId(registrationId)

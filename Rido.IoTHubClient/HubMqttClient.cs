@@ -31,7 +31,7 @@ namespace Rido.IoTHubClient
 
         readonly HubMqttConnection connection;
 
-        public static async Task<IHubMqttClient> CreateAsync(string hostname, string deviceId, string deviceKey) => 
+        public static async Task<IHubMqttClient> CreateAsync(string hostname, string deviceId, string deviceKey) =>
             await CreateAsync(new ConnectionSettings { HostName = hostname, DeviceId = deviceId, SharedAccessKey = deviceKey });
 
         public static async Task<IHubMqttClient> CreateAsync(string cs) => await CreateAsync(ConnectionSettings.FromConnectionString(cs));
@@ -48,6 +48,7 @@ namespace Rido.IoTHubClient
         private HubMqttClient(HubMqttConnection conn)
         {
             connection = conn;
+            connection.OnMessage = m => OnMessage(m);
         }
 
         public async Task CloseAsync()
@@ -57,17 +58,11 @@ namespace Rido.IoTHubClient
 
         public async Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "")
         {
-            string topic = $"devices/{connection.ConnectionSettings.DeviceId}";
-
-            if (!string.IsNullOrEmpty(connection.ConnectionSettings.ModuleId))
-            {
-                topic += $"/modules/{connection.ConnectionSettings.ModuleId}";
-            }
-            topic += "/messages/events/";
+            string topic = $"$az/iot/telemetry";
 
             if (!string.IsNullOrEmpty(dtdlComponentname))
             {
-                topic += $"$.sub={dtdlComponentname}";
+                topic += $"/?dts={dtdlComponentname}";
             }
             var pubAck = await connection.PublishAsync(topic, payload);
             var pubResult = (PubResult)pubAck.ReasonCode;
@@ -75,12 +70,12 @@ namespace Rido.IoTHubClient
         }
 
         public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-          await connection.PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
+         await connection.PublishAsync($"$az/iot/methods/{cmdName}/response/?rid={rid}&rc={status}", payload);
 
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            var puback = await connection.PublishAsync($"$az/iot/twin/get/?rid={lastRid++}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 twin_cb = s => tcs.TrySetResult(s);
@@ -95,7 +90,7 @@ namespace Rido.IoTHubClient
         public async Task<int> UpdateTwinAsync(object payload)
         {
             var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
+            var puback = await connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 patch_cb = s => tcs.TrySetResult(s);
@@ -111,9 +106,11 @@ namespace Rido.IoTHubClient
         {
             Trace.TraceWarning("### CONNECTED WITH SERVER ###");
             var subres = connection.SubscribeAsync(new string[] {
-                                                    "$iothub/methods/POST/#",
-                                                    "$iothub/twin/res/#",
-                                                    "$iothub/twin/PATCH/properties/desired/#" }).Result;
+                                                    "$az/iot/methods/+/+",
+                                                    "$az/iot/twin/get/response/+",
+                                                    "$az/iot/twin/patch/response/+",
+                                                    "$az/iot/twin/events/desired-changed/+" }).Result;
+
             subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
 
             if (subres.Items.ToList().Any(x => x.ResultCode == MqttClientSubscribeResultCode.UnspecifiedError))
@@ -133,8 +130,8 @@ namespace Rido.IoTHubClient
                 {
                     // parse qs to extract the rid
                     var qs = HttpUtility.ParseQueryString(segments[^1]);
-                    rid = Convert.ToInt32(qs["$rid"]);
-                    twinVersion = Convert.ToInt32(qs["$version"]);
+                    rid = Convert.ToInt32(qs["rid"]);
+                    twinVersion = Convert.ToInt32(qs["v"]);
                 }
 
                 if (e.ApplicationMessage.Payload != null)
@@ -143,15 +140,15 @@ namespace Rido.IoTHubClient
                 }
 
                 //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
-                if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
-                {   
+                if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/get/response"))
+                {
                     twin_cb(msg);
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
+                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/patch/response/"))
                 {
                     patch_cb(twinVersion);
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
+                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/events/desired-changed"))
                 {
                     var ack = await OnPropertyChange?.Invoke(new PropertyReceived()
                     {
@@ -162,7 +159,7 @@ namespace Rido.IoTHubClient
                     });
                     await UpdateTwinAsync(ack.BuildAck());
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
+                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/methods"))
                 {
                     var cmdName = segments[3];
                     var resp = await OnCommand?.Invoke(new CommandRequest()
@@ -196,11 +193,11 @@ namespace Rido.IoTHubClient
 
         public Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics)
         {
-            throw new NotImplementedException("Pub/Sub not enabled in classic hubs");
+            return connection.SubscribeAsync(topics);
         }
         public Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
-            throw new NotImplementedException("Pub/Sub not enabled in classic hubs");
+            return connection.PublishAsync(topic, payload);
         }
         public Func<MqttApplicationMessageReceivedEventArgs, Task> OnMessage { get; set; }
     }

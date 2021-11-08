@@ -11,8 +11,8 @@ namespace Rido.IoTHubClient.Tests
 {
     public class HubMqttClientFixture
     {
-        const string hubConnectionString = "HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=";
-        const string hubName = "tests.azure-devices.net";
+        const string hubConnectionString = "HostName=broker.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=HbdIWLOaSHdaL5xmF0OhiC0kmDHPinOyI0kISxZ0Rt0=";
+        const string hubName = "broker.azure-devices.net";
         readonly RegistryManager rm;
         readonly string deviceId = String.Empty;
         readonly Device device;
@@ -212,8 +212,8 @@ namespace Rido.IoTHubClient.Tests
             var expAck = new
             {
                 ac = 200,
-                av = updatedVersion,
                 ad = "test update",
+                av = updatedVersion,
                 value = 2
             };
             Assert.Equal(JsonSerializer.Serialize(expAck), updatedProp.ToJson());
@@ -252,8 +252,8 @@ namespace Rido.IoTHubClient.Tests
             var expAck = new
             {
                 ac = 200,
-                av = updatedVersion,
                 ad = "test update",
+                av = updatedVersion,
                 value = new { aComplexPerson = new { withName = "rido" } }
             };
             Assert.Equal(JsonSerializer.Serialize(expAck), updatedProp.ToJson());
