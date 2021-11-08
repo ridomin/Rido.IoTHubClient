@@ -18,8 +18,9 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<Using Include="Rido.IoTHubClient "/>
-		<Using Include="System.Text.Json "/>
+		<Using Include="Rido.IoTHubClient"/>
+		<Using Include="System.Text.Json"/>
+		<Using Include="System"/>
 	</ItemGroup>
 		
 	

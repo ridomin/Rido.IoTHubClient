@@ -1,4 +1,7 @@
-﻿using System;
+﻿using MQTTnet;
+using MQTTnet.Client.Publishing;
+using MQTTnet.Client.Subscribing;
+using System;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
@@ -9,5 +12,9 @@ namespace Rido.IoTHubClient
         bool IsConnected { get; }
         event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         Task CloseAsync();
+
+        Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics);
+        Task<MqttClientPublishResult> PublishAsync(string topic, object payload);
+        Func<MqttApplicationMessageReceivedEventArgs, Task> OnMessage { get; set; }
     }
 }
