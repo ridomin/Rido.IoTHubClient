@@ -10,17 +10,21 @@ public class Worker : BackgroundService
     public Worker(ILogger<Worker> logger)
     {
         _logger = logger;
+        connection =  HubMqttConnection.CreateAsync(
+            ConnectionSettings.FromConnectionString(
+                Environment.GetEnvironmentVariable("dcs")
+            )
+        ).Result;
+        _logger.LogInformation(connection.ConnectionSettings.ToString());
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        connection = await HubMqttConnection.CreateAsync(
-            ConnectionSettings.FromConnectionString(
-                Environment.GetEnvironmentVariable("dcs")
-            )
-        );
+        connection.OnMqttClientDisconnected += (o,e) => 
+        {
+            _logger.LogInformation("Disconnect:" + e.ResultCode);  
+        };
 
-        _logger.LogInformation(connection.ConnectionSettings.ToString());
         
         await connection.MqttClient.SubscribeAsync("$iothub/methods/POST/#");        
         connection.MqttClient.UseApplicationMessageReceivedHandler(async e =>
@@ -31,13 +35,14 @@ public class Worker : BackgroundService
             var segments = topic.Split("/");
             var qs = System.Web.HttpUtility.ParseQueryString(segments[^1]);
             var rid = Convert.ToInt32(qs["$rid"]);
-            await connection.PublishAsync($"$iothub/methods/res/200/?$rid={rid}", new {resp = "fake"});
+            var puback = await connection.PublishAsync($"$iothub/methods/res/200/?$rid={rid}", new {resp = "fake"});
+            _logger.LogInformation($"-> $iothub/methods/res/200/?$rid={rid}");
         });
 
         while (!stoppingToken.IsCancellationRequested)
         {
             _logger.LogInformation("Worker running at: {time} status {}", DateTimeOffset.Now, connection.IsConnected );
-            await Task.Delay(5000, stoppingToken);
+            await Task.Delay(60000, stoppingToken);
         }
     }
 }
