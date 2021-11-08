@@ -56,18 +56,17 @@ public class Thermostat
         return t;
     }
 
-    public Thermostat(HubMqttConnection conn)
+    private Thermostat(HubMqttConnection conn)
     {
         connection = conn;
     }
 
     async Task Configure()
     {
-        var subres = await connection.MqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
-                                                   .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                   .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                   .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                   .Build());
+        var subres = await connection.SubscribeAsync(new string[] {
+                                                    "$iothub/methods/POST/#",
+                                                    "$iothub/twin/res/#",
+                                                    "$iothub/twin/PATCH/properties/desired/#"});
 
         subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
 
@@ -76,7 +75,7 @@ public class Thermostat
             throw new ApplicationException("Error subscribing to system topics");
         }
 
-        connection.MqttClient.UseApplicationMessageReceivedHandler(async m =>
+        connection.OnMessage = async m =>
         {
             var segments = m.ApplicationMessage.Topic.Split('/');
             int rid = 0;
@@ -115,7 +114,7 @@ public class Thermostat
                     new Command_getMaxMinReport_Request { since = JsonSerializer.Deserialize<DateTime>(msg), _rid = rid });
                 await connection.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={resp?._rid}", JsonSerializer.Serialize(resp));
             }
-        });
+        };
     }
 
 

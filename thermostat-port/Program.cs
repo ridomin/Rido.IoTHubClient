@@ -5,7 +5,7 @@ Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxT
 
 string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
 
-Thermostat thermostat = await Thermostat.CreateAsync(connectionString);
+Thermostat thermostat = await Thermostat.CreateAsync(connectionString + ";SasMinutes=3");
 Console.WriteLine(thermostat.connection.ConnectionSettings);
 
 var targetTemperature = await thermostat.GetTargetTemperature();
@@ -64,7 +64,7 @@ while (true)
     }
     await thermostat.Send_temperature(temperature);
     Console.WriteLine("-> t: temperature " + temperature);
-    await Task.Delay(2000);
+    await Task.Delay(30000);
 }
 
 void AdjustTempInSteps(double target)

@@ -110,11 +110,10 @@ namespace Rido.IoTHubClient
         void ConfigureReservedTopics()
         {
             Trace.TraceWarning("### CONNECTED WITH SERVER ###");
-            var subres = connection.MqttClient.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
-                                                    .WithTopicFilter("$iothub/methods/POST/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                    .WithTopicFilter("$iothub/twin/res/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                    .WithTopicFilter("$iothub/twin/PATCH/properties/desired/#", MqttQualityOfServiceLevel.AtMostOnce)
-                                                    .Build()).Result;
+            var subres = connection.SubscribeAsync(new string[] {
+                                                    "$iothub/methods/POST/#",
+                                                    "$iothub/twin/res/#",
+                                                    "$iothub/twin/PATCH/properties/desired/#" }).Result;
             subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
 
             if (subres.Items.ToList().Any(x => x.ResultCode == MqttClientSubscribeResultCode.UnspecifiedError))
@@ -123,7 +122,7 @@ namespace Rido.IoTHubClient
             }
 
 
-            connection.MqttClient.UseApplicationMessageReceivedHandler(async e =>
+            connection.OnMessage  = async e =>
             {
                 string msg = string.Empty;
 
@@ -173,7 +172,7 @@ namespace Rido.IoTHubClient
                     });
                     await CommandResponseAsync(rid.ToString(), cmdName, resp.Status.ToString(), resp.CommandResponsePayload);
                 }
-            });
+            };
         }
 
         protected virtual void Dispose(bool disposing)
@@ -194,5 +193,15 @@ namespace Rido.IoTHubClient
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
+        public Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics)
+        {
+            throw new NotImplementedException("Pub/Sub not enabled in classic hubs");
+        }
+        public Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
+        {
+            throw new NotImplementedException("Pub/Sub not enabled in classic hubs");
+        }
+        public Func<MqttApplicationMessageReceivedEventArgs, Task> OnMessage { get; set; }
     }
 }
