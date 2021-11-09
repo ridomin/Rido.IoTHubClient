@@ -3,6 +3,8 @@ double temperature = 0d;
 double maxTemp = 0d;
 Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxTemp } };
 
+string js(object o) => JsonSerializer.Serialize(o);
+
 string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
 
 Thermostat thermostat = await Thermostat.CreateAsync(connectionString + ";SasMinutes=3");
@@ -40,7 +42,7 @@ thermostat.OntargetTemperatureUpdated = m =>
         Description = "updating",
         Status = 202,
         Version = m.version,
-        Value = JsonSerializer.Serialize(new { temperature })
+        Value = js(new { targetTemperature = temperature })
     }));
 
     AdjustTempInSteps(m.targetTemperature);
@@ -50,7 +52,7 @@ thermostat.OntargetTemperatureUpdated = m =>
         Description = "updated",
         Status = 200,
         Version = m.version,
-        Value = JsonSerializer.Serialize(new { temperature })
+        Value = js(new { targetTemperature = temperature })
     };
 };
 
@@ -69,18 +71,17 @@ while (true)
 
 void AdjustTempInSteps(double target)
 {
-    Console.WriteLine("adjusting temp to: " + target);
     Task.Run(async () =>
     {
+        Console.WriteLine("adjusting temp to: " + target);
         double step = (target - temperature) / 10d;
         for (int i = 1; i <= 10; i++)
         {
             temperature = Math.Round(temperature + step, 1);
             readings.Add(DateTimeOffset.Now, temperature);
-
-
             await Task.Delay(1000);
         }
-    });
+        Console.WriteLine("adjusting temp to: " + target);
+    }).Wait();
 }
 
