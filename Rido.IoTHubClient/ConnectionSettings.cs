@@ -28,7 +28,7 @@ namespace Rido.IoTHubClient
             this.Auth = "SAS";
         }
         public static ConnectionSettings FromConnectionString(string cs) => new ConnectionSettings(cs);
-        private ConnectionSettings(string cs) => ParseConnectionString(cs);
+        public ConnectionSettings(string cs) => ParseConnectionString(cs);
 
         private void ParseConnectionString(string cs)
         {
