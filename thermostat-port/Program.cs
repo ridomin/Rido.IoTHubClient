@@ -1,24 +1,19 @@
-﻿Random random = new();
-double temperature = 0d;
-double maxTemp = 0d;
-Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxTemp } };
+﻿string js(object o) => JsonSerializer.Serialize(o);
 
-string js(object o) => JsonSerializer.Serialize(o);
+Random random = new();
+double rndDouble(double scaleFactor = 1.0) => random.NextDouble() * scaleFactor;
+
+double temperature = Math.Round(rndDouble(18), 1);
+double maxTemp = 0d;
+Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, temperature } };
 
 string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
-
-Thermostat thermostat = await Thermostat.CreateAsync(connectionString + ";SasMinutes=3");
+Thermostat thermostat = await Thermostat.CreateAsync(connectionString);
 Console.WriteLine(thermostat.connection.ConnectionSettings);
-
-var targetTemperature = await thermostat.GetTargetTemperature();
-if (targetTemperature?.targetTemperature != null)
-{
-    AdjustTempInSteps(targetTemperature.targetTemperature);
-}
 
 thermostat.Command_getMaxMinReport = req =>
 {
-    Console.WriteLine("<- c: getMaxMinReport " + req.since);
+    Console.WriteLine("\n<- c: getMaxMinReport " + req.since);
     Dictionary<DateTimeOffset, double> filteredReadings = readings
                                            .Where(i => i.Key > req.since)
                                            .ToDictionary(i => i.Key, i => i.Value);
@@ -34,18 +29,18 @@ thermostat.Command_getMaxMinReport = req =>
     };
 };
 
-thermostat.OntargetTemperatureUpdated = m =>
+thermostat.OntargetTemperatureUpdated = async m =>
 {
-    Console.WriteLine("<- w: targetTemperature received " + m.targetTemperature);
-    Task.Run(async () => await thermostat.Report_targetTemperatureACK(new PropertyAck
+    Console.WriteLine("\n<- w: targetTemperature received " + m.targetTemperature);
+    await thermostat.Report_targetTemperatureACK(new PropertyAck
     {
         Description = "updating",
         Status = 202,
         Version = m.version,
         Value = js(new { targetTemperature = temperature })
-    }));
+    });
 
-    AdjustTempInSteps(m.targetTemperature);
+    await AdjustTempInStepsAsync(m.targetTemperature);
 
     return new PropertyAck()
     {
@@ -56,32 +51,47 @@ thermostat.OntargetTemperatureUpdated = m =>
     };
 };
 
+var targetTemperature = await thermostat.GetTargetTemperature();
+if (targetTemperature?.targetTemperature != null)
+{
+    await AdjustTempInStepsAsync(targetTemperature.targetTemperature);
+}
+
 while (true)
 {
+    temperature = Math.Round(
+        (temperature % 2) == 0 ?
+            temperature + rndDouble(0.3) :
+            temperature - rndDouble(0.2),
+        2);
+
+    readings.Add(DateTimeOffset.Now, temperature);
+
     if (readings.Values.Max<double>() > maxTemp)
     {
         maxTemp = readings.Values.Max<double>();
         await thermostat.Report_maxTempSinceLastReboot(maxTemp);
-        Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
+
+        Console.WriteLine($"\n-> r: maxTempSinceLastReboot {maxTemp}");
     }
+
     await thermostat.Send_temperature(temperature);
-    Console.WriteLine("-> t: temperature " + temperature);
-    await Task.Delay(30000);
+    Console.Write($"\r-> t: temperature {temperature} \t");
+
+    await Task.Delay(10000);
 }
 
-void AdjustTempInSteps(double target)
+async Task AdjustTempInStepsAsync(double target)
 {
-    Task.Run(async () =>
+    Console.WriteLine("\n adjusting temp to: " + target);
+    double step = (target - temperature) / 5d;
+    for (int i = 1; i <= 5; i++)
     {
-        Console.WriteLine("adjusting temp to: " + target);
-        double step = (target - temperature) / 10d;
-        for (int i = 1; i <= 10; i++)
-        {
-            temperature = Math.Round(temperature + step, 1);
-            readings.Add(DateTimeOffset.Now, temperature);
-            await Task.Delay(1000);
-        }
-        Console.WriteLine("adjusting temp to: " + target);
-    }).Wait();
+        temperature = Math.Round(temperature + step, 1);
+        await thermostat.Send_temperature(temperature);
+        Console.Write($"\r-> t: temperature {temperature} \t");
+        readings.Add(DateTimeOffset.Now, temperature);
+        await Task.Delay(1000);
+    }
+    Console.WriteLine("\n temp adjusted to: " + target);
 }
-
