@@ -7,6 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+
   <ItemGroup>
     <ProjectReference Include="..\Rido.IoTHubClient\Rido.IoTHubClient.csproj" />
   </ItemGroup>
@@ -18,9 +19,9 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<Using Include="Rido.IoTHubClient"/>
-		<Using Include="System.Text.Json"/>
-		<Using Include="System"/>
+		<Using Include="Rido.IoTHubClient" />
+		<Using Include="System.Text.Json" />
+		<Using Include="System" />
 	</ItemGroup>
 		
 	
