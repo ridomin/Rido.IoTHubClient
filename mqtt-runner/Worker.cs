@@ -20,6 +20,7 @@ public class Worker : BackgroundService
         IConfiguration configuration;
         IHubMqttClient client;
 
+        Timer refreshScreenTimer;
         int SendTelemetrySuccess = 0;
         int Disconnects = 0;
         int Commands = 0;
@@ -33,8 +34,8 @@ public class Worker : BackgroundService
         {
             client = await HubMqttClient.CreateAsync(new ConnectionSettings()
             {
-                HostName = "tests.azure-devices.net",
-                DeviceId = "d4",
+                HostName = "rido-freetier.azure-devices.net",
+                DeviceId = "longrunner",
                 SharedAccessKey = System.Convert.ToBase64String(
                                         System.Text.Encoding.UTF8.GetBytes(
                                             System.Guid.Empty.ToString("N"))),
@@ -49,17 +50,32 @@ public class Worker : BackgroundService
                         { Status =200, CommandResponsePayload = "{}"});
             }; 
 
+            
+
+            refreshScreenTimer = new Timer((tcb) => 
+            {
+                refreshScreen(); 
+            }, null, 1000, 0);
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 var puback = await client.SendTelemetryAsync(new {Environment.WorkingSet});
                 if (puback == 0) SendTelemetrySuccess++;
-                Console.Clear();
-                Console.Write(RenderData());
-                await Task.Delay(1000);
-                Console.CursorVisible = false;
+                await Task.Delay(5000);
             }
            
         }
+
+        void refreshScreen()
+            {
+                Console.Clear();
+                Console.WriteLine(RenderData());
+                refreshScreenTimer = new Timer((tcb) => 
+                {
+                    refreshScreen(); 
+                }, null, 1000, 0);
+            
+            }
         
         string RenderData()
         {
@@ -68,7 +84,6 @@ public class Worker : BackgroundService
             sb.AppendLine("");
             sb.AppendLine(client.ConnectionSettings.ToString());
             sb.AppendLine("");
-            sb.AppendLine("");
             sb.AppendLine($"{nameof(Commands)}: {Commands}");
             sb.AppendLine($"{nameof(Disconnects)}: {Disconnects}");
             //sb.AppendLine("");
@@ -76,7 +91,8 @@ public class Worker : BackgroundService
             sb.AppendLine($"{nameof(SendTelemetrySuccess)}: {SendTelemetrySuccess}");
             sb.AppendLine("");
             sb.AppendLine($"WorkingSet: {Environment.WorkingSet.Bytes()}");
-            sb.Append($"Time Running: {TimeSpan.FromMilliseconds(clock.ElapsedMilliseconds).Humanize(4)}");
+            sb.Append($"Time Running: {TimeSpan.FromMilliseconds(clock.ElapsedMilliseconds).Humanize(2)}");
+            sb.AppendLine("");
             return sb.ToString();
         }
     }
