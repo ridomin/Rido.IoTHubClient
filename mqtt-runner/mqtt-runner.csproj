@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-mqtt_runner-726A1545-AC5A-424C-86DD-ED8E362B8B79</UserSecretsId>
+    <RootNamespace>mqtt_runner</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+     <PackageReference Include="Humanizer" Version="2.11.10" />
+    <PackageReference Include="Rido.IoTHubClient" Version="0.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0-rc.2.21480.5" />
+  </ItemGroup>
+</Project>
