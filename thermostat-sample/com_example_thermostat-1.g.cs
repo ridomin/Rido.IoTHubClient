@@ -1,13 +1,9 @@
 ﻿using MQTTnet.Client.Publishing;
 using Rido.IoTHubClient;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace com_example
@@ -56,46 +52,7 @@ namespace com_example
         public async Task InitTwinAsync(double defaultTargetTemp)
         {
             var twin = await GetTwinAsync();
-            var root = JsonNode.Parse(twin);
-            var desired = root?["desired"];
-            var reported = root?["reported"];
-
-            int? desiredVersion = desired?["$version"]?.GetValue<int>();
-            
-            double? desired_targetTemperature = desired["targetTemperature"]?.GetValue<double>();
-            double? reported_targetTemperature = reported["targetTemperature"]?["value"]?.GetValue<double>();
-            int? reported_targetTemperature_version = reported["targetTemperature"]?["av"]?.GetValue<int>();
-            if (desired_targetTemperature.HasValue)
-            {
-                if (desiredVersion > reported_targetTemperature_version || 
-                    !reported_targetTemperature.HasValue)
-                {
-                    Property_targetTemperature = new WritableProperty<double>("targetTemperature")
-                    {
-                        Value = desired_targetTemperature.Value,
-                        Version = desiredVersion.Value,
-                        Status = 200,
-                        Description = "propertyAccepted"
-                    };
-                }
-            } else if (!reported_targetTemperature.HasValue)
-            {
-                Property_targetTemperature = new WritableProperty<double>("targetTemperature")
-                {
-                    Value = defaultTargetTemp,
-                    Version = desiredVersion.Value,
-                    Status = 201,
-                    Description = "init to default value"
-                };
-            }
-            if (Property_targetTemperature == null && reported_targetTemperature.HasValue)
-            {
-                Property_targetTemperature = new WritableProperty<double>("targetTemperature")
-                {
-                    Value = reported_targetTemperature.Value,
-                    Version = reported_targetTemperature_version.Value,
-                };
-            }
+            Property_targetTemperature = WritableProperty<double>.InitFromTwin(twin, "targetTemperature", defaultTargetTemp);
             OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
             await UpdateTwin(Property_targetTemperature.ToAck());
         }

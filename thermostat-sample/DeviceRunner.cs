@@ -83,12 +83,13 @@ public class DeviceRunner : BackgroundService
         }
     }
 
-    async Task AdjustTempInStepsAsync(double target)
+    async Task AdjustTempInStepsAsync(double? target)
     {
         ArgumentNullException.ThrowIfNull(client);
+        ArgumentNullException.ThrowIfNull(target);
 
         Console.WriteLine("\n adjusting temp to: " + target);
-        double step = (target - temperature) / 5d;
+        double step = (target.Value - temperature) / 5d;
         for (int i = 1; i <= 5; i++)
         {
             temperature = Math.Round(temperature + step, 1);

@@ -17,6 +17,7 @@
 		<Deterministic>true</Deterministic>
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 		<PackageReleaseNotes>
+			0.0.9 Add WritableProperty
 			0.0.8 Add Pub/Sub to HubMQttConnection, to resuscribe on reconnect/refresh
 			0.0.7 Expose internal MqttClient in HubMqttConnection
 			0.0.6 Make the callbacks async compatible, split connection and client
