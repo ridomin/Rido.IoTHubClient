@@ -53,17 +53,51 @@ namespace com_example
             return client;
         }
 
-        public async Task InitTwinAsync(Dictionary<string, object> defaults)
+        public async Task InitTwinAsync(double defaultTargetTemp)
         {
             var twin = await GetTwinAsync();
             var root = JsonNode.Parse(twin);
             var desired = root?["desired"];
             var reported = root?["reported"];
 
-            var desiredVersion = desired?["$version"]?.GetValue<int>();
-
-
-
+            int? desiredVersion = desired?["$version"]?.GetValue<int>();
+            
+            double? desired_targetTemperature = desired["targetTemperature"]?.GetValue<double>();
+            double? reported_targetTemperature = reported["targetTemperature"]?["value"]?.GetValue<double>();
+            int? reported_targetTemperature_version = reported["targetTemperature"]?["av"]?.GetValue<int>();
+            if (desired_targetTemperature.HasValue)
+            {
+                if (desiredVersion > reported_targetTemperature_version || 
+                    !reported_targetTemperature.HasValue)
+                {
+                    Property_targetTemperature = new WritableProperty<double>("targetTemperature")
+                    {
+                        Value = desired_targetTemperature.Value,
+                        Version = desiredVersion.Value,
+                        Status = 200,
+                        Description = "propertyAccepted"
+                    };
+                }
+            } else if (!reported_targetTemperature.HasValue)
+            {
+                Property_targetTemperature = new WritableProperty<double>("targetTemperature")
+                {
+                    Value = defaultTargetTemp,
+                    Version = desiredVersion.Value,
+                    Status = 201,
+                    Description = "init to default value"
+                };
+            }
+            if (Property_targetTemperature == null && reported_targetTemperature.HasValue)
+            {
+                Property_targetTemperature = new WritableProperty<double>("targetTemperature")
+                {
+                    Value = reported_targetTemperature.Value,
+                    Version = reported_targetTemperature_version.Value,
+                };
+            }
+            OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
+            await UpdateTwin(Property_targetTemperature.ToAck());
         }
 
         private void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
@@ -130,12 +164,12 @@ namespace com_example
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
         }
 
-        public async Task<int> Report_maxTempSinceLastReboot(double maxTempSinceLastReboot)
+        public async Task<int> UpdateTwin(object patch)
         {
             var tcs = new TaskCompletionSource<int>();
             var puback = await _connection.PublishAsync(
                     $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
-                        new { maxTempSinceLastReboot });
+                        patch);
             if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 report_cb = s => tcs.TrySetResult(s);
@@ -144,8 +178,11 @@ namespace com_example
             {
                 report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
             }
-            return tcs.Task.Result;
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
         }
+
+        public async Task<int> Report_maxTempSinceLastReboot(double maxTempSinceLastReboot) => await UpdateTwin(new { maxTempSinceLastReboot });
+        
 
         public async Task<MqttClientPublishResult> Send_temperature(double temperature)
         {
