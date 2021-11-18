@@ -35,9 +35,10 @@ namespace com_example
             async Task SubscribeToSysTopicsAsync(HubMqttConnection connection)
             {
                 var subres = await connection.SubscribeAsync(new string[] {
-                                                    "$iothub/methods/POST/#",
-                                                    "$iothub/twin/res/#",
-                                                    "$iothub/twin/PATCH/properties/desired/#"});
+                                                    "$az/iot/methods/+/+",
+                                                    "$az/iot/twin/get/response/+",
+                                                    "$az/iot/twin/patch/response/+",
+                                                    "$az/iot/twin/events/desired-changed/+" });
 
                 subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             }
@@ -69,13 +70,13 @@ namespace com_example
                 {
                     // parse qs to extract the rid
                     var qs = HttpUtility.ParseQueryString(segments[^1]);
-                    rid = Convert.ToInt32(qs["$rid"]);
-                    twinVersion = Convert.ToInt32(qs["$version"]);
+                    rid = Convert.ToInt32(qs["rid"]);
+                    twinVersion = Convert.ToInt32(qs["v"]);
                 }
 
                 string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
 
-                if (topic.StartsWith("$iothub/methods/POST/getMaxMinReport"))
+                if (topic.StartsWith("$az/iot/methods/getMaxMinReport"))
                 {
                     Cmd_getMaxMinReport_Request req = new Cmd_getMaxMinReport_Request()
                     {
@@ -84,21 +85,21 @@ namespace com_example
                     if (OnCommand_getMaxMinReport_Invoked != null)
                     {
                         var resp = await OnCommand_getMaxMinReport_Invoked.Invoke(req);
-                        await _connection.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={rid}", resp);
+                        await _connection.PublishAsync($"$az/iot/methods/getMaxMinReport/response/?rid={rid}&rc={resp?._status}", resp);
                     }    
                 }
 
-                if (topic.StartsWith("$iothub/twin/res/200"))
+                if (topic.StartsWith("$az/iot/twin/get/response"))
                 {
                     this.getTwin_cb?.Invoke(msg);
                 }
 
-                if (topic.StartsWith("$iothub/twin/res/204"))
+                if (topic.StartsWith("$az/iot/twin/patch/response"))
                 {
                     this.report_cb?.Invoke(twinVersion);
                 }
 
-                if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
+                if (topic.StartsWith("$az/iot/twin/events/desired-changed"))
                 {
                     JsonNode root = JsonNode.Parse(msg);
                     await Invoke_targetTemperature_Callback(root);
@@ -109,7 +110,7 @@ namespace com_example
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            var puback = await _connection.PublishAsync($"$az/iot/twin/get/?rid={lastRid++}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 getTwin_cb = s => tcs.TrySetResult(s);
@@ -125,8 +126,7 @@ namespace com_example
         {
             var tcs = new TaskCompletionSource<int>();
             var puback = await _connection.PublishAsync(
-                    $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
-                        patch);
+                    $"$az/iot/twin/patch/reported/?rid={lastRid++}",patch);
             if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 report_cb = s => tcs.TrySetResult(s);
@@ -144,7 +144,7 @@ namespace com_example
         public async Task<MqttClientPublishResult> Send_temperature(double temperature)
         {
             return await _connection.PublishAsync(
-                $"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",
+                $"$az/iot/telemetry",
                 new { temperature });
         }
 
