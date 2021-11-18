@@ -7,10 +7,8 @@ public class DeviceRunner : BackgroundService
     static Random random = new();
     static double rndDouble(double scaleFactor = 1.1) => random.NextDouble() * scaleFactor;
     double maxTemp = 0d;
-    FixedSizeDictonary<DateTimeOffset, double> readings = new(1000) { { DateTimeOffset.Now, Math.Round(rndDouble(18), 1) } };
-    double temperature = Math.Round(rndDouble(18), 1);
-
-
+    FixedSizeDictonary<DateTimeOffset, double> readings = new(1000) { { DateTimeOffset.Now, 0 } };
+    double temperature = 0;
 
     private readonly ILogger<DeviceRunner> _logger;
     private readonly IConfiguration _configuration;

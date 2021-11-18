@@ -125,8 +125,7 @@ namespace com_example
         public async Task<int> UpdateTwin(object patch)
         {
             var tcs = new TaskCompletionSource<int>();
-            var puback = await _connection.PublishAsync(
-                    $"$az/iot/twin/patch/reported/?rid={lastRid++}",patch);
+            var puback = await _connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}",patch);
             if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 report_cb = s => tcs.TrySetResult(s);
@@ -143,9 +142,7 @@ namespace com_example
 
         public async Task<MqttClientPublishResult> Send_temperature(double temperature)
         {
-            return await _connection.PublishAsync(
-                $"$az/iot/telemetry",
-                new { temperature });
+            return await _connection.PublishAsync($"$az/iot/telemetry", new { temperature });
         }
 
         private async Task Invoke_targetTemperature_Callback(JsonNode desired)
