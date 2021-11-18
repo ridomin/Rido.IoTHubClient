@@ -20,6 +20,12 @@
 		<Compile Update="com_example_thermostat-1.g.cs">
 			<DependentUpon>com_example_thermostat-1.json</DependentUpon>
 		</Compile>
+		<Compile Update="Cmd_getMaxMinReport_Request.cs">
+			<DependentUpon>com_example_thermostat-1.json</DependentUpon>
+		</Compile>
+		<Compile Update="Cmd_getMaxMinReport_Response.cs">
+			<DependentUpon>com_example_thermostat-1.json</DependentUpon>
+		</Compile>
 	</ItemGroup>
 	
 </Project>

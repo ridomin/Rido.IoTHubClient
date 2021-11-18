@@ -31,6 +31,7 @@ namespace Rido.IoTHubClient
             // TODO: Use pattern matching
             if (Value?.GetType() == typeof(bool)) writer.WriteBoolean("value", Convert.ToBoolean(Value));
             if (Value?.GetType() == typeof(int)) writer.WriteNumber("value", Convert.ToInt32(Value));
+            if (Value?.GetType() == typeof(double)) writer.WriteNumber("value", Convert.ToInt32(Value));
             if (Value?.GetType() == typeof(string)) writer.WriteString("value", Value.ToString());
 
             writer.WriteEndObject();

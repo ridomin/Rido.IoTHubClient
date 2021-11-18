@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Web;
@@ -13,7 +14,8 @@ namespace com_example
 {
     public class thermostat_1
     {
-        const string modelId = "dtmi:rido:pnp_basic;1";
+        const string modelId = "dtmi:com:example:Thermostat;1";
+
         internal IHubMqttConnection _connection;
 
         int lastRid;
@@ -30,21 +32,6 @@ namespace com_example
         {
              _connection = c;
             ConfigureSysTopicsCallbacks(_connection);
-        }
-
-        public async Task<string> GetTwinAsync()
-        {
-            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
-            if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
-            {
-                getTwin_cb = s => tcs.TrySetResult(s);
-            }
-            else
-            {
-                getTwin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback?.ReasonCode}' publishing twin GET: {s}"));
-            }
-            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
         }
 
         public static async Task<thermostat_1> CreateDeviceClientAsync(string cs)
@@ -66,6 +53,19 @@ namespace com_example
             return client;
         }
 
+        public async Task InitTwinAsync(Dictionary<string, object> defaults)
+        {
+            var twin = await GetTwinAsync();
+            var root = JsonNode.Parse(twin);
+            var desired = root?["desired"];
+            var reported = root?["reported"];
+
+            var desiredVersion = desired?["$version"]?.GetValue<int>();
+
+
+
+        }
+
         private void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
         {
             connection.OnMessage = async m =>
@@ -84,9 +84,17 @@ namespace com_example
 
                 string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
 
-                if (topic.StartsWith("$iothub/methods/POST/getRuntimeStats"))
+                if (topic.StartsWith("$iothub/methods/POST/getMaxMinReport"))
                 {
-                    
+                    Cmd_getMaxMinReport_Request req = new Cmd_getMaxMinReport_Request()
+                    {
+                        since = JsonSerializer.Deserialize<DateTime>(msg)
+                    };
+                    if (OnCommand_getMaxMinReport_Invoked != null)
+                    {
+                        var resp = await OnCommand_getMaxMinReport_Invoked.Invoke(req);
+                        await _connection.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={rid}", resp);
+                    }    
                 }
 
                 if (topic.StartsWith("$iothub/twin/res/200"))
@@ -105,6 +113,45 @@ namespace com_example
                     await Invoke_targetTemperature_Callback(root);
                 }
             };
+        }
+
+        public async Task<string> GetTwinAsync()
+        {
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
+            {
+                getTwin_cb = s => tcs.TrySetResult(s);
+            }
+            else
+            {
+                getTwin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback?.ReasonCode}' publishing twin GET: {s}"));
+            }
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
+        }
+
+        public async Task<int> Report_maxTempSinceLastReboot(double maxTempSinceLastReboot)
+        {
+            var tcs = new TaskCompletionSource<int>();
+            var puback = await _connection.PublishAsync(
+                    $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
+                        new { maxTempSinceLastReboot });
+            if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
+            {
+                report_cb = s => tcs.TrySetResult(s);
+            }
+            else
+            {
+                report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
+            }
+            return tcs.Task.Result;
+        }
+
+        public async Task<MqttClientPublishResult> Send_temperature(double temperature)
+        {
+            return await _connection.PublishAsync(
+                $"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",
+                new { temperature });
         }
 
         private async Task Invoke_targetTemperature_Callback(JsonNode desired)
