@@ -142,7 +142,8 @@ namespace Rido.IoTHubClient
                     var dpsRes = JsonSerializer.Deserialize<DpsStatus>(msg);
                     if (dpsRes.status == "assigning")
                     {
-                        await Task.Delay(900);
+                        // TODO: ready retry-after
+                        await Task.Delay(2500); //avoid throtling
                         var pollTopic = $"$dps/registrations/GET/iotdps-get-operationstatus/?$rid={rid}&operationId={dpsRes.operationId}";
                         var puback = await mqttClient.PublishAsync(pollTopic);
                     }

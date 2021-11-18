@@ -209,16 +209,8 @@ namespace Rido.IoTHubClient
         {
             if (mqttClient.IsConnected)
             {
-                //var unsuback = await MqttClient.UnsubscribeAsync(new string[]
-                //{
-                //    "$iothub/methods/POST/#",
-                //    "$iothub/twin/res/#",
-                //    "$iothub/twin/PATCH/properties/desired/#"
-                //});
-                //unsuback.Items.ToList().ForEach(i => Trace.TraceInformation($"- {i.TopicFilter} {i.ReasonCode}"));
                 Trace.TraceWarning("Forced Diconnection");
                 await mqttClient.DisconnectAsync();
-
             }
         }
 
@@ -237,6 +229,8 @@ namespace Rido.IoTHubClient
             reconnecting = false;
             timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
         }
+
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string topic) => await SubscribeAsync(new string [] {topic});
 
         public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics)
         {
