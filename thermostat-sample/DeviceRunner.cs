@@ -3,10 +3,10 @@ namespace thermostat_sample;
 public class DeviceRunner : BackgroundService
 {
     static Random random = new();
-    static double rndDouble(double scaleFactor = 1.0) => random.NextDouble() * scaleFactor;
-    static double temperature = Math.Round(rndDouble(18), 1);
+    static double rndDouble(double scaleFactor = 1.1) => random.NextDouble() * scaleFactor;
     double maxTemp = 0d;
-    Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, temperature } };
+    FixedSizeDictonary<DateTimeOffset, double> readings = new(1000) { { DateTimeOffset.Now, Math.Round(rndDouble(18), 1) } };
+    double temperature = Math.Round(rndDouble(18), 1);
 
     private readonly ILogger<DeviceRunner> _logger;
     private readonly IConfiguration _configuration;
