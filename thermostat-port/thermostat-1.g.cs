@@ -8,15 +8,9 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Web;
 
-public class CommandResponse
-{
-    [JsonIgnore]
-    public int _status { get; set; }
-    [JsonIgnore]
-    public int _rid { get; set; }
-}
 
-public class TargetTemperature
+
+public class TargetTemperature 
 {
     public double targetTemperature { get; set; }
     public int version { get; set; }
@@ -27,9 +21,13 @@ public class Command_getMaxMinReport_Request
     public DateTime since { get; set; }
     public int _rid { get; set; }
 }
-
-public class Command_getMaxMinReport_Response : CommandResponse
+public class Command_getMaxMinReport_Response 
 {
+    [JsonIgnore]
+    public int _status { get; set; }
+    [JsonIgnore]
+    public int _rid { get; set; }
+
     public double maxTemp { get; set; }
     public double minTemp { get; set; }
     public double avgTemp { get; set; }

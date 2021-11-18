@@ -1,0 +1,132 @@
+﻿using MQTTnet.Client.Publishing;
+using Rido.IoTHubClient;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
+using System.Web;
+
+namespace com_example
+{
+    public class thermostat_1
+    {
+        const string modelId = "dtmi:rido:pnp_basic;1";
+        internal IHubMqttConnection _connection;
+
+        int lastRid;
+
+        public Func<WritableProperty<double>, Task<WritableProperty<double>>> OnProperty_targetTemperature_Updated = null;
+        public Func<Cmd_getMaxMinReport_Request, Task<Cmd_getMaxMinReport_Response>> OnCommand_getMaxMinReport_Invoked = null;
+
+        public WritableProperty<double> Property_targetTemperature;
+
+        Action<string> getTwin_cb;
+        Action<int> report_cb;
+
+        public thermostat_1(IHubMqttConnection c)
+        {
+             _connection = c;
+            ConfigureSysTopicsCallbacks(_connection);
+        }
+
+        public async Task<string> GetTwinAsync()
+        {
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
+            {
+                getTwin_cb = s => tcs.TrySetResult(s);
+            }
+            else
+            {
+                getTwin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback?.ReasonCode}' publishing twin GET: {s}"));
+            }
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
+        }
+
+        public static async Task<thermostat_1> CreateDeviceClientAsync(string cs)
+        {
+            async Task SubscribeToSysTopicsAsync(HubMqttConnection connection)
+            {
+                var subres = await connection.SubscribeAsync(new string[] {
+                                                    "$iothub/methods/POST/#",
+                                                    "$iothub/twin/res/#",
+                                                    "$iothub/twin/PATCH/properties/desired/#"});
+
+                subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+            }
+
+            if (cs == null) throw new ArgumentException("ConnectionString is null");
+            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId });
+            await SubscribeToSysTopicsAsync(connection);
+            var client = new thermostat_1(connection);
+            return client;
+        }
+
+        private void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
+        {
+            connection.OnMessage = async m =>
+            {
+                var topic = m.ApplicationMessage.Topic;
+                var segments = topic.Split('/');
+                int rid = 0;
+                int twinVersion = 0;
+                if (topic.Contains('?'))
+                {
+                    // parse qs to extract the rid
+                    var qs = HttpUtility.ParseQueryString(segments[^1]);
+                    rid = Convert.ToInt32(qs["$rid"]);
+                    twinVersion = Convert.ToInt32(qs["$version"]);
+                }
+
+                string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
+
+                if (topic.StartsWith("$iothub/methods/POST/getRuntimeStats"))
+                {
+                    
+                }
+
+                if (topic.StartsWith("$iothub/twin/res/200"))
+                {
+                    this.getTwin_cb?.Invoke(msg);
+                }
+
+                if (topic.StartsWith("$iothub/twin/res/204"))
+                {
+                    this.report_cb?.Invoke(twinVersion);
+                }
+
+                if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
+                {
+                    JsonNode root = JsonNode.Parse(msg);
+                    await Invoke_targetTemperature_Callback(root);
+                }
+            };
+        }
+
+        private async Task Invoke_targetTemperature_Callback(JsonNode desired)
+        {
+            if (desired?["targetTemperature"] != null)
+            {
+                if (OnProperty_targetTemperature_Updated != null)
+                {
+                    var targetTemperatureProperty = new WritableProperty<double>("targetTemperature")
+                    {
+                        Value = Convert.ToDouble(desired?["targetTemperature"]?.GetValue<double>()),
+                        Version = desired["$version"].GetValue<int>(),
+                    };
+                    var ack = await OnProperty_targetTemperature_Updated.Invoke(targetTemperatureProperty);
+                    if (ack != null)
+                    {
+                        Property_targetTemperature = ack;
+                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
+                    }
+                }
+            }
+        }
+    }
+}
+
