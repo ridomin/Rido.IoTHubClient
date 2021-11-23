@@ -15,6 +15,7 @@ namespace com_example
         internal IMqttConnection _connection;
 
         int lastRid;
+        public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
 
         public Func<WritableProperty<double>, Task<WritableProperty<double>>> OnProperty_targetTemperature_Updated = null;
         public Func<Cmd_getMaxMinReport_Request, Task<Cmd_getMaxMinReport_Response>> OnCommand_getMaxMinReport_Invoked = null;

@@ -149,7 +149,7 @@ namespace Rido.IoTHubClient
             return await mqttClient.ConnectWithX509Async(dcs.HostName, cert, dcs.ModelId);
         }
 
-        public static async Task<HubMqttConnection> CreateAsync(string hostname, X509Certificate2 cert, string modelId = "")
+        public static async Task<IMqttConnection> CreateAsync(string hostname, X509Certificate2 cert, string modelId = "")
         {
             string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
             Trace.TraceInformation(certInfo);

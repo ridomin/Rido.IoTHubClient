@@ -1,3 +1,5 @@
+using Rido.IoTHubClient;
+
 namespace thermostat_sample;
 
 public class DeviceRunner : BackgroundService
@@ -9,8 +11,6 @@ public class DeviceRunner : BackgroundService
     double maxTemp = 0d;
     FixedSizeDictonary<DateTimeOffset, double> readings = new(1000) { { DateTimeOffset.Now, Math.Round(rndDouble(18), 1) } };
     double temperature = Math.Round(rndDouble(18), 1);
-
-
 
     private readonly ILogger<DeviceRunner> _logger;
     private readonly IConfiguration _configuration;
@@ -26,13 +26,22 @@ public class DeviceRunner : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         client = await com_example.thermostat_1.CreateDeviceClientAsync(_configuration.GetConnectionString("cs"));
-
+        _logger.LogInformation(client.ConnectionSettings.ToString());
         client.OnProperty_targetTemperature_Updated = async m =>
         {
-            Console.WriteLine("\n<- w: targetTemperature received " + m.Value);
+            _logger.LogInformation("\n<- w: targetTemperature received " + m.Value);
+            //await Task.Delay(1000);
+            //var inProgress = new WritableProperty<double>("targetTemperature")
+            //{
+            //    Version = m.Version,
+            //    Value = temperature,
+            //    Status = 202,
+            //};
+            //await client.UpdateTwin(inProgress.ToAck());
+
             await AdjustTempInStepsAsync(m.Value);
-            await Task.Delay(1000);
-            return new Rido.IoTHubClient.WritableProperty<double>("targetTemperature")
+            
+            return new WritableProperty<double>("targetTemperature")
             {
                 Version = m.Version,
                 Value = m.Value,
@@ -87,17 +96,16 @@ public class DeviceRunner : BackgroundService
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(target);
-
-        Console.WriteLine("\n adjusting temp to: " + target);
+        _logger.LogInformation("\n adjusting temp to: " + target);
         double step = (target.Value - temperature) / 5d;
         for (int i = 1; i <= 5; i++)
         {
             temperature = Math.Round(temperature + step, 1);
             await client.Send_temperature(temperature);
-            Console.Write($"\r-> t: temperature {temperature} \t");
+            _logger.LogInformation($"\r-> t: temperature {temperature} \t");
             readings.Add(DateTimeOffset.Now, temperature);
             await Task.Delay(1000);
         }
-        Console.WriteLine("\n temp adjusted to: " + target);
+        _logger.LogInformation("\n temp adjusted to: " + target);
     }
 }
