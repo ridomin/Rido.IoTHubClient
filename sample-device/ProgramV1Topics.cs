@@ -1,6 +1,7 @@
 ﻿using Rido.IoTHubClient;
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace sample_device
@@ -14,7 +15,7 @@ namespace sample_device
             Trace.Listeners[1].Filter = new EventTypeFilter(SourceLevels.Warning);
 
             var conn = await HubMqttConnection.CreateAsync(
-                ConnectionSettings.FromConnectionString(Environment.GetEnvironmentVariable("cs")));
+                ConnectionSettings.FromConnectionString(Environment.GetEnvironmentVariable("cs")), CancellationToken.None);
 
             Console.WriteLine(conn.ConnectionSettings.ToString());
             Console.WriteLine(conn.IsConnected);

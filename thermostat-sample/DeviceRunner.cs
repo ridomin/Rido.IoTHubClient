@@ -26,7 +26,7 @@ public class DeviceRunner : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        client = await com_example.thermostat_1.CreateDeviceClientAsync(_configuration.GetConnectionString("cs"));
+        client = await com_example.thermostat_1.CreateDeviceClientAsync(_configuration.GetConnectionString("cs"), stoppingToken);
         Console.WriteLine(client.ConnectionSettings.ToString());
 
         client.OnProperty_targetTemperature_Updated = OnProperty_targetTemperatue_Handler;

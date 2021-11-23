@@ -31,7 +31,7 @@ namespace com_example
             ConfigureSysTopicsCallbacks(_connection);
         }
 
-        public static async Task<thermostat_1> CreateDeviceClientAsync(string cs)
+        public static async Task<thermostat_1> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)
         {
             async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
             {
@@ -44,7 +44,7 @@ namespace com_example
             }
 
             if (cs == null) throw new ArgumentException("ConnectionString is null");
-            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId });
+            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
             await SubscribeToSysTopicsAsync(connection);
             var client = new thermostat_1(connection);
             return client;

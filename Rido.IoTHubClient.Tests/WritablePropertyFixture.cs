@@ -19,7 +19,7 @@ namespace Rido.IoTHubClient.Tests
 
             WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", 0.2);
             Assert.Equal(0.2, twinProp.Value);
-            Assert.Equal(1, twinProp.Version);
+            Assert.Equal(0, twinProp.Version);
             Assert.Equal(201, twinProp.Status);
         }
 

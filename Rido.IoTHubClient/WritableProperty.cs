@@ -43,7 +43,7 @@ namespace Rido.IoTHubClient
 
             bool reportedFound = false;
             T reported_Prop = default(T);
-            int reported_Prop_version = -1;
+            int reported_Prop_version = 0;
             int reported_Prop_status = 001;
             string reported_Prop_description = String.Empty;
 

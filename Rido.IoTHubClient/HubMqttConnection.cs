@@ -80,26 +80,27 @@ namespace Rido.IoTHubClient
             });
         }
 
-        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs)
+        //public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs) => await CreateAsync(dcs, CancellationToken.None);
+        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs, CancellationToken cancellationToken)
         {
             await ProvisionIfNeeded(dcs);
             var connection = new HubMqttConnection(dcs);
-            await connection.ConnectAsync();
+            await connection.ConnectAsync(cancellationToken);
             return connection;
         }
 
-        private async Task ConnectAsync()
+        private async Task ConnectAsync(CancellationToken cancellationToken)
         {
             var dcs = ConnectionSettings;
             MqttClientConnectResult connAck = null;
             if (dcs.Auth == "X509")
             {
-                connAck = await ConnectWithCertAsync();
+                connAck = await ConnectWithCertAsync(cancellationToken);
             }
 
             if (dcs.Auth == "SAS")
             {
-                connAck = await ConnectWithSasAsync();
+                connAck = await ConnectWithSasAsync(cancellationToken);
             }
 
             if (connAck?.ResultCode != MqttClientConnectResultCode.Success)
@@ -108,17 +109,17 @@ namespace Rido.IoTHubClient
             }
         }
 
-        private async Task<MqttClientConnectResult> ConnectWithSasAsync()
+        private async Task<MqttClientConnectResult> ConnectWithSasAsync(CancellationToken cancellationToken)
         {
             var dcs = ConnectionSettings;
             MqttClientConnectResult connAck;
             if (string.IsNullOrEmpty(dcs.ModuleId))
             {
-                connAck = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
+                connAck = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, cancellationToken, dcs.ModelId, dcs.SasMinutes);
             }
             else
             {
-                connAck = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes);
+                connAck = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, cancellationToken, dcs.ModelId, dcs.SasMinutes);
             }
 
             if (connAck?.ResultCode == MqttClientConnectResultCode.Success)
@@ -128,7 +129,7 @@ namespace Rido.IoTHubClient
             return connAck;
         }
 
-        private async  Task<MqttClientConnectResult> ConnectWithCertAsync()
+        private async  Task<MqttClientConnectResult> ConnectWithCertAsync(CancellationToken cancellationToken)
         {
             var dcs = ConnectionSettings;
             var segments = dcs.X509Key.Split('|');
@@ -146,10 +147,10 @@ namespace Rido.IoTHubClient
                 dcs.ModuleId = segmentsId[1];
 
             }
-            return await mqttClient.ConnectWithX509Async(dcs.HostName, cert, dcs.ModelId);
+            return await mqttClient.ConnectWithX509Async(dcs.HostName, cert, cancellationToken, dcs.ModelId);
         }
 
-        public static async Task<IMqttConnection> CreateAsync(string hostname, X509Certificate2 cert, string modelId = "")
+        public static async Task<IMqttConnection> CreateAsync(string hostname, X509Certificate2 cert, CancellationToken cancellationToken, string modelId = "")
         {
             string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
             Trace.TraceInformation(certInfo);
@@ -165,7 +166,7 @@ namespace Rido.IoTHubClient
             }
 
             var client = new HubMqttConnection(ConnectionSettings.FromConnectionString($"HostName={hostname};DeviceId={deviceId};ModuleId={moduleId};Auth=X509"));
-            var connack = await client.mqttClient.ConnectWithX509Async(hostname, cert, modelId);
+            var connack = await client.mqttClient.ConnectWithX509Async(hostname, cert, cancellationToken, modelId);
             if (connack.ResultCode != MqttClientConnectResultCode.Success)
             {
                 throw new ApplicationException($"Error connecting: {connack.ResultCode} {connack.ReasonString}");
@@ -222,7 +223,7 @@ namespace Rido.IoTHubClient
             var dcs = ConnectionSettings;
 
             CloseAsync().Wait();
-            ConnectAsync().Wait();
+            ConnectAsync(CancellationToken.None).Wait();
             SubscribeAsync(subscribedTopics).Wait();
             
             Trace.TraceWarning($"Refreshed Result: {mqttClient.IsConnected}");
