@@ -241,9 +241,10 @@ namespace Rido.IoTHubClient
             return await mqttClient.SubscribeAsync(subBuilder.Build());
         }
 
-        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
+        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload) => await PublishAsync(topic, payload, CancellationToken.None);
+        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
         {
-            while (!IsConnected && reconnecting)
+            while (!IsConnected && reconnecting )
             {
                 Trace.TraceWarning(" !! waiting 100 ms to publish ");
                 await Task.Delay(100);
@@ -264,11 +265,11 @@ namespace Rido.IoTHubClient
                               .Build();
 
             MqttClientPublishResult pubRes;
-            if (IsConnected)
+            if (IsConnected && !cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    pubRes = await mqttClient.PublishAsync(message, CancellationToken.None);
+                    pubRes = await mqttClient.PublishAsync(message, cancellationToken);
                     if (pubRes.ReasonCode != MqttClientPublishReasonCode.Success)
                     {
                         Trace.TraceError(pubRes.ReasonCode + pubRes.ReasonString);

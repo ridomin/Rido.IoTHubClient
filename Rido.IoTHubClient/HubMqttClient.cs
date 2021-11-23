@@ -200,6 +200,12 @@ namespace Rido.IoTHubClient
         {
             throw new NotImplementedException("Pub/Sub not enabled in classic hubs");
         }
+
+        public Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException("Pub/Sub not enabled in classic hubs");
+        }
+
         public Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
             throw new NotImplementedException("Pub/Sub not enabled in classic hubs");

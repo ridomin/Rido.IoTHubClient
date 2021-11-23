@@ -88,7 +88,7 @@ namespace Rido.IoTHubClient
                     {
                         DesiredVersion = desiredVersion,
                         Value = desired_Prop,
-                        Version = reported_Prop_version
+                        Version = desiredVersion
                     };
                 }
             }
