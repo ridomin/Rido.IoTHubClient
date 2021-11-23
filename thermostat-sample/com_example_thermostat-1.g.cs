@@ -50,12 +50,13 @@ namespace com_example
             return client;
         }
 
-        public async Task InitTwinAsync(double defaultTargetTemp)
+        public async Task InitTwinProperty_targetTemperature_Async(double defaultTargetTemp)
         {
             var twin = await GetTwinAsync();
             Property_targetTemperature = WritableProperty<double>.InitFromTwin(twin, "targetTemperature", defaultTargetTemp);
             OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
-            await UpdateTwin(Property_targetTemperature.ToAck());
+            var v = await UpdateTwin(Property_targetTemperature.ToAck());
+            Trace.TraceInformation("ack saved to v " + v);
         }
 
         private void ConfigureSysTopicsCallbacks(IMqttConnection connection)
@@ -158,7 +159,7 @@ namespace com_example
                     var targetTemperatureProperty = new WritableProperty<double>("targetTemperature")
                     {
                         Value = Convert.ToDouble(desired?["targetTemperature"]?.GetValue<double>()),
-                        Version = desired["$version"].GetValue<int>(),
+                        DesiredVersion = desired["$version"].GetValue<int>()
                     };
                     var ack = await OnProperty_targetTemperature_Updated.Invoke(targetTemperatureProperty);
                     if (ack != null)

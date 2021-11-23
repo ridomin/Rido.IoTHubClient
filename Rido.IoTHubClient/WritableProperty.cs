@@ -12,7 +12,8 @@ namespace Rido.IoTHubClient
         {
             propName = name;
         }
-        public int Version { get; set; }
+        public int? DesiredVersion { get; set; }
+        public int? Version { get; set; }
         public string Description { get; set; }
         public int Status { get; set; }
         public T? Value { get; set; } = default(T);
@@ -30,6 +31,7 @@ namespace Rido.IoTHubClient
             T? reported_Prop = reported[propName]?["value"]?.GetValue<T>();
             int? reported_Prop_version = reported[propName]?["av"]?.GetValue<int>();
             int? reported_Prop_status = reported[propName]?["ac"]?.GetValue<int>();
+            string reported_Prop_description = reported[propName]?["ad"]?.GetValue<string>();
             if (desired_Prop.HasValue)
             {
                 if (desiredVersion > reported_Prop_version ||
@@ -40,7 +42,8 @@ namespace Rido.IoTHubClient
                         Value = desired_Prop.Value,
                         Version = desiredVersion.Value,
                         Status = 200,
-                        Description = "propertyAccepted"
+                        Description = "propertyAccepted",
+                        DesiredVersion = desiredVersion
                     };
                 }
             }
@@ -51,7 +54,8 @@ namespace Rido.IoTHubClient
                     Value = defaultValue,
                     Version = desiredVersion.Value,
                     Status = 201,
-                    Description = "init to default value"
+                    Description = "init to default value",
+                    DesiredVersion = -1
                 };
             }
             if (result == null && reported_Prop.HasValue)
@@ -60,11 +64,12 @@ namespace Rido.IoTHubClient
                 {
                     Value = reported_Prop.Value,
                     Version = reported_Prop_version.Value,
-                    Status = reported_Prop_status.Value
+                    Status = reported_Prop_status.Value,
+                    Description = reported_Prop_description,
+                    DesiredVersion = desiredVersion
                 };
             }
             return result;
-
         }
 
         public string ToAck()
@@ -76,7 +81,7 @@ namespace Rido.IoTHubClient
             writer.WriteStartObject();
 
             writer.WriteString("ad", Description);
-            writer.WriteNumber("av", Version );
+            writer.WriteNumber("av", Convert.ToInt32(Version.Value));
             writer.WriteNumber("ac", Status);
 
             // TODO: Use pattern matching

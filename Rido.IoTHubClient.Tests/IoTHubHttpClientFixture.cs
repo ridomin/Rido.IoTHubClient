@@ -21,10 +21,33 @@ namespace Rido.IoTHubClient.Tests
             Assert.True(resp.IsSuccessStatusCode);
         }
 
+        //[Fact]
+        //public async Task SendTelemetryObjectModule()
+        //{
+        //    var client = new IoTHubHttpClient(new ConnectionSettings() { HostName = hostname, DeviceId = deviceId, ModuleId="m1", SharedAccessKey = DefaultKey });
+        //    var resp = await client.SendTelemetryAsync(new { temperature = 22 });
+        //    Assert.True(resp.IsSuccessStatusCode);
+        //}
+
         [Fact]
         public async Task SendTelemetryString()
         {
             var client = new IoTHubHttpClient(new ConnectionSettings() { HostName = hostname, DeviceId = deviceId, SharedAccessKey = DefaultKey });
+            var resp = await client.SendTelemetryAsync("{ \"temperature\" = 22 }");
+            Assert.True(resp.IsSuccessStatusCode);
+        }
+
+        [Fact]
+        public async Task SendTelemetryStringWithCert()
+        {
+            const string hubName = "tests.azure-devices.net";
+            var cs = new ConnectionSettings()
+            {
+                HostName = hubName,
+                Auth = "X509",
+                X509Key = "testdevice.pfx|1234"
+            };
+            var client = new IoTHubHttpClient(cs);
             var resp = await client.SendTelemetryAsync("{ \"temperature\" = 22 }");
             Assert.True(resp.IsSuccessStatusCode);
         }
