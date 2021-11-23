@@ -32,7 +32,7 @@ namespace com_example
 
         public static async Task<thermostat_1> CreateDeviceClientAsync(string cs)
         {
-            async Task SubscribeToSysTopicsAsync(HubMqttConnection connection)
+            async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
             {
                 var subres = await connection.SubscribeAsync(new string[] {
                                                     "$iothub/methods/POST/#",

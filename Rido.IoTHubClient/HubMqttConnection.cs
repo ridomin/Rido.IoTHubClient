@@ -80,7 +80,7 @@ namespace Rido.IoTHubClient
             });
         }
 
-        public static async Task<HubMqttConnection> CreateAsync(ConnectionSettings dcs)
+        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs)
         {
             await ProvisionIfNeeded(dcs);
             var connection = new HubMqttConnection(dcs);

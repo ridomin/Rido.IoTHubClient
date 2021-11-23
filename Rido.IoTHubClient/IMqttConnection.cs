@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
-    public interface IMqttConnection
+    public interface IMqttConnection : IDisposable
     {
         ConnectionSettings ConnectionSettings { get; }
         bool IsConnected { get; }

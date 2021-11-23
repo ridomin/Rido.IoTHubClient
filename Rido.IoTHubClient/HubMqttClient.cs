@@ -29,7 +29,7 @@ namespace Rido.IoTHubClient
         int lastRid = 1;
         private bool disposedValue;
 
-        readonly HubMqttConnection connection;
+        readonly IMqttConnection connection;
 
         public static async Task<IHubMqttClient> CreateAsync(string hostname, string deviceId, string deviceKey) => 
             await CreateAsync(new ConnectionSettings { HostName = hostname, DeviceId = deviceId, SharedAccessKey = deviceKey });
@@ -45,7 +45,7 @@ namespace Rido.IoTHubClient
             return hubClient;
         }
 
-        private HubMqttClient(HubMqttConnection conn)
+        private HubMqttClient(IMqttConnection conn)
         {
             connection = conn;
         }
