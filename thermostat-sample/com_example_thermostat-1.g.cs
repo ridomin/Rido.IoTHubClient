@@ -54,9 +54,8 @@ namespace com_example
         {
             var twin = await GetTwinAsync();
             Property_targetTemperature = WritableProperty<double>.InitFromTwin(twin, "targetTemperature", defaultTargetTemp);
-            OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
-            var v = await UpdateTwin(Property_targetTemperature.ToAck());
-            Trace.TraceInformation("ack saved to v " + v);
+            var ack = await OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
+            _ = await UpdateTwin(ack.ToAck());
         }
 
         private void ConfigureSysTopicsCallbacks(IMqttConnection connection)

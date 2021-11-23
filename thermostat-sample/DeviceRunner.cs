@@ -78,7 +78,7 @@ public class DeviceRunner : BackgroundService
         Console.WriteLine("\n<- w: targetTemperature received " + prop.Value);
         await Task.Delay(1000);
 
-        await AdjustTempInStepsAsync(prop.Value);
+        await AdjustTempInStepsAsync(prop);
 
         return new WritableProperty<double>("targetTemperature")
         {
@@ -89,12 +89,13 @@ public class DeviceRunner : BackgroundService
         };
     }
 
-    async Task AdjustTempInStepsAsync(double? target)
+    async Task AdjustTempInStepsAsync(WritableProperty<double> prop)
     {
         ArgumentNullException.ThrowIfNull(client);
-        ArgumentNullException.ThrowIfNull(target);
-        Console.WriteLine("\n adjusting temp to: " + target);
-        double step = (target.Value - temperature) / 5d;
+        ArgumentNullException.ThrowIfNull(prop);
+        Console.WriteLine("\n adjusting temp to: " + prop.Value);
+        await client.UpdateTwin(new WritableProperty<double>("targetTemperature") { Status = 202, Version = prop.Version, Value = prop.Value }.ToAck());
+        double step = (prop.Value - temperature) / 5d;
         for (int i = 1; i <= 5; i++)
         {
             temperature = Math.Round(temperature + step, 1);
@@ -103,6 +104,6 @@ public class DeviceRunner : BackgroundService
             readings.Add(DateTimeOffset.Now, temperature);
             await Task.Delay(1000);
         }
-        Console.WriteLine("\n temp adjusted to: " + target);
+        Console.WriteLine("\n temp adjusted to: " + prop.Value);
     }
 }

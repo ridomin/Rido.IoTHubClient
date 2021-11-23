@@ -31,7 +31,7 @@ namespace Rido.IoTHubClient
             var desired = root?["desired"];
             var reported = root?["reported"];
             int desiredVersion = desired["$version"].GetValue<int>();
-            WritableProperty<T> result = new WritableProperty<T>(propName) { DesiredVersion = desiredVersion};
+            WritableProperty<T> result = new WritableProperty<T>(propName) { DesiredVersion = desiredVersion };
 
             bool desiredFound = false;
             T desired_Prop = default(T);
@@ -41,11 +41,11 @@ namespace Rido.IoTHubClient
                 desiredFound = true;
             }
 
-            bool reportedFound =false;
+            bool reportedFound = false;
             T reported_Prop = default(T);
             int reported_Prop_version = -1;
             int reported_Prop_status = 001;
-            string reported_Prop_description= String.Empty;
+            string reported_Prop_description = String.Empty;
 
             if (reported[propName] != null)
             {
@@ -55,13 +55,13 @@ namespace Rido.IoTHubClient
                 reported_Prop_description = reported[propName]["ad"]?.GetValue<string>();
                 reportedFound = true;
             }
-            
+
             if (!desiredFound && !reportedFound)
             {
                 result = new WritableProperty<T>(propName)
                 {
                     DesiredVersion = desiredVersion,
-                    Version = desiredVersion,
+                    Version = reported_Prop_version,
                     Value = defaultValue,
                     Status = 201,
                     Description = "Init from default value"
@@ -72,6 +72,7 @@ namespace Rido.IoTHubClient
             {
                 result = new WritableProperty<T>(propName)
                 {
+                    DesiredVersion = desiredVersion,
                     Version = reported_Prop_version,
                     Value = reported_Prop,
                     Status = reported_Prop_status,
@@ -79,7 +80,21 @@ namespace Rido.IoTHubClient
                 };
             }
 
-            if (desiredFound)
+            if (desiredFound && reportedFound)
+            {
+                if (desiredVersion >= reported_Prop_version)
+                {
+                    result = new WritableProperty<T>(propName)
+                    {
+                        DesiredVersion = desiredVersion,
+                        Value = desired_Prop,
+                        Version = reported_Prop_version
+                    };
+                }
+            }
+
+
+            if (desiredFound && !reportedFound)
             {
                 result = new WritableProperty<T>(propName)
                 {
@@ -88,10 +103,10 @@ namespace Rido.IoTHubClient
                 };
             }
 
-             
+
             return result;
         }
 
-        public string ToAck() => JsonSerializer.Serialize(new Dictionary<string, object>(){{ propName, this }});
+        public string ToAck() => JsonSerializer.Serialize(new Dictionary<string, object>() { { propName, this } });
     }
 }
