@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttConnection : IHubMqttConnection, IDisposable
+    public class HubMqttConnection : IMqttConnection, IDisposable
     {
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         public bool IsConnected => mqttClient.IsConnected;

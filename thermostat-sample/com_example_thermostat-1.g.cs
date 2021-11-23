@@ -12,7 +12,7 @@ namespace com_example
     {
         const string modelId = "dtmi:com:example:Thermostat;1";
 
-        internal IHubMqttConnection _connection;
+        internal IMqttConnection _connection;
 
         int lastRid;
 
@@ -24,7 +24,7 @@ namespace com_example
         Action<string> getTwin_cb;
         Action<int> report_cb;
 
-        public thermostat_1(IHubMqttConnection c)
+        public thermostat_1(IMqttConnection c)
         {
              _connection = c;
             ConfigureSysTopicsCallbacks(_connection);
@@ -57,7 +57,7 @@ namespace com_example
             await UpdateTwin(Property_targetTemperature.ToAck());
         }
 
-        private void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
+        private void ConfigureSysTopicsCallbacks(IMqttConnection connection)
         {
             connection.OnMessage = async m =>
             {
