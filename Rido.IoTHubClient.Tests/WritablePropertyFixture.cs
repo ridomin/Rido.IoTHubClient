@@ -131,5 +131,40 @@ namespace Rido.IoTHubClient.Tests
             });
             Assert.Equal(expectedJson, wp.ToAck());
         }
+
+        [Fact]
+        public void AckComplexOject()
+        {
+            var aComplexObj = new AComplexObj() { AIntProp = 1 , AStringProp ="a"};
+            var prop = new WritableProperty<AComplexObj>("aComplexObj")
+            {
+                Version = 3,
+                Value = aComplexObj,
+                Status = 213,
+                Description = "description"
+            };
+            var expectedJson = js(new
+            {
+                aComplexObj = new
+                {
+                    av = 3,
+                    ad = "description",
+                    ac = 213,
+                    value = new
+                    {
+                        AStringProp ="a",
+                        AIntProp = 1
+                    },
+                }
+            });
+            Assert.Equal(expectedJson, prop.ToAck());
+        }
+
+    }
+    class AComplexObj
+    {
+        public string AStringProp { get; set; }
+        public int AIntProp { get; set; }
+
     }
 }
