@@ -1,102 +1,97 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Rido.IoTHubClient
 {
-    public class WritableProperty<T> where T : struct
+    public class WritableProperty<T> // where T : struct
     {
         string propName;
         public WritableProperty(string name)
         {
             propName = name;
         }
+        [JsonIgnore]
         public int? DesiredVersion { get; set; }
+        [JsonPropertyName("av")]
         public int? Version { get; set; }
+        [JsonPropertyName("ad")]
         public string Description { get; set; }
+        [JsonPropertyName("ac")]
         public int Status { get; set; }
-        public T? Value { get; set; } = default(T);
+        [JsonPropertyName("value")]
+        public T Value { get; set; } = default(T);
 
         public static WritableProperty<T> InitFromTwin(string twinJson, string propName, T defaultValue)
         {
-            WritableProperty<T> result = null;
             var root = JsonNode.Parse(twinJson);
             var desired = root?["desired"];
             var reported = root?["reported"];
+            int desiredVersion = desired["$version"].GetValue<int>();
+            WritableProperty<T> result = new WritableProperty<T>(propName) { DesiredVersion = desiredVersion};
 
-            int? desiredVersion = desired?["$version"]?.GetValue<int>();
-
-            T? desired_Prop = desired[propName]?.GetValue<T>();
-            T? reported_Prop = reported[propName]?["value"]?.GetValue<T>();
-            int? reported_Prop_version = reported[propName]?["av"]?.GetValue<int>();
-            int? reported_Prop_status = reported[propName]?["ac"]?.GetValue<int>();
-            string reported_Prop_description = reported[propName]?["ad"]?.GetValue<string>();
-            if (desired_Prop.HasValue)
+            bool desiredFound = false;
+            T desired_Prop = default(T);
+            if (desired[propName] != null)
             {
-                if (desiredVersion > reported_Prop_version ||
-                    !reported_Prop.HasValue)
-                {
-                    result = new WritableProperty<T>(propName)
-                    {
-                        Value = desired_Prop.Value,
-                        Version = desiredVersion.Value,
-                        Status = 200,
-                        Description = "propertyAccepted",
-                        DesiredVersion = desiredVersion
-                    };
-                }
+                desired_Prop = desired[propName].GetValue<T>();
+                desiredFound = true;
             }
-            else if (!reported_Prop.HasValue)
+
+            bool reportedFound =false;
+            T reported_Prop = default(T);
+            int reported_Prop_version = -1;
+            int reported_Prop_status = 001;
+            string reported_Prop_description= String.Empty;
+
+            if (reported[propName] != null)
+            {
+                reported_Prop = reported[propName]["value"].GetValue<T>();
+                reported_Prop_version = reported[propName]["av"].GetValue<int>();
+                reported_Prop_status = reported[propName]["ac"].GetValue<int>();
+                reported_Prop_description = reported[propName]["ad"]?.GetValue<string>();
+                reportedFound = true;
+            }
+            
+            if (!desiredFound && !reportedFound)
             {
                 result = new WritableProperty<T>(propName)
                 {
+                    DesiredVersion = desiredVersion,
+                    Version = desiredVersion,
                     Value = defaultValue,
-                    Version = desiredVersion.Value,
                     Status = 201,
-                    Description = "init to default value",
-                    DesiredVersion = -1
+                    Description = "Init from default value"
                 };
             }
-            if (result == null && reported_Prop.HasValue)
+
+            if (!desiredFound && reportedFound)
             {
                 result = new WritableProperty<T>(propName)
                 {
-                    Value = reported_Prop.Value,
-                    Version = reported_Prop_version.Value,
-                    Status = reported_Prop_status.Value,
-                    Description = reported_Prop_description,
-                    DesiredVersion = desiredVersion
+                    Version = reported_Prop_version,
+                    Value = reported_Prop,
+                    Status = reported_Prop_status,
+                    Description = reported_Prop_description
                 };
             }
+
+            if (desiredFound)
+            {
+                result = new WritableProperty<T>(propName)
+                {
+                    DesiredVersion = desiredVersion,
+                    Value = desired_Prop
+                };
+            }
+
+             
             return result;
         }
 
-        public string ToAck()
-        {
-            using MemoryStream ms = new MemoryStream();
-            using Utf8JsonWriter writer = new Utf8JsonWriter(ms);
-            writer.WriteStartObject();
-            writer.WritePropertyName(propName);
-            writer.WriteStartObject();
-
-            writer.WriteString("ad", Description);
-            writer.WriteNumber("av", Convert.ToInt32(Version.Value));
-            writer.WriteNumber("ac", Status);
-
-            // TODO: Use pattern matching
-            if (Value?.GetType() == typeof(bool)) writer.WriteBoolean("value", Convert.ToBoolean(Value));
-            if (Value?.GetType() == typeof(int)) writer.WriteNumber("value", Convert.ToInt32(Value));
-            if (Value?.GetType() == typeof(double)) writer.WriteNumber("value", Convert.ToDouble(Value));
-            if (Value?.GetType() == typeof(DateTime)) writer.WriteString("value", Convert.ToDateTime(Value).ToString("yyyy-MM-ddThh:mm:ss.000Z"));
-            if (Value?.GetType() == typeof(string)) writer.WriteString("value", Value.ToString());
-
-            writer.WriteEndObject();
-            writer.WriteEndObject();
-            writer.Flush();
-            ms.Position = 0;
-            using StreamReader sr = new StreamReader(ms);
-            return sr.ReadToEnd();
-        }
+        public string ToAck() => JsonSerializer.Serialize(new Dictionary<string, object>(){{ propName, this }});
     }
 }
