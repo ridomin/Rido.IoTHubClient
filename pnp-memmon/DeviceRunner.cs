@@ -45,8 +45,8 @@ public class DeviceRunner : BackgroundService
 
         _ = await client.Report_started_Async(DateTime.Now);
 
-        await client.InitProperty_interval_Async(default_interval);
         await client.InitProperty_enabled_Async(default_enabled);
+        await client.InitProperty_interval_Async(default_interval);
 
         screenRefresher = new Timer(RefreshScreen, this, 1000, 0);
 

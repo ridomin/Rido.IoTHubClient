@@ -46,8 +46,15 @@ namespace dtmi_rido_pnp
         {
             var twin = await GetTwinAsync();
             Property_enabled = WritableProperty<bool>.InitFromTwin(twin, "enabled", defaultEnabled);
-            OnProperty_enabled_Updated?.Invoke(Property_enabled);
-            await UpdateTwin(Property_enabled.ToAck());
+            if (OnProperty_enabled_Updated != null)
+            {
+                var ack = await OnProperty_enabled_Updated.Invoke(Property_enabled);
+                await UpdateTwin(ack.ToAck());
+            }
+            if (Property_enabled.DesiredVersion < 2)
+            {
+                await UpdateTwin(Property_enabled.ToAck()); ;
+            }
         }
 
         public async Task InitProperty_interval_Async(int defaultInterval)
