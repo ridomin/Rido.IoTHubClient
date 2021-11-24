@@ -15,7 +15,7 @@ namespace dtmi_rido_pnp
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
         internal IMqttConnection _connection;
-
+        string initialTwin = string.Empty;
         int lastRid;
 
         public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
@@ -39,34 +39,35 @@ namespace dtmi_rido_pnp
             var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
             await SubscribeToSysTopicsAsync(connection);
             var client = new memmon(connection);
+            client.initialTwin = await client.GetTwinAsync();
             return client;
         }
 
         public async Task InitProperty_enabled_Async(bool defaultEnabled)
         {
-            var twin = await GetTwinAsync();
-            Property_enabled = WritableProperty<bool>.InitFromTwin(twin, "enabled", defaultEnabled);
-            if (OnProperty_enabled_Updated != null)
+            Property_enabled = WritableProperty<bool>.InitFromTwin(initialTwin, "enabled", defaultEnabled);
+            if (OnProperty_enabled_Updated != null && (Property_enabled.DesiredVersion > 1))
             {
                 var ack = await OnProperty_enabled_Updated.Invoke(Property_enabled);
                 await UpdateTwin(ack.ToAck());
+                Property_enabled = ack;
             }
-            if (Property_enabled.DesiredVersion < 2)
+            else
             {
-                await UpdateTwin(Property_enabled.ToAck()); ;
+                await UpdateTwin(Property_enabled.ToAck());
             }
         }
 
         public async Task InitProperty_interval_Async(int defaultInterval)
         {
-            var twin = await GetTwinAsync();
-            Property_interval = WritableProperty<int>.InitFromTwin(twin, "interval", defaultInterval);
-            if (OnProperty_interval_Updated != null)
+            Property_interval = WritableProperty<int>.InitFromTwin(initialTwin, "interval", defaultInterval);
+            if (OnProperty_interval_Updated != null && (Property_interval.DesiredVersion > 1))
             {
                 var ack = await OnProperty_interval_Updated.Invoke(Property_interval);
                 await UpdateTwin(ack.ToAck());
+                Property_interval = ack;
             }
-            if (Property_interval.DesiredVersion<2)
+            else
             {
                 await UpdateTwin(Property_interval.ToAck());
             }

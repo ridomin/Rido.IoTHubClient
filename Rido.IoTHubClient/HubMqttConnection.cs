@@ -80,7 +80,7 @@ namespace Rido.IoTHubClient
             });
         }
 
-        //public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs) => await CreateAsync(dcs, CancellationToken.None);
+        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs) => await CreateAsync(dcs, CancellationToken.None);
         public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs, CancellationToken cancellationToken)
         {
             await ProvisionIfNeeded(dcs);
@@ -148,31 +148,6 @@ namespace Rido.IoTHubClient
 
             }
             return await mqttClient.ConnectWithX509Async(dcs.HostName, cert, cancellationToken, dcs.ModelId);
-        }
-
-        public static async Task<IMqttConnection> CreateAsync(string hostname, X509Certificate2 cert, CancellationToken cancellationToken, string modelId = "")
-        {
-            string certInfo = $"{cert.SubjectName.Name} issued by {cert.IssuerName.Name} NotAfter {cert.GetExpirationDateString()} ({cert.Thumbprint})";
-            Trace.TraceInformation(certInfo);
-            var cid = cert.Subject[3..];
-            string deviceId = cid;
-            string moduleId = string.Empty;
-
-            if (cid.Contains("/")) // is a module
-            {
-                var segments = cid.Split('/');
-                deviceId = segments[0];
-                moduleId = segments[1];
-            }
-
-            var client = new HubMqttConnection(ConnectionSettings.FromConnectionString($"HostName={hostname};DeviceId={deviceId};ModuleId={moduleId};Auth=X509"));
-            var connack = await client.mqttClient.ConnectWithX509Async(hostname, cert, cancellationToken, modelId);
-            if (connack.ResultCode != MqttClientConnectResultCode.Success)
-            {
-                throw new ApplicationException($"Error connecting: {connack.ResultCode} {connack.ReasonString}");
-            }
-
-            return client;
         }
 
         private static async Task ProvisionIfNeeded(ConnectionSettings dcs)
@@ -290,6 +265,8 @@ namespace Rido.IoTHubClient
                 return new MqttClientPublishResult() { ReasonCode = MqttClientPublishReasonCode.UnspecifiedError };
             }
         }
+
+        
 
         public void Dispose()
         {

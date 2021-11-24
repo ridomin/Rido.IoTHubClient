@@ -72,7 +72,7 @@ namespace Rido.IoTHubClient
             {
                 result = new WritableProperty<T>(propName)
                 {
-                    DesiredVersion = desiredVersion,
+                    DesiredVersion = 0,
                     Version = reported_Prop_version,
                     Value = reported_Prop,
                     Status = reported_Prop_status,
@@ -99,6 +99,7 @@ namespace Rido.IoTHubClient
                 result = new WritableProperty<T>(propName)
                 {
                     DesiredVersion = desiredVersion,
+                    Version = desiredVersion,
                     Value = desired_Prop
                 };
             }
