@@ -33,46 +33,6 @@ namespace dtmi_rido_pnp
             ConfigureSysTopicsCallbacks(_connection);
         }
 
-        public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)
-        {
-            ArgumentNullException.ThrowIfNull(cs);
-            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
-            await SubscribeToSysTopicsAsync(connection);
-            var client = new memmon(connection);
-            client.initialTwin = await client.GetTwinAsync();
-            return client;
-        }
-
-        public async Task InitProperty_enabled_Async(bool defaultEnabled)
-        {
-            Property_enabled = WritableProperty<bool>.InitFromTwin(initialTwin, "enabled", defaultEnabled);
-            if (OnProperty_enabled_Updated != null && (Property_enabled.DesiredVersion > 1))
-            {
-                var ack = await OnProperty_enabled_Updated.Invoke(Property_enabled);
-                await UpdateTwin(ack.ToAck());
-                Property_enabled = ack;
-            }
-            else
-            {
-                await UpdateTwin(Property_enabled.ToAck());
-            }
-        }
-
-        public async Task InitProperty_interval_Async(int defaultInterval)
-        {
-            Property_interval = WritableProperty<int>.InitFromTwin(initialTwin, "interval", defaultInterval);
-            if (OnProperty_interval_Updated != null && (Property_interval.DesiredVersion > 1))
-            {
-                var ack = await OnProperty_interval_Updated.Invoke(Property_interval);
-                await UpdateTwin(ack.ToAck());
-                Property_interval = ack;
-            }
-            else
-            {
-                await UpdateTwin(Property_interval.ToAck());
-            }
-        }
-
         void ConfigureSysTopicsCallbacks(IMqttConnection connection)
         {
             connection.OnMessage = async m =>
@@ -124,6 +84,58 @@ namespace dtmi_rido_pnp
             };
         }
 
+        public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(cs);
+            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
+            await SubscribeToSysTopicsAsync(connection);
+            var client = new memmon(connection);
+            client.initialTwin = await client.GetTwinAsync();
+            return client;
+        }
+
+        private static async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
+        {
+            var subres = await connection.SubscribeAsync(new string[] {
+                                                    "$iothub/methods/POST/#",
+                                                    "$iothub/twin/res/#",
+                                                    "$iothub/twin/PATCH/properties/desired/#"});
+
+            subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
+        }
+
+        public async Task InitProperty_enabled_Async(bool defaultEnabled)
+        {
+            Property_enabled = WritableProperty<bool>.InitFromTwin(initialTwin, "enabled", defaultEnabled);
+            if (OnProperty_enabled_Updated != null && (Property_enabled.DesiredVersion > 1))
+            {
+                var ack = await OnProperty_enabled_Updated.Invoke(Property_enabled);
+                await UpdateTwinAsync(ack.ToAck());
+                Property_enabled = ack;
+            }
+            else
+            {
+                await UpdateTwinAsync(Property_enabled.ToAck());
+            }
+        }
+
+        public async Task InitProperty_interval_Async(int defaultInterval)
+        {
+            Property_interval = WritableProperty<int>.InitFromTwin(initialTwin, "interval", defaultInterval);
+            if (OnProperty_interval_Updated != null && (Property_interval.DesiredVersion > 1))
+            {
+                var ack = await OnProperty_interval_Updated.Invoke(Property_interval);
+                await UpdateTwinAsync(ack.ToAck());
+                Property_interval = ack;
+            }
+            else
+            {
+                await UpdateTwinAsync(Property_interval.ToAck());
+            }
+        }
+
+       
+
         private async Task Invoke_interval_Callback(JsonNode? desired)
         {
             if (desired?["interval"] != null)
@@ -139,7 +151,7 @@ namespace dtmi_rido_pnp
                     if (ack != null)
                     {
                         Property_interval = ack;
-                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
+                        await UpdateTwinAsync(ack.ToAck(), true);
                     }
                 }
             }
@@ -160,21 +172,16 @@ namespace dtmi_rido_pnp
                     if (ack != null)
                     {
                         Property_enabled = ack;
-                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
+                        await UpdateTwinAsync(ack.ToAck(), true);
                     }
                 }
             }
         }
 
-        private static async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
-        {
-            var subres = await connection.SubscribeAsync(new string[] {
-                                                    "$iothub/methods/POST/#",
-                                                    "$iothub/twin/res/#",
-                                                    "$iothub/twin/PATCH/properties/desired/#"});
+      
 
-            subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
-        }
+        
+        public async Task<int> Report_started_Async(DateTime started) => await UpdateTwinAsync(new { started });
 
         Action<string>? getTwin_cb;
         public async Task<string> GetTwinAsync()
@@ -189,40 +196,28 @@ namespace dtmi_rido_pnp
             {
                 getTwin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback?.ReasonCode}' publishing twin GET: {s}"));
             }
-            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
         }
+
+
 
         Action<int>? report_cb;
-
-        public async Task<int> Report_started_Async(DateTime started)
+        public async Task<int> UpdateTwinAsync(object payload, bool fireAndForget = false)
         {
-            var tcs = new TaskCompletionSource<int>();
-            var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", new { started });
-            if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
+            if (fireAndForget)
             {
-                report_cb = s => tcs.TrySetResult(s);
-                Property_started = started;
+                await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
+                return 0;
             }
-            else
-            {
-                report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
-            }
-            return await tcs.Task;
-        }
-
-        public async Task<int> UpdateTwin(object patch)
-        {
-            var tcs = new TaskCompletionSource<int>();
-            var puback = await _connection.PublishAsync(
-                    $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
-                        patch);
-            if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
+            var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", payload);
+            if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 report_cb = s => tcs.TrySetResult(s);
             }
             else
             {
-                report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
+                report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback?.ReasonCode}' publishing twin PATCH: {s}"));
             }
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
         }
