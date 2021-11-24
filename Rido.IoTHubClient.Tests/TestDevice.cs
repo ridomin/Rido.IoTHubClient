@@ -60,7 +60,7 @@ namespace Rido.IoTHubClient.Tests
             };
         }
 
-        private async Task Invoke_interval_Callback(JsonNode? desired)
+        private async Task Invoke_interval_Callback(JsonNode desired)
         {
             if (desired?["interval"] != null)
             {
