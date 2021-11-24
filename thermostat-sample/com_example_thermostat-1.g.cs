@@ -1,5 +1,6 @@
 ﻿using MQTTnet.Client.Publishing;
 using Rido.IoTHubClient;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -22,8 +23,8 @@ namespace com_example
 
         public WritableProperty<double> Property_targetTemperature;
 
-        Action<string> getTwin_cb;
-        Action<int> report_cb;
+        ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
+        ConcurrentDictionary<int, TaskCompletionSource<int>> pendingUpdateTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<int>>();
 
         public thermostat_1(IMqttConnection c)
         {
@@ -43,7 +44,7 @@ namespace com_example
                 subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
             }
 
-            if (cs == null) throw new ArgumentException("ConnectionString is null");
+            ArgumentNullException.ThrowIfNull(cs);
             var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
             await SubscribeToSysTopicsAsync(connection);
             var client = new thermostat_1(connection);
@@ -55,7 +56,7 @@ namespace com_example
             var twin = await GetTwinAsync();
             Property_targetTemperature = WritableProperty<double>.InitFromTwin(twin, "targetTemperature", defaultTargetTemp);
             var ack = await OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
-            _ = await UpdateTwin(ack.ToAck());
+            _ = await UpdateTwinAsync(ack.ToAck());
         }
 
         private void ConfigureSysTopicsCallbacks(IMqttConnection connection)
@@ -91,12 +92,18 @@ namespace com_example
 
                 if (topic.StartsWith("$iothub/twin/res/200"))
                 {
-                    this.getTwin_cb?.Invoke(msg);
+                    if (pendingGetTwinRequests.TryRemove(rid, out TaskCompletionSource<string> tcs))
+                    {
+                        tcs.SetResult(msg);
+                    }
                 }
 
                 if (topic.StartsWith("$iothub/twin/res/204"))
                 {
-                    this.report_cb?.Invoke(twinVersion);
+                    if (pendingUpdateTwinRequests.TryRemove(rid, out TaskCompletionSource<int> tcs))
+                    {
+                        tcs.SetResult(twinVersion);
+                    }
                 }
 
                 if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
@@ -110,44 +117,39 @@ namespace com_example
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
-                getTwin_cb = s => tcs.TrySetResult(s);
+                pendingGetTwinRequests.TryAdd(lastRid++, tcs);
             }
             else
             {
-                getTwin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback?.ReasonCode}' publishing twin GET: {s}"));
+                Trace.TraceError($"Error '{puback?.ReasonCode}' publishing twin GET");
             }
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
         }
 
-        public async Task<int> UpdateTwin(object patch)
+        public async Task<int> UpdateTwinAsync(object patch)
         {
             var tcs = new TaskCompletionSource<int>();
-            var puback = await _connection.PublishAsync(
-                    $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
-                        patch);
+            var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid}",patch);
             if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
             {
-                report_cb = s => tcs.TrySetResult(s);
+                pendingUpdateTwinRequests.TryAdd(lastRid++, tcs);
             }
             else
             {
-                report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
+                Trace.TraceError($"Error '{puback.ReasonCode}' publishing twin PATCH");
             }
-            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
         }
 
-        public async Task<int> Report_maxTempSinceLastReboot(double maxTempSinceLastReboot) => await UpdateTwin(new { maxTempSinceLastReboot });
+        public async Task<int> Report_maxTempSinceLastReboot(double maxTempSinceLastReboot) => 
+            await UpdateTwinAsync(new { maxTempSinceLastReboot });
+
+        public async Task<MqttClientPublishResult> Send_temperature(double temperature) => 
+            await _connection.PublishAsync($"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",new { temperature });
         
-
-        public async Task<MqttClientPublishResult> Send_temperature(double temperature)
-        {
-            return await _connection.PublishAsync(
-                $"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",
-                new { temperature });
-        }
 
         private async Task Invoke_targetTemperature_Callback(JsonNode desired)
         {
@@ -164,7 +166,7 @@ namespace com_example
                     if (ack != null)
                     {
                         Property_targetTemperature = ack;
-                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
+                        await UpdateTwinAsync(ack.ToAck());
                     }
                 }
             }

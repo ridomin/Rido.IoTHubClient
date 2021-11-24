@@ -50,7 +50,7 @@ namespace Rido.IoTHubClient
             if (reported[propName] != null)
             {
                 reported_Prop = reported[propName]["value"].GetValue<T>();
-                reported_Prop_version = reported[propName]["av"].GetValue<int>();
+                reported_Prop_version = reported[propName]["av"]?.GetValue<int>() ?? -1;
                 reported_Prop_status = reported[propName]["ac"].GetValue<int>();
                 reported_Prop_description = reported[propName]["ad"]?.GetValue<string>();
                 reportedFound = true;
