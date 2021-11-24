@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -29,23 +30,24 @@ namespace Rido.IoTHubClient
         int lastRid = 1;
         private bool disposedValue;
 
-        readonly HubMqttConnection connection;
+        readonly IMqttConnection connection;
 
-        public static async Task<IHubMqttClient> CreateAsync(string hostname, string deviceId, string deviceKey) =>
-            await CreateAsync(new ConnectionSettings { HostName = hostname, DeviceId = deviceId, SharedAccessKey = deviceKey });
+        public static async Task<IHubMqttClient> CreateAsync(string hostname, string deviceId, string deviceKey) => 
+            await CreateAsync(new ConnectionSettings { HostName = hostname, DeviceId = deviceId, SharedAccessKey = deviceKey }, CancellationToken.None);
 
-        public static async Task<IHubMqttClient> CreateAsync(string cs) => await CreateAsync(ConnectionSettings.FromConnectionString(cs));
-
-        public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs)
+        public static async Task<IHubMqttClient> CreateAsync(string cs) => await CreateAsync(ConnectionSettings.FromConnectionString(cs), CancellationToken.None);
+        public static async Task<IHubMqttClient> CreateAsync(string cs, CancellationToken cancellationToken) => await CreateAsync(ConnectionSettings.FromConnectionString(cs), cancellationToken);
+        public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs) => await CreateAsync(cs, CancellationToken.None);
+        public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs, CancellationToken cancellationToken)
         {
-            var mqttConnection = await HubMqttConnection.CreateAsync(cs);
+            var mqttConnection = await HubMqttConnection.CreateAsync(cs, cancellationToken);
             var hubClient = new HubMqttClient(mqttConnection);
             hubClient.ConfigureReservedTopics();
             mqttConnection.OnMqttClientDisconnected += (o, e) => hubClient.OnMqttClientDisconnected?.Invoke(o, e);
             return hubClient;
         }
 
-        private HubMqttClient(HubMqttConnection conn)
+        private HubMqttClient(IMqttConnection conn)
         {
             connection = conn;
             connection.OnMessage = m => OnMessage(m);
@@ -195,6 +197,12 @@ namespace Rido.IoTHubClient
         {
             return connection.SubscribeAsync(topics);
         }
+
+        public Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException("Pub/Sub not enabled in classic hubs");
+        }
+
         public Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
         {
             return connection.PublishAsync(topic, payload);

@@ -5,6 +5,7 @@ using System;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -53,7 +54,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ConnectDeviceWithCert()
         {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"));
+            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"), CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
@@ -72,21 +73,21 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ConnectDeviceWithCertAndModelID()
         {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"), "dtmi:rido:device;1");
+            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"), CancellationToken.None,"dtmi:rido:device;1");
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
         public async Task ConnectModuleWithCert()
         {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"));
+            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
         public async Task ConnectModuleWithCertAndModelId()
         {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), "dtmi:rido:module;1");
+            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), CancellationToken.None, "dtmi:rido:module;1");
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
