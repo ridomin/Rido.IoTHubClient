@@ -37,7 +37,8 @@ namespace Rido.IoTHubClient
 
                 if (string.IsNullOrEmpty(cs.ModuleId))
                 {
-                    (_, token) = SasAuth.GenerateHubSasCredentials(cs.HostName, cs.DeviceId, cs.SharedAccessKey, "", cs.SasMinutes);
+                    (_, byte[] tokenBytes) = SasAuth.GenerateHubSasCredentials(cs.HostName, cs.DeviceId, cs.SharedAccessKey, "", cs.SasMinutes);
+                    token = Convert.ToBase64String(tokenBytes);
                 }
                 else
                 {

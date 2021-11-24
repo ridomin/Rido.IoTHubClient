@@ -101,21 +101,21 @@ namespace dtmi_rido_pnp
                     if (OnCommand_getRuntimeStats_Invoked != null)
                     {
                         var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
-                        await _connection.PublishAsync($"$iothub/methods/res/{resp?.Status}/?$rid={rid}", resp);
+                        await _connection.PublishAsync($"$az/iot/methods/getRuntimeState/response/?rid={rid}&rc={resp.Status}", resp);
                     }
                 }
 
-                if (topic.StartsWith("$iothub/twin/res/200"))
+                if (topic.StartsWith("$az/iot/twin/get/response"))
                 {
                     this.getTwin_cb?.Invoke(msg);
                 }
 
-                if (topic.StartsWith("$iothub/twin/res/204"))
+                if (topic.StartsWith("$az/iot/twin/patch/response/"))
                 {
                     this.report_cb?.Invoke(twinVersion);
                 }
 
-                if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
+                if (topic.StartsWith("$az/iot/twin/events/desired-changed"))
                 {
                     JsonNode? root = JsonNode.Parse(msg);
                     await Invoke_enabled_Callback(root);
@@ -139,7 +139,7 @@ namespace dtmi_rido_pnp
                     if (ack != null)
                     {
                         Property_interval = ack;
-                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
+                        await _connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", ack.ToAck());
                     }
                 }
             }
@@ -160,7 +160,7 @@ namespace dtmi_rido_pnp
                     if (ack != null)
                     {
                         Property_enabled = ack;
-                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
+                        await _connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", ack.ToAck());
                     }
                 }
             }
@@ -169,9 +169,10 @@ namespace dtmi_rido_pnp
         private static async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
         {
             var subres = await connection.SubscribeAsync(new string[] {
-                                                    "$iothub/methods/POST/#",
-                                                    "$iothub/twin/res/#",
-                                                    "$iothub/twin/PATCH/properties/desired/#"});
+                                                    "$az/iot/methods/+/+",
+                                                    "$az/iot/twin/get/response/+",
+                                                    "$az/iot/twin/patch/response/+",
+                                                    "$az/iot/twin/events/desired-changed/+"});
 
             subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
         }
@@ -180,7 +181,7 @@ namespace dtmi_rido_pnp
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+            var puback = await _connection.PublishAsync($"$az/iot/twin/get/?rid={lastRid++}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 getTwin_cb = s => tcs.TrySetResult(s);
@@ -197,7 +198,7 @@ namespace dtmi_rido_pnp
         public async Task<int> Report_started_Async(DateTime started)
         {
             var tcs = new TaskCompletionSource<int>();
-            var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", new { started });
+            var puback = await _connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", new { started });
             if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 report_cb = s => tcs.TrySetResult(s);
@@ -214,7 +215,7 @@ namespace dtmi_rido_pnp
         {
             var tcs = new TaskCompletionSource<int>();
             var puback = await _connection.PublishAsync(
-                    $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
+                    $"$az/iot/twin/patch/reported/?rid={lastRid++}",
                         patch);
             if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
             {
@@ -231,7 +232,7 @@ namespace dtmi_rido_pnp
         public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken)
         {
             return await _connection.PublishAsync(
-                $"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",
+                $"$az/iot/telemetry",
                 new { workingSet }, cancellationToken);
         }
     }

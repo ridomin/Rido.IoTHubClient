@@ -13,7 +13,7 @@ namespace Rido.IoTHubClient.Tests
         const string deviceId = "d8";
         static string DefaultKey => Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")));
 
-        [Fact]
+        [Fact(Skip = "not impl in preview")]
         public async Task SendTelemetryObject()
         {
             var client = new IoTHubHttpClient(new ConnectionSettings() { HostName = hostname, DeviceId = deviceId, SharedAccessKey = DefaultKey});
@@ -29,7 +29,7 @@ namespace Rido.IoTHubClient.Tests
         //    Assert.True(resp.IsSuccessStatusCode);
         //}
 
-        [Fact]
+        [Fact(Skip = "not impl in preview")]
         public async Task SendTelemetryString()
         {
             var client = new IoTHubHttpClient(new ConnectionSettings() { HostName = hostname, DeviceId = deviceId, SharedAccessKey = DefaultKey });
