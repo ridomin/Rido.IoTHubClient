@@ -19,7 +19,7 @@ namespace Rido.IoTHubClient.Tests
 
             WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", 0.2);
             Assert.Equal(0.2, twinProp.Value);
-            Assert.Equal(1, twinProp.Version);
+            Assert.Equal(0, twinProp.Version);
             Assert.Equal(201, twinProp.Status);
         }
 
@@ -57,8 +57,7 @@ namespace Rido.IoTHubClient.Tests
 
             WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", 0.2);
             Assert.Equal(3.1, twinProp.Value);
-            Assert.Equal(2, twinProp.Version);
-            Assert.Equal(200, twinProp.Status);
+            Assert.Equal(2, twinProp.DesiredVersion);
         }
 
         [Fact]
@@ -66,18 +65,18 @@ namespace Rido.IoTHubClient.Tests
         {
             var wp = new WritableProperty<double>("aDouble")
             {
-                Value = 1.2,
-                Version = 3,
+                Description = "updated",
                 Status = 200,
-                Description = "updated"
+                Version = 3,
+                Value = 1.2,
             };
 
             var expectedJson = js(new
             {
                 aDouble = new
                 {
-                    ad = "updated",
                     av = 3,
+                    ad = "updated",
                     ac = 200,
                     value = 1.2,
                 }
@@ -90,7 +89,7 @@ namespace Rido.IoTHubClient.Tests
         {
             var wp = new WritableProperty<DateTime>("aDateTime")
             {
-                Value = new DateTime(2011, 11, 10),
+                Value = new DateTime(2011, 11, 10, 8, 31, 12),
                 Version = 3,
                 Status = 200,
                 Description = "updated"
@@ -100,10 +99,10 @@ namespace Rido.IoTHubClient.Tests
             {
                 aDateTime = new
                 {
-                    ad = "updated",
                     av = 3,
+                    ad = "updated",
                     ac = 200,
-                    value = "2011-11-10T12:00:00.000Z",
+                    value = "2011-11-10T08:31:12",
                 }
             });
             Assert.Equal(expectedJson, wp.ToAck());
@@ -124,13 +123,48 @@ namespace Rido.IoTHubClient.Tests
             {
                 aBoolean = new
                 {
-                    ad = "updated",
                     av = 3,
+                    ad = "updated",
                     ac = 200,
                     value = false,
                 }
             });
             Assert.Equal(expectedJson, wp.ToAck());
         }
+
+        [Fact]
+        public void AckComplexOject()
+        {
+            var aComplexObj = new AComplexObj() { AIntProp = 1 , AStringProp ="a"};
+            var prop = new WritableProperty<AComplexObj>("aComplexObj")
+            {
+                Version = 3,
+                Value = aComplexObj,
+                Status = 213,
+                Description = "description"
+            };
+            var expectedJson = js(new
+            {
+                aComplexObj = new
+                {
+                    av = 3,
+                    ad = "description",
+                    ac = 213,
+                    value = new
+                    {
+                        AStringProp ="a",
+                        AIntProp = 1
+                    },
+                }
+            });
+            Assert.Equal(expectedJson, prop.ToAck());
+        }
+
+    }
+    class AComplexObj
+    {
+        public string AStringProp { get; set; }
+        public int AIntProp { get; set; }
+
     }
 }

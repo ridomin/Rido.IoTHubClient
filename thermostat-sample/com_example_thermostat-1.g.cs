@@ -12,9 +12,10 @@ namespace com_example
     {
         const string modelId = "dtmi:com:example:Thermostat;1";
 
-        internal IHubMqttConnection _connection;
+        internal IMqttConnection _connection;
 
         int lastRid;
+        public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
 
         public Func<WritableProperty<double>, Task<WritableProperty<double>>> OnProperty_targetTemperature_Updated = null;
         public Func<Cmd_getMaxMinReport_Request, Task<Cmd_getMaxMinReport_Response>> OnCommand_getMaxMinReport_Invoked = null;
@@ -24,15 +25,15 @@ namespace com_example
         Action<string> getTwin_cb;
         Action<int> report_cb;
 
-        public thermostat_1(IHubMqttConnection c)
+        public thermostat_1(IMqttConnection c)
         {
              _connection = c;
             ConfigureSysTopicsCallbacks(_connection);
         }
 
-        public static async Task<thermostat_1> CreateDeviceClientAsync(string cs)
+        public static async Task<thermostat_1> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)
         {
-            async Task SubscribeToSysTopicsAsync(HubMqttConnection connection)
+            async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
             {
                 var subres = await connection.SubscribeAsync(new string[] {
                                                     "$iothub/methods/POST/#",
@@ -43,21 +44,21 @@ namespace com_example
             }
 
             if (cs == null) throw new ArgumentException("ConnectionString is null");
-            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId });
+            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
             await SubscribeToSysTopicsAsync(connection);
             var client = new thermostat_1(connection);
             return client;
         }
 
-        public async Task InitTwinAsync(double defaultTargetTemp)
+        public async Task InitTwinProperty_targetTemperature_Async(double defaultTargetTemp)
         {
             var twin = await GetTwinAsync();
             Property_targetTemperature = WritableProperty<double>.InitFromTwin(twin, "targetTemperature", defaultTargetTemp);
-            OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
-            await UpdateTwin(Property_targetTemperature.ToAck());
+            var ack = await OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
+            _ = await UpdateTwin(ack.ToAck());
         }
 
-        private void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
+        private void ConfigureSysTopicsCallbacks(IMqttConnection connection)
         {
             connection.OnMessage = async m =>
             {
@@ -157,7 +158,7 @@ namespace com_example
                     var targetTemperatureProperty = new WritableProperty<double>("targetTemperature")
                     {
                         Value = Convert.ToDouble(desired?["targetTemperature"]?.GetValue<double>()),
-                        Version = desired["$version"].GetValue<int>(),
+                        DesiredVersion = desired["$version"].GetValue<int>()
                     };
                     var ack = await OnProperty_targetTemperature_Updated.Invoke(targetTemperatureProperty);
                     if (ack != null)

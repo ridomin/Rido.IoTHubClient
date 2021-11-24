@@ -17,7 +17,9 @@ namespace Rido.IoTHubClient
 {
     public static class IMqttClientExtensions
     {
-        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, string modelId = "", int minutes = 60)
+        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, string modelId = "", int minutes = 60) =>
+            await ConnectWithSasAsync(mqttClient, hostName, deviceId, sasKey, CancellationToken.None);
+        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string sasKey, CancellationToken cancellationToken, string modelId = "", int minutes = 60)
         {
             (string username, string password) = SasAuth.GenerateHubSasCredentials(hostName, deviceId, sasKey, modelId, minutes);
             return await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
@@ -30,13 +32,13 @@ namespace Rido.IoTHubClient
                      UseTls = true,
                      SslProtocol = SslProtocols.Tls12
                  })
-                 .Build());
+                 .Build(), cancellationToken);
         }
 
-        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, string modelId = "", int minutes = 60) =>
-            await ConnectWithSasAsync(mqttClient, hostName, $"{deviceId}/{moduleId}", sasKey, modelId, minutes);
+        public static async Task<MqttClientConnectResult> ConnectWithSasAsync(this IMqttClient mqttClient, string hostName, string deviceId, string moduleId, string sasKey, CancellationToken cancellationToken, string modelId = "", int minutes = 60) =>
+            await ConnectWithSasAsync(mqttClient, hostName, $"{deviceId}/{moduleId}", sasKey, cancellationToken, modelId, minutes);
 
-        public static async Task<MqttClientConnectResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, string modelId = "")
+        public static async Task<MqttClientConnectResult> ConnectWithX509Async(this IMqttClient mqttClient, string hostName, X509Certificate cert, CancellationToken cancellationToken, string modelId = "")
         {
             return await mqttClient.ConnectAsync(
                new MqttClientOptionsBuilder()
@@ -54,7 +56,7 @@ namespace Rido.IoTHubClient
                        Certificates = new List<X509Certificate> { cert }
                    })
                    .Build(),
-               CancellationToken.None);
+               cancellationToken);
         }
 
         public static IMqttClient CreateMqttClientWithLogger(TextWriter writer = null)
