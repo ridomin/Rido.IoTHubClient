@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 namespace Rido.IoTHubClient.Tests
 {
 
-    public class PropertiesE2EFixture : IDisposable
+    public class WritablePropertiesE2EFixture : IDisposable
     {
         const string hubConnectionString = "HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws=";
         const string hubName = "tests.azure-devices.net";
@@ -20,7 +20,7 @@ namespace Rido.IoTHubClient.Tests
 
         private readonly ITestOutputHelper output;
 
-        public PropertiesE2EFixture(ITestOutputHelper output)
+        public WritablePropertiesE2EFixture(ITestOutputHelper output)
         {
             this.output = output;
             rm = RegistryManager.CreateFromConnectionString(hubConnectionString);
@@ -92,8 +92,6 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task UpdatesDesiredPropertyWhenOnline()
         {
-            
-
             var td = await TestDevice.CreateTestDevice($"HostName={hubName};DeviceId={deviceId};SharedAccessKey={device.Authentication.SymmetricKey.PrimaryKey}");
             td.OnProperty_interval_Updated = async m =>
             {

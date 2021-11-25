@@ -38,7 +38,7 @@ public class DeviceRunner : BackgroundService
         {
             temperature = Math.Round((temperature % 2) == 0 ? temperature + rndDouble(0.3) : temperature - rndDouble(0.2),2);
             readings.Add(DateTimeOffset.Now, temperature);
-            await client.Send_temperature(temperature);
+            //await client.Send_temperature(temperature);
             Console.Write($"\r-> t: temperature {temperature} \t");
             await Task.Delay(10000, stoppingToken);
         }
@@ -76,17 +76,14 @@ public class DeviceRunner : BackgroundService
     async Task<WritableProperty<double>> OnProperty_targetTemperatue_Handler(WritableProperty<double> prop)
     {
         Console.WriteLine("\n<- w: targetTemperature received " + prop.Value);
-        await Task.Delay(1000);
-
-        await AdjustTempInStepsAsync(prop);
-
-        return new WritableProperty<double>("targetTemperature")
+        _ = AdjustTempInStepsAsync(prop);
+        return await Task.FromResult(new WritableProperty<double>("targetTemperature")
         {
-            Version = prop.DesiredVersion,
+            Version = prop.Version,
             Value = prop.Value,
             Status = 200,
             Description = "Temperature accepted and adjusted to " + prop.Value
-        };
+        });
     }
 
     async Task AdjustTempInStepsAsync(WritableProperty<double> prop)
@@ -94,12 +91,20 @@ public class DeviceRunner : BackgroundService
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(prop);
         Console.WriteLine("\n adjusting temp to: " + prop.Value);
-        await client.UpdateTwin(new WritableProperty<double>("targetTemperature") { Status = 202, Version = prop.Version, Value = prop.Value }.ToAck());
+        
         double step = (prop.Value - temperature) / 5d;
         for (int i = 1; i <= 5; i++)
         {
+            await client.UpdateTwinAsync(new WritableProperty<double>("targetTemperature")
+            {
+                Status = 202,
+                Version = prop.Version,
+                Value = prop.Value,
+                Description = "Step " + i
+            }.ToAck());
+            
             temperature = Math.Round(temperature + step, 1);
-            await client.Send_temperature(temperature);
+            //await client.Send_temperature(temperature);
             Console.WriteLine($"\r-> t: temperature {temperature} \t");
             readings.Add(DateTimeOffset.Now, temperature);
             await Task.Delay(1000);

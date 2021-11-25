@@ -1,9 +1,8 @@
 ﻿using MQTTnet;
-using MQTTnet.Client;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
-using MQTTnet.Protocol;
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -13,7 +12,7 @@ using System.Web;
 
 namespace Rido.IoTHubClient
 {
-    public class HubMqttClient : IHubMqttClient, IDisposable
+    public class HubMqttClient : IHubMqttClient
     {
         public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
         public bool IsConnected => connection.IsConnected;
@@ -24,10 +23,10 @@ namespace Rido.IoTHubClient
 
         const int twinOperationTimeoutSeconds = 5;
 
-        static Action<string> twin_cb;
-        static Action<int> patch_cb;
+        ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
+        ConcurrentDictionary<int, TaskCompletionSource<int>> pendingUpdateTwinRequests = new  ConcurrentDictionary<int, TaskCompletionSource<int>>();
 
-        int lastRid = 1;
+        int lastRid = 0;
         private bool disposedValue;
 
         readonly IMqttConnection connection;
@@ -80,11 +79,11 @@ namespace Rido.IoTHubClient
             var puback = await connection.PublishAsync($"$az/iot/twin/get/?rid={lastRid++}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
-                twin_cb = s => tcs.TrySetResult(s);
+                pendingGetTwinRequests.TryAdd(lastRid++, tcs);
             }
             else
             {
-                twin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin GET: {s}"));
+                Trace.TraceError($"Error '{puback.ReasonCode}' publishing twin GET");
             }
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds));
         }
@@ -95,18 +94,18 @@ namespace Rido.IoTHubClient
             var puback = await connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
-                patch_cb = s => tcs.TrySetResult(s);
+                pendingUpdateTwinRequests.TryAdd(lastRid++, tcs);
             }
             else
             {
-                patch_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
+                Trace.TraceError($"Error '{puback.ReasonCode}' publishing twin PATCH");
             }
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(twinOperationTimeoutSeconds));
         }
 
         void ConfigureReservedTopics()
         {
-            Trace.TraceWarning("### CONNECTED WITH SERVER ###");
+           
             var subres = connection.SubscribeAsync(new string[] {
                                                     "$az/iot/methods/+/+",
                                                     "$az/iot/twin/get/response/+",
@@ -141,14 +140,19 @@ namespace Rido.IoTHubClient
                     msg = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                 }
 
-                //Trace.TraceWarning($"<- {e.ApplicationMessage.Topic}  {e.ApplicationMessage.Payload?.Length} Bytes");
-                if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/get/response"))
-                {
-                    twin_cb(msg);
+                if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
+                {   
+                    if (pendingGetTwinRequests.TryRemove(rid, out TaskCompletionSource<string> tcs))
+                    {
+                        tcs.SetResult(msg);
+                    }
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/patch/response/"))
                 {
-                    patch_cb(twinVersion);
+                    if (pendingUpdateTwinRequests.TryRemove(rid, out TaskCompletionSource<int> tcs))
+                    {
+                        tcs.SetResult(twinVersion);
+                    }
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/events/desired-changed"))
                 {
@@ -159,7 +163,7 @@ namespace Rido.IoTHubClient
                         PropertyMessageJson = msg,
                         Version = twinVersion
                     });
-                    await UpdateTwinAsync(ack.BuildAck());
+                    _ = UpdateTwinAsync(ack.BuildAck());
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/methods"))
                 {

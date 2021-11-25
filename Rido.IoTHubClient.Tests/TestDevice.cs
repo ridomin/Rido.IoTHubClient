@@ -75,7 +75,7 @@ namespace Rido.IoTHubClient.Tests
                     if (ack != null)
                     {
                         Property_interval = ack;
-                        await connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
+                        _ = connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
                     }
                 }
             }
