@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
 		<TargetFramework>netstandard2.1</TargetFramework>
-		<Version>0.0.10</Version>
+		<Version>0.0.11</Version>
 		<Authors>ridomin</Authors>
 		<Description>Minimalistic device client to interact with Azure IoT Hub using MqttNet</Description>
 		<RepositoryUrl>https://github.com/ridomin/Rido.IoTHubClient</RepositoryUrl>
@@ -17,6 +17,7 @@
 		<Deterministic>true</Deterministic>
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 		<PackageReleaseNotes>
+			0.0.11 Rid Correlation, review async on OnMessage callbacks
 			0.0.10 HttpClient, CancellationTokens, rename IMqttConnection
 			0.0.9 Add WritableProperty
 			0.0.8 Add Pub/Sub to HubMQttConnection, to resuscribe on reconnect/refresh
