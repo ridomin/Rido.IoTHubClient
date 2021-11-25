@@ -1,8 +1,6 @@
 ﻿using MQTTnet;
-using MQTTnet.Client;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
-using MQTTnet.Protocol;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -168,7 +166,7 @@ namespace Rido.IoTHubClient
                         PropertyMessageJson = msg,
                         Version = twinVersion
                     });
-                    await UpdateTwinAsync(ack.BuildAck());
+                    _ = UpdateTwinAsync(ack.BuildAck());
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
                 {

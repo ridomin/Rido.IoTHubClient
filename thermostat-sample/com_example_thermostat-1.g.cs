@@ -1,4 +1,5 @@
-﻿using MQTTnet.Client.Publishing;
+﻿using MQTTnet.Client;
+using MQTTnet.Client.Publishing;
 using Rido.IoTHubClient;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -29,7 +30,7 @@ namespace com_example
         public thermostat_1(IMqttConnection c)
         {
              _connection = c;
-            ConfigureSysTopicsCallbacks(_connection);
+           
         }
 
         public static async Task<thermostat_1> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)
@@ -48,6 +49,7 @@ namespace com_example
             var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
             await SubscribeToSysTopicsAsync(connection);
             var client = new thermostat_1(connection);
+            client.ConfigureSysTopicsCallbacks();
             return client;
         }
 
@@ -59,9 +61,9 @@ namespace com_example
             _ = await UpdateTwinAsync(ack.ToAck());
         }
 
-        private void ConfigureSysTopicsCallbacks(IMqttConnection connection)
+        private void ConfigureSysTopicsCallbacks()
         {
-            connection.OnMessage = async m =>
+            _connection.OnMessage = async m =>
             {
                 var topic = m.ApplicationMessage.Topic;
                 var segments = topic.Split('/');
@@ -109,7 +111,11 @@ namespace com_example
                 if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                 {
                     JsonNode root = JsonNode.Parse(msg);
-                    await Invoke_targetTemperature_Callback(root);
+                    var ack = await Invoke_targetTemperature_Callback(root);
+                    if (ack != null)
+                    {
+                        _ = UpdateTwinAsync(ack);
+                    }
                 }
             };
         }
@@ -150,26 +156,29 @@ namespace com_example
         public async Task<MqttClientPublishResult> Send_temperature(double temperature) => 
             await _connection.PublishAsync($"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",new { temperature });
         
-
-        private async Task Invoke_targetTemperature_Callback(JsonNode desired)
+        private async Task<WritableProperty<double>> Invoke_targetTemperature_Callback(JsonNode desired)
         {
             if (desired?["targetTemperature"] != null)
             {
-                if (OnProperty_targetTemperature_Updated != null)
+                var targetTemperatureProperty = new WritableProperty<double>("targetTemperature")
                 {
-                    var targetTemperatureProperty = new WritableProperty<double>("targetTemperature")
-                    {
-                        Value = Convert.ToDouble(desired?["targetTemperature"]?.GetValue<double>()),
-                        DesiredVersion = desired["$version"].GetValue<int>()
-                    };
-                    var ack = await OnProperty_targetTemperature_Updated.Invoke(targetTemperatureProperty);
-                    if (ack != null)
-                    {
-                        Property_targetTemperature = ack;
-                        await UpdateTwinAsync(ack.ToAck());
-                    }
+                    Value = Convert.ToDouble(desired?["targetTemperature"]?.GetValue<double>()),
+                    DesiredVersion = desired["$version"].GetValue<int>()
+                };
+
+                if (OnProperty_targetTemperature_Updated == null)
+                {
+                    return targetTemperatureProperty;
+                }
+                else
+                {
+                    return await OnProperty_targetTemperature_Updated.Invoke(targetTemperatureProperty);
                 }
             }
+            else
+            {
+                return null;
+            }    
         }
     }
 }
