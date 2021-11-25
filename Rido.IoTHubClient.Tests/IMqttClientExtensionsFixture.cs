@@ -14,7 +14,7 @@ namespace Rido.IoTHubClient.Tests
     public class IMqttClientExtensionsFixture : IDisposable
     {
         const string hostname = "broker.azure-devices.net";
-        const string deviceId = "d5";
+        const string deviceId = "zero-device";
         static string DefaultKey => Convert.ToBase64String(Encoding.UTF8.GetBytes(Guid.Empty.ToString("N")));
 
         readonly IMqttClient mqttClient;

@@ -21,7 +21,7 @@ namespace Rido.IoTHubClient
         public Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
         public Func<PropertyReceived, Task<PropertyAck>> OnPropertyChange { get; set; }
 
-        const int twinOperationTimeoutSeconds = 5;
+        const int twinOperationTimeoutSeconds = 55;
 
         ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
         ConcurrentDictionary<int, TaskCompletionSource<int>> pendingUpdateTwinRequests = new  ConcurrentDictionary<int, TaskCompletionSource<int>>();
@@ -76,7 +76,7 @@ namespace Rido.IoTHubClient
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.PublishAsync($"$az/iot/twin/get/?rid={lastRid++}", string.Empty);
+            var puback = await connection.PublishAsync($"$az/iot/twin/get/?rid={lastRid}", string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 pendingGetTwinRequests.TryAdd(lastRid++, tcs);
@@ -122,12 +122,12 @@ namespace Rido.IoTHubClient
 
             connection.OnMessage  = async e =>
             {
+                string topic = e.ApplicationMessage.Topic;
                 string msg = string.Empty;
-
                 var segments = e.ApplicationMessage.Topic.Split('/');
                 int rid = 0;
                 int twinVersion = 0;
-                if (e.ApplicationMessage.Topic.Contains("?"))
+                if (topic.Contains("?"))
                 {
                     // parse qs to extract the rid
                     var qs = HttpUtility.ParseQueryString(segments[^1]);
@@ -140,21 +140,21 @@ namespace Rido.IoTHubClient
                     msg = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                 }
 
-                if (e.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
+                if (topic.StartsWith("$az/iot/twin/get/response"))
                 {   
                     if (pendingGetTwinRequests.TryRemove(rid, out TaskCompletionSource<string> tcs))
                     {
                         tcs.SetResult(msg);
                     }
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/patch/response/"))
+                else if (topic.StartsWith("$az/iot/twin/patch/response/"))
                 {
                     if (pendingUpdateTwinRequests.TryRemove(rid, out TaskCompletionSource<int> tcs))
                     {
                         tcs.SetResult(twinVersion);
                     }
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/twin/events/desired-changed"))
+                else if (topic.StartsWith("$az/iot/twin/events/desired-changed"))
                 {
                     var ack = await OnPropertyChange?.Invoke(new PropertyReceived()
                     {
@@ -165,7 +165,7 @@ namespace Rido.IoTHubClient
                     });
                     _ = UpdateTwinAsync(ack.BuildAck());
                 }
-                else if (e.ApplicationMessage.Topic.StartsWith("$az/iot/methods"))
+                else if (topic.StartsWith("$az/iot/methods"))
                 {
                     var cmdName = segments[3];
                     var resp = await OnCommand?.Invoke(new CommandRequest()
@@ -173,7 +173,7 @@ namespace Rido.IoTHubClient
                         CommandName = cmdName,
                         CommandPayload = msg
                     });
-                    await CommandResponseAsync(rid.ToString(), cmdName, resp.Status.ToString(), resp.CommandResponsePayload);
+                    _ = CommandResponseAsync(rid.ToString(), cmdName, resp.Status.ToString(), resp.CommandResponsePayload);
                 }
             };
         }

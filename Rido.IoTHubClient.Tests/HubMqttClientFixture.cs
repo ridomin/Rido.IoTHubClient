@@ -302,6 +302,7 @@ namespace Rido.IoTHubClient.Tests
                 new ConnectionSettings { 
                     HostName = hubName, 
                     DeviceId = device.Id, 
+                    ModelId = modelId,
                     SharedAccessKey = device.Authentication.SymmetricKey.PrimaryKey });
 
             var deviceRecord = await rm.GetTwinAsync(device.Id);
