@@ -91,7 +91,7 @@ namespace Rido.IoTHubClient
         public async Task<int> UpdateTwinAsync(object payload)
         {
             var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", payload);
+            var puback = await connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid}", payload);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 pendingUpdateTwinRequests.TryAdd(lastRid++, tcs);

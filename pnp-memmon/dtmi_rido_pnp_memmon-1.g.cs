@@ -187,15 +187,6 @@ namespace dtmi_rido_pnp
                 }
             }
         }
-
-        private static async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
-        {
-            var subres = await connection.SubscribeAsync(new string[] {
-                                                    "$az/iot/methods/+/+",
-                                                    "$az/iot/twin/get/response/+",
-                                                    "$az/iot/twin/patch/response/+",
-                                                    "$az/iot/twin/events/desired-changed/+"});
-
         
         public async Task<string> GetTwinAsync()
         {
@@ -211,29 +202,14 @@ namespace dtmi_rido_pnp
             }
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
         }
+        public async Task<int> Report_started_Async(DateTime started) =>
+            await UpdateTwinAsync(new { started });
+        
 
-        Action<int>? report_cb;
-
-        public async Task<int> Report_started_Async(DateTime started)
-        {
-            var tcs = new TaskCompletionSource<int>();
-            var puback = await _connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid++}", new { started });
-            if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
-            {
-                report_cb = s => tcs.TrySetResult(s);
-                Property_started = started;
-            }
-            else
-            {
-                report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
-            }
-            return await tcs.Task;
-        }
-
-        public async Task<int> UpdateTwin(object patch)
+        public async Task<int> UpdateTwinAsync(object patch)
         {
             var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid}", payload);
+            var puback = await _connection.PublishAsync($"$az/iot/twin/patch/reported/?rid={lastRid}", patch);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 pendingUpdateTwinRequests.TryAdd(lastRid++, tcs);

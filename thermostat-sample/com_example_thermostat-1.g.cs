@@ -159,7 +159,7 @@ namespace com_example
             return await _connection.PublishAsync($"$az/iot/telemetry", new { temperature });
         }
 
-        private async Task Invoke_targetTemperature_Callback(JsonNode desired)
+        private async Task<WritableProperty<double>> Invoke_targetTemperature_Callback(JsonNode desired)
         {
             if (desired?["targetTemperature"] != null)
             {
@@ -171,7 +171,7 @@ namespace com_example
 
                 if (OnProperty_targetTemperature_Updated == null)
                 {
-                    return targetTemperatureProperty;
+                    return await Task.FromResult(targetTemperatureProperty);
                 }
                 else
                 {
