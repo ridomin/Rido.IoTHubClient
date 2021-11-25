@@ -17,7 +17,7 @@ namespace dtmi_rido_pnp
         const string modelId = "dtmi:rido:pnp:memmon;1";
         internal IMqttConnection _connection;
         string initialTwin = string.Empty;
-        int lastRid;
+        internal int lastRid;
 
         ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
         ConcurrentDictionary<int, TaskCompletionSource<int>> pendingUpdateTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<int>>();
@@ -65,7 +65,7 @@ namespace dtmi_rido_pnp
                     if (OnCommand_getRuntimeStats_Invoked != null)
                     {
                         var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
-                        await _connection.PublishAsync($"$iothub/methods/res/{resp?.Status}/?$rid={rid}", resp);
+                        _ = _connection.PublishAsync($"$iothub/methods/res/{resp?.Status}/?$rid={rid}", resp);
                     }
                 }
 
@@ -88,8 +88,8 @@ namespace dtmi_rido_pnp
                 if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                 {
                     JsonNode? root = JsonNode.Parse(msg);
-                    await Invoke_enabled_Callback(root);
-                    await Invoke_interval_Callback(root);
+                    _ = Invoke_enabled_Callback(root);
+                    _ = Invoke_interval_Callback(root);
                 }
             };
         }
