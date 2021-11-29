@@ -175,6 +175,10 @@ namespace Rido.IoTHubClient
                     });
                     _ = CommandResponseAsync(rid.ToString(), cmdName, resp.Status.ToString(), resp.CommandResponsePayload);
                 }
+                else
+                {
+                    OnMessage?.Invoke(e);
+                }
             };
         }
 
