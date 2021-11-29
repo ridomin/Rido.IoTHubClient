@@ -65,8 +65,7 @@ namespace dtmi_rido_pnp
                     if (OnCommand_getRuntimeStats_Invoked != null)
                     {
                         var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
-                        await _connection.PublishAsync($"$az/iot/methods/getRuntimeState/response/?rid={rid}&rc={resp.Status}", resp);
-                        _ = _connection.PublishAsync($"$iothub/methods/res/{resp?.Status}/?$rid={rid}", resp);
+                        _ = _connection.PublishAsync($"$az/iot/methods/getRuntimeState/response/?rid={rid}&rc={resp.Status}", resp);
                     }
                 }
 
