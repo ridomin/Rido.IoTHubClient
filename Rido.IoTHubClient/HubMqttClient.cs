@@ -19,7 +19,7 @@ namespace Rido.IoTHubClient
 
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         public Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
-        public Func<PropertyReceived, Task<PropertyAck>> OnPropertyChange { get; set; }
+        public Func<PropertyReceived, Task<WritablePropertyAck>> OnPropertyChange { get; set; }
 
         const int twinOperationTimeoutSeconds = 5;
 
@@ -166,7 +166,7 @@ namespace Rido.IoTHubClient
                         PropertyMessageJson = msg,
                         Version = twinVersion
                     });
-                    _ = UpdateTwinAsync(ack.BuildAck());
+                    _ = UpdateTwinAsync(ack.ToAck());
                 }
                 else if (e.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/"))
                 {

@@ -4,14 +4,14 @@ using System.Text.Json;
 namespace Rido.IoTHubClient
 {
 
-    public class PropertyAck
+    public class WritablePropertyAck
     {
         public int Version { get; set; }
         public int Status { get; set; }
         public string Description { get; set; }
         public string Value { get; set; }
 
-        public string BuildAck()
+        public string ToAck()
         {
             using MemoryStream ms = new MemoryStream();
             using JsonDocument doc = JsonDocument.Parse(Value);

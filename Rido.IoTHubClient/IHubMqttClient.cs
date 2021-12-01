@@ -10,7 +10,7 @@ namespace Rido.IoTHubClient
         Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
         Task CommandResponseAsync(string rid, string cmdName, string status, object payload);
         Task<string> GetTwinAsync();
-        Func<PropertyReceived, Task<PropertyAck>> OnPropertyChange { get; set; }
+        Func<PropertyReceived, Task<WritablePropertyAck>> OnPropertyChange { get; set; }
         Task<int> UpdateTwinAsync(object payload);
     }
 }

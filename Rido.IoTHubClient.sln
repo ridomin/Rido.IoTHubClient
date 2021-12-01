@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "thermostat-sample", "thermo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pnp-memmon", "pnp-memmon\pnp-memmon.csproj", "{CCD24EE8-4BA9-442D-AB01-B15D16EA3932}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pnp-memmon-component", "pnp-memmon-component\pnp-memmon-component.csproj", "{C914013F-6330-4D2F-8598-866370B72672}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +48,10 @@ Global
 		{CCD24EE8-4BA9-442D-AB01-B15D16EA3932}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCD24EE8-4BA9-442D-AB01-B15D16EA3932}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CCD24EE8-4BA9-442D-AB01-B15D16EA3932}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C914013F-6330-4D2F-8598-866370B72672}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C914013F-6330-4D2F-8598-866370B72672}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C914013F-6330-4D2F-8598-866370B72672}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C914013F-6330-4D2F-8598-866370B72672}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
