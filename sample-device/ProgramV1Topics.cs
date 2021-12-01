@@ -59,7 +59,7 @@ namespace sample_device
             {
                 System.Console.WriteLine($"<- Received property {e.PropertyMessageJson}");
                 await Task.Delay(100);
-                return new PropertyAck()
+                return new WritablePropertyAck()
                 {
                     Version = e.Version,
                     Status = 200,

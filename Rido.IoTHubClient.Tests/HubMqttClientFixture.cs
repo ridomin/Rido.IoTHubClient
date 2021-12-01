@@ -192,7 +192,7 @@ namespace Rido.IoTHubClient.Tests
                 await Task.Delay(100);
                 propertyReceived = true;
                 updatedVersion = e.Version;
-                return new PropertyAck()
+                return new WritablePropertyAck()
                 {
                     Description = "test update",
                     Status = 200,
@@ -232,7 +232,7 @@ namespace Rido.IoTHubClient.Tests
                 output.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 propertyReceived = true;
                 updatedVersion = e.Version;
-                return await Task.FromResult(new PropertyAck
+                return await Task.FromResult(new WritablePropertyAck
                 {
                     Description = "test update",
                     Status = 200,
