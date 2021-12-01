@@ -17,6 +17,7 @@
 		<Deterministic>true</Deterministic>
 		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
 		<PackageReleaseNotes>
+			0.0.12 Component Support in Properties
 			0.0.11 Rid Correlation, review async on OnMessage callbacks
 			0.0.10 HttpClient, CancellationTokens, rename IMqttConnection
 			0.0.9 Add WritableProperty
