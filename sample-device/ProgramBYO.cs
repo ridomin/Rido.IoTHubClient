@@ -98,7 +98,7 @@ namespace sample_device
             {
                 Console.WriteLine($"Processing Desired Property {e.PropertyMessageJson}");
                 await Task.Delay(100);
-                return new PropertyAck()
+                return new WritablePropertyAck()
                 {
                     Description = "updated",
                     Status = 200,
