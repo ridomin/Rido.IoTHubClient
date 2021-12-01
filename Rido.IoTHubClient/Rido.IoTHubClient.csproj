@@ -25,17 +25,10 @@
 			0.0.7 Expose internal MqttClient in HubMqttConnection
 			0.0.6 Make the callbacks async compatible, split connection and client
 			0.0.5 Update to MQTTNet 3.0.17
-			0.0.4 Use Func T for callbacks
-			Ack for desired properties
+			0.0.4 Use Func T for callbacks, Ack for desired properties
 			0.0.3 ConnectionSettings with IdScope
-			0.0.2 Expose Disconnect event,
-			Add component name to telemetry
-			Reconnects
+			0.0.2 Expose Disconnect event, Add component name to telemetry, Reconnects
 			0.0.1 - Support api-version 2020-09-30
-			Device/Module support
-			Sas Tokens Auth with Refresh
-			X509 Auth
-			DPS Client
 		</PackageReleaseNotes>
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
