@@ -135,7 +135,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public void AckComplexOject()
         {
-            var aComplexObj = new AComplexObj() { AIntProp = 1 , AStringProp ="a"};
+            var aComplexObj = new AComplexObj() { AIntProp = 1, AStringProp = "a" };
             var prop = new WritableProperty<AComplexObj>("aComplexObj")
             {
                 Version = 3,
@@ -152,12 +152,197 @@ namespace Rido.IoTHubClient.Tests
                     ac = 213,
                     value = new
                     {
-                        AStringProp ="a",
+                        AStringProp = "a",
                         AIntProp = 1
                     },
                 }
             });
             Assert.Equal(expectedJson, prop.ToAck());
+        }
+
+        [Fact]
+        public void AckDoubleInComponent()
+        {
+            var wp = new WritableProperty<double>("aDouble", "inAComp")
+            {
+                Version = 4,
+                Status = 200,
+                Value = 2.4,
+                Description = "updated"
+            };
+            var expectedJson = js(new
+            {
+                inAComp = new
+                {
+                    __t = "c",
+                    aDouble = new
+                    {
+                        av = 4,
+                        ad = "updated",
+                        ac = 200,
+                        value = 2.4,
+                    }
+                }
+            });
+            Assert.Equal(expectedJson, wp.ToAck());
+        }
+
+        [Fact]
+        public void InitTwinWithDesiredInComponent()
+        {
+            string twin = js(new
+            {
+                reported = new Dictionary<string, object>() { { "$version", 1 } },
+                desired = new Dictionary<string, object>() {
+                    {
+                        "$version", 2
+                    },
+                    {
+
+                        "myComp", new Dictionary<string, object>() {
+                            {
+                                "__t", "c"
+                            },
+                            {
+                                "myProp", 3.4
+                            }
+                        }
+                    }
+                }
+            });
+            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            Assert.Equal(3.4, twinProp.Value);
+            Assert.Null(twinProp.Description);
+            Assert.Equal(0, twinProp.Status);
+            Assert.Equal(2, twinProp.DesiredVersion);
+        }
+
+
+        [Fact]
+        public void InitTwinWithReportedInComponent()
+        {
+            string twin = js(new
+            {
+                desired = new Dictionary<string, object>()
+                {
+                    { "$version", 3 }
+                },
+                reported = new Dictionary<string, object>() 
+                {
+                    {
+                        "$version", 4
+                    },
+                    {
+                        "myComp", new
+                        {
+                            __t = "c",
+                            myProp = new
+                            {
+                                ac = 200,
+                                av = 3 ,
+                                ad = "desc",
+                                value = 3.4
+                            }
+                        }
+                    }
+                }
+            });
+
+
+            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            Assert.Equal(3.4, twinProp.Value);
+            Assert.Equal("desc", twinProp.Description);
+            Assert.Equal(200, twinProp.Status);
+            Assert.Equal(0, twinProp.DesiredVersion);
+        }
+
+        [Fact]
+        public void InitTwinWithReportedInComponentWithoutFlag()
+        {
+            string twin = js(new
+            {
+                desired = new Dictionary<string, object>()
+                {
+                    { "$version", 3 }
+                },
+                reported = new Dictionary<string, object>()
+                {
+                    {
+                        "$version", 4
+                    },
+                    {
+                        "myComp", new
+                        {
+                            myProp = new
+                            {
+                                ac = 200,
+                                av = 3 ,
+                                ad = "desc",
+                                value = 3.4
+                            }
+                        }
+                    }
+                }
+            });
+
+            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            Assert.Equal(0.2, twinProp.Value);
+            Assert.Equal("Init from default value", twinProp.Description);
+            Assert.Equal(201, twinProp.Status);
+            Assert.Null(twinProp.DesiredVersion);
+        }
+
+        [Fact]
+        public void InitReportedDoubleInComponent()
+        {
+            string twin = js(new
+            {
+                reported = new
+                {
+                    myComp = new
+                    {
+                        __t = "c",
+                        myProp = new
+                        {
+                            ac = 201,
+                            av = 1,
+                            value = 4.3
+                        }
+                    }
+                },
+                desired = new Dictionary<string, object>() { { "$version", 1 } },
+            });
+
+            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            Assert.Equal(4.3, twinProp.Value);
+            Assert.Equal(1, twinProp.Version);
+            Assert.Equal(201, twinProp.Status);
+        }
+
+        [Fact]
+        public void InitReportedDoubleInComponentWithouFlag()
+        {
+            string twin = js(new
+            {
+                reported = new
+                {
+                    myComp = new
+                    {
+                        myProp = new
+                        {
+                            ac = 201,
+                            av = 1,
+                            value = 4.3
+                        }
+                    }
+                },
+                desired = new Dictionary<string, object>() { { "$version", 1 } },
+            });
+
+            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            Assert.Equal(0.2, twinProp.Value);
+            Assert.Equal(0, twinProp.Version);
+            Assert.Equal(201, twinProp.Status);
         }
 
     }
