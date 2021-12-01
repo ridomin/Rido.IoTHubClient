@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -95,7 +93,7 @@ namespace Rido.IoTHubClient
 
             if (!desiredFound && !reportedFound)
             {
-                result = new WritableProperty<T>(propName)
+                result = new WritableProperty<T>(propName, componentName)
                 {
                     //DesiredVersion = desiredVersion,
                     Version = reported_Prop_version,
@@ -107,7 +105,7 @@ namespace Rido.IoTHubClient
 
             if (!desiredFound && reportedFound)
             {
-                result = new WritableProperty<T>(propName)
+                result = new WritableProperty<T>(propName, componentName)
                 {
                     DesiredVersion = 0,
                     Version = reported_Prop_version,
@@ -121,7 +119,7 @@ namespace Rido.IoTHubClient
             {
                 if (desiredVersion >= reported_Prop_version)
                 {
-                    result = new WritableProperty<T>(propName)
+                    result = new WritableProperty<T>(propName, componentName)
                     {
                         DesiredVersion = desiredVersion,
                         Value = desired_Prop,
@@ -133,15 +131,13 @@ namespace Rido.IoTHubClient
 
             if (desiredFound && !reportedFound)
             {
-                result = new WritableProperty<T>(propName)
+                result = new WritableProperty<T>(propName, componentName)
                 {
                     DesiredVersion = desiredVersion,
                     Version = desiredVersion,
                     Value = desired_Prop
                 };
             }
-
-
             return result;
         }
 
@@ -159,7 +155,6 @@ namespace Rido.IoTHubClient
                 dict[compName].Add(propName, this);
                 return JsonSerializer.Serialize(dict);
             }
-
         }
     }
 }

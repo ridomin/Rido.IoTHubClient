@@ -14,7 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace dtmi_rido_pnp
+namespace dtmi_rido_pnp_sample
 {
     public class memmon
     {
@@ -122,7 +122,7 @@ namespace dtmi_rido_pnp
 
         public async Task InitProperty_memMon_enabled_Async(bool defaultEnabled)
         {
-            Property_memMon_enabled = WritableProperty<bool>.InitFromTwin(initialTwin, "enabled", defaultEnabled);
+            Property_memMon_enabled = WritableProperty<bool>.InitFromTwin(initialTwin, "enabled", "memMon", defaultEnabled);
             if (OnProperty_memMon_enabled_Updated != null && (Property_memMon_enabled.DesiredVersion > 1))
             {
                 var ack = await OnProperty_memMon_enabled_Updated.Invoke(Property_memMon_enabled);
@@ -137,7 +137,7 @@ namespace dtmi_rido_pnp
 
         public async Task InitProperty_memMon_interval_Async(int defaultInterval)
         {
-            Property_memMon_interval = WritableProperty<int>.InitFromTwin(initialTwin, "interval", defaultInterval);
+            Property_memMon_interval = WritableProperty<int>.InitFromTwin(initialTwin, "interval", "memMon", defaultInterval);
             if (OnProperty_memMon_interval_Updated != null && (Property_memMon_interval.DesiredVersion > 1))
             {
                 var ack = await OnProperty_memMon_interval_Updated.Invoke(Property_memMon_interval);
@@ -150,17 +150,18 @@ namespace dtmi_rido_pnp
             }
         }
 
-       
+
 
         private async Task Invoke_memMon_interval_Callback(JsonNode? desired)
         {
-            if (desired?["interval"] != null)
+            if (desired?["memMon"]?["__t"]?.GetValue<string>() == "c" &&
+                desired?["memMon"]?["interval"] != null)
             {
                 if (OnProperty_memMon_interval_Updated != null)
                 {
-                    var intervalProperty = new WritableProperty<int>("interval")
+                    var intervalProperty = new WritableProperty<int>("interval", ",memMon")
                     {
-                        Value = Convert.ToInt32(desired?["interval"]?.GetValue<int>()),
+                        Value = Convert.ToInt32(desired?["memMon"]?["interval"]?.GetValue<int>()),
                         Version = desired?["$version"]?.GetValue<int>() ?? 0
                     };
                     var ack = await OnProperty_memMon_interval_Updated.Invoke(intervalProperty);
@@ -175,13 +176,14 @@ namespace dtmi_rido_pnp
 
         private async Task Invoke_memMon_enabled_Callback(JsonNode? desired)
         {
-            if (desired?["enabled"] != null)
+            if (desired?["memMon"]?["__t"]?.GetValue<string>() == "c" &&
+                desired?["memMon"]?["emabled"] != null)
             {
                 if (OnProperty_memMon_enabled_Updated != null)
                 {
-                    var enabledProperty = new WritableProperty<bool>("enabled")
+                    var enabledProperty = new WritableProperty<bool>("enabled", "memMon")
                     {
-                        Value = Convert.ToBoolean(desired?["enabled"]?.GetValue<bool>()),
+                        Value = Convert.ToBoolean(desired?["memMon"]?["enabled"]?.GetValue<bool>()),
                         Version = desired?["$version"]?.GetValue<int>() ?? 0,
                     };
                     var ack = await OnProperty_memMon_enabled_Updated.Invoke(enabledProperty);
@@ -194,9 +196,19 @@ namespace dtmi_rido_pnp
             }
         }
 
-        public async Task<int> Report_memMon_started_Async(DateTime started) => await UpdateTwinAsync(new { started });
+        public async Task<int> Report_memMon_started_Async(DateTime started)
+        {
+            var compProp = new
+            {
+                memMon = new
+                {
+                    __t = "c",
+                    started
+                }
+            };
+            return await UpdateTwinAsync(compProp);
+        }
 
-        
         public async Task<string> GetTwinAsync()
         {
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -212,7 +224,7 @@ namespace dtmi_rido_pnp
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
         }
 
-        
+
         public async Task<int> UpdateTwinAsync(object payload)
         {
             var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -232,7 +244,7 @@ namespace dtmi_rido_pnp
         public async Task<MqttClientPublishResult> Send_memMon_workingSet_Async(double workingSet, CancellationToken cancellationToken)
         {
             return await _connection.PublishAsync(
-                $"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/?dt-subject=memMon",
+                $"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/$.sub=memMon",
                 new { workingSet }, cancellationToken);
         }
     }
