@@ -37,13 +37,13 @@ namespace dtmi_rido_pnp
         private memmon(IMqttConnection c)
         {
             _connection = c;
-            getTwinBinder = new BindRequestResponse(_connection);
             ConfigureSysTopicsCallbacks(_connection);
+            getTwinBinder = new BindRequestResponse(_connection, "$iothub/twin/GET/?$rid={0}", "$iothub/twin/res");
         }
 
         void ConfigureSysTopicsCallbacks(IMqttConnection connection)
         {
-            connection.OnMessage += async m =>
+            connection.OnMessage = async m =>
             {
                 var topic = m.ApplicationMessage.Topic;
                 (int rid, int twinVersion) = TopicParser.ParseTopic(topic);
@@ -183,24 +183,8 @@ namespace dtmi_rido_pnp
         }
 
         public async Task<int> Report_started_Async(DateTime started) => await UpdateTwinAsync(new { started });
-
         
-        public async Task<string> GetTwinAsync()
-        {
-            return await getTwinBinder.GetTwinAsync();
-            //var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            //var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid}", string.Empty);
-            //if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
-            //{
-            //    pendingGetTwinRequests.TryAdd(lastRid++, tcs);
-            //}
-            //else
-            //{
-            //    Trace.TraceError($"Error '{puback?.ReasonCode}' publishing twin GET");
-            //}
-            //return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
-        }
-
+        public async Task<string> GetTwinAsync() => await getTwinBinder.SendRequestWaitForResponse(25);
         
         public async Task<int> UpdateTwinAsync(object payload)
         {
