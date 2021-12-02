@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace pnp_memmon
 {
-    internal class CommandBinder<T, TResponse> 
+    public class CommandBinder<T, TResponse> 
         where T : IBaseCommandRequest, new()
         where TResponse : BaseCommandResponse
     {

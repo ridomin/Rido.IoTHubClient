@@ -39,10 +39,9 @@ public class DeviceRunner : BackgroundService
             throw new ApplicationException("Error creating MQTT Client");
 
         client._connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
-
-        client.OnProperty_enabled_Updated = Property_enabled_UpdateHandler;
-        client.OnProperty_interval_Updated = Property_interval_UpdateHandler;
-        client.OnCommand_getRuntimeStats_Invoked = Command_getRuntimeStats_Handler;
+        client.Property_enabled_Desired.OnProperty_Updated = Property_enabled_UpdateHandler;
+        client.Property_interval_Desired.OnProperty_Updated = Property_interval_UpdateHandler;
+        client.Command_getRuntimeResponse_Binder.OnCmdDelegate = Command_getRuntimeStats_Handler;
 
         _ = await client.Report_started_Async(DateTime.Now);
 
@@ -74,6 +73,7 @@ public class DeviceRunner : BackgroundService
             Version = req.Version,
             Value = req.Value
         };
+        client.Property_enabled = ack;
         return await Task.FromResult(ack);
     }
 
@@ -88,6 +88,7 @@ public class DeviceRunner : BackgroundService
             Version = req.Version,
             Value = req.Value
         };
+        client.Property_interval = ack;
         return await Task.FromResult(ack);
     }
 

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace pnp_memmon
 {
-    internal class GetTwinBinder
+    public class GetTwinBinder
     {
         ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
         
