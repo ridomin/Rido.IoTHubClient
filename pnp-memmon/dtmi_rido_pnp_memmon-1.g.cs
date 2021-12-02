@@ -18,10 +18,7 @@ namespace dtmi_rido_pnp
         const string modelId = "dtmi:rido:pnp:memmon;1";
         internal IMqttConnection _connection;
         string initialTwin = string.Empty;
-        internal int lastRid;
-
-        //ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
-        ConcurrentDictionary<int, TaskCompletionSource<int>> pendingUpdateTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<int>>();
+        //internal int lastRid;
 
         public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
         public Func<WritableProperty<bool>, Task<WritableProperty<bool>>>? OnProperty_enabled_Updated = null;
@@ -32,13 +29,15 @@ namespace dtmi_rido_pnp
         public WritableProperty<int>? Property_interval;
         public DateTime Property_started { get; private set; }
 
-        private BindRequestResponse getTwinBinder; 
+        private GetTwinBinder getTwinBinder;
+        private UpdateTwinBinder updateTwinBinder;
 
         private memmon(IMqttConnection c)
         {
             _connection = c;
             ConfigureSysTopicsCallbacks(_connection);
-            getTwinBinder = new BindRequestResponse(_connection, "$iothub/twin/GET/?$rid={0}", "$iothub/twin/res");
+            getTwinBinder = new GetTwinBinder(_connection);
+            updateTwinBinder = new UpdateTwinBinder(_connection);
         }
 
         void ConfigureSysTopicsCallbacks(IMqttConnection connection)
@@ -71,13 +70,13 @@ namespace dtmi_rido_pnp
                 //    }
                 //}
 
-                if (topic.StartsWith("$iothub/twin/res/204"))
-                {
-                    if (pendingUpdateTwinRequests.TryRemove(rid, out var tcs))
-                    {
-                        tcs.SetResult(twinVersion);
-                    }
-                }
+                //if (topic.StartsWith("$iothub/twin/res/204"))
+                //{
+                //    if (pendingUpdateTwinRequests.TryRemove(rid, out var tcs))
+                //    {
+                //        tcs.SetResult(twinVersion);
+                //    }
+                //}
 
                 if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                 {
@@ -184,23 +183,10 @@ namespace dtmi_rido_pnp
 
         public async Task<int> Report_started_Async(DateTime started) => await UpdateTwinAsync(new { started });
         
-        public async Task<string> GetTwinAsync() => await getTwinBinder.SendRequestWaitForResponse(25);
-        
-        public async Task<int> UpdateTwinAsync(object payload)
-        {
-            var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid}", payload);
-            if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
-            {
-                pendingUpdateTwinRequests.TryAdd(lastRid++, tcs);
-            }
-            else
-            {
-                Trace.TraceError($"Error '{puback?.ReasonCode}' publishing twin PATCH");
-            }
-            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
-        }
+        public async Task<string> GetTwinAsync() => await getTwinBinder.SendRequestWaitForResponse();
 
+        public async Task<int> UpdateTwinAsync(object payload) => await updateTwinBinder.SendRequestWaitForResponse(payload);
+        
         public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) => await Send_workingSet_Async(workingSet, CancellationToken.None);
         public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken)
         {

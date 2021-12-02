@@ -6,27 +6,25 @@ using System.Text;
 
 namespace pnp_memmon
 {
-    internal class BindRequestResponse
+    internal class GetTwinBinder
     {
         ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
         
         IMqttConnection connection;
-        string requestTopic;
 
         int lastRid =0;
 
-        public BindRequestResponse(IMqttConnection conn, string requestTopic, string responseTopic)
+        public GetTwinBinder(IMqttConnection conn)
         {
-            this.requestTopic = requestTopic;
             connection = conn;
-            connection.SubscribeAsync(responseTopic + "/#").Wait();
+            connection.SubscribeAsync("$iothub/twin/res/#").Wait();
             connection.OnMessage += async m =>
             {
                 var topic = m.ApplicationMessage.Topic;
                 string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                 (int rid, int twinVersion) = TopicParser.ParseTopic(topic);
 
-                if (topic.StartsWith(responseTopic + "/200"))
+                if (topic.StartsWith("$iothub/twin/res/200"))
                 {
                      if (pendingGetTwinRequests.TryRemove(rid, out var tcs))
                     {
@@ -37,10 +35,10 @@ namespace pnp_memmon
             };
         }
 
-        public async Task<string> SendRequestWaitForResponse(int timeout)
+        public async Task<string> SendRequestWaitForResponse(int timeout = 5)
         {
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.PublishAsync(string.Format(requestTopic, lastRid), string.Empty);
+            var puback = await connection.PublishAsync(string.Format($"$iothub/twin/GET/?$rid={lastRid}"), string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 pendingGetTwinRequests.TryAdd(lastRid++, tcs);
