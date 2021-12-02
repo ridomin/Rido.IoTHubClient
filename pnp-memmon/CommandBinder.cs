@@ -12,13 +12,10 @@ namespace pnp_memmon
         where T : IBaseCommandRequest, new()
         where TResponse : BaseCommandResponse
     {
-        IMqttConnection connection;
-
         public Func<T, Task<TResponse>>? OnCmdDelegate { get; set; }
 
         public CommandBinder(IMqttConnection connection, string commandName, string componentName = "")
         {
-            this.connection = connection;
             _ = connection.SubscribeAsync("$iothub/methods/POST/#");
             connection.OnMessage += async m =>
             {

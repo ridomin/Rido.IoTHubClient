@@ -20,11 +20,11 @@ namespace pnp_memmon
             connection.OnMessage += async m =>
             {
                 var topic = m.ApplicationMessage.Topic;
-                string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
-                (int rid, int twinVersion) = TopicParser.ParseTopic(topic);
 
                 if (topic.StartsWith("$iothub/twin/res/204"))
                 {
+                    string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
+                    (int rid, int twinVersion) = TopicParser.ParseTopic(topic);
                     if (pendingRequests.TryRemove(rid, out var tcs))
                     {
                         tcs.SetResult(twinVersion);

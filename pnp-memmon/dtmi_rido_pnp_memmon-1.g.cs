@@ -107,7 +107,7 @@ namespace dtmi_rido_pnp
         private static async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
         {
             var subres = await connection.SubscribeAsync(new string[] {
-                                                    "$iothub/methods/POST/#",
+                                                    //"$iothub/methods/POST/#",
                                                     //"$iothub/twin/res/#",
                                                     "$iothub/twin/PATCH/properties/desired/#"});
 
