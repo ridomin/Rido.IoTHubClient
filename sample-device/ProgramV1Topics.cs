@@ -22,9 +22,9 @@ namespace sample_device
 
             conn.OnMqttClientDisconnected += (o, e) => Console.WriteLine(e.DisconnectReason);
 
-                double temp = new Random().NextDouble();
-                await conn.PublishAsync($"device/{conn.ConnectionSettings.DeviceId}/messages/events", new { temp });
-                Console.Write("-> t");
+            double temp = new Random().NextDouble();
+            await conn.PublishAsync($"device/{conn.ConnectionSettings.DeviceId}/messages/events", new { temp });
+            Console.Write("-> t");
 
             var client = await HubMqttClient.CreateAsync(Environment.GetEnvironmentVariable("dps"));
 

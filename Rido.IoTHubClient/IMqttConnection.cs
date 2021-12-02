@@ -14,6 +14,7 @@ namespace Rido.IoTHubClient
         event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
         Task CloseAsync();
 
+        Task<MqttClientSubscribeResult> SubscribeAsync(string topic);
         Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics);
         Task<MqttClientPublishResult> PublishAsync(string topic, object payload);
         Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken);

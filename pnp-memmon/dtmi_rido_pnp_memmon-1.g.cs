@@ -2,6 +2,7 @@
 #nullable enable
 
 using MQTTnet.Client.Publishing;
+using pnp_memmon;
 using Rido.IoTHubClient;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -19,7 +20,7 @@ namespace dtmi_rido_pnp
         string initialTwin = string.Empty;
         internal int lastRid;
 
-        ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
+        //ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
         ConcurrentDictionary<int, TaskCompletionSource<int>> pendingUpdateTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<int>>();
 
         public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
@@ -31,28 +32,21 @@ namespace dtmi_rido_pnp
         public WritableProperty<int>? Property_interval;
         public DateTime Property_started { get; private set; }
 
+        private BindRequestResponse getTwinBinder; 
+
         private memmon(IMqttConnection c)
         {
             _connection = c;
+            getTwinBinder = new BindRequestResponse(_connection);
             ConfigureSysTopicsCallbacks(_connection);
         }
 
         void ConfigureSysTopicsCallbacks(IMqttConnection connection)
         {
-            connection.OnMessage = async m =>
+            connection.OnMessage += async m =>
             {
                 var topic = m.ApplicationMessage.Topic;
-                var segments = topic.Split('/');
-                int rid = 0;
-                int twinVersion = 0;
-                if (topic.Contains('?'))
-                {
-                    // parse qs to extract the rid
-                    var qs = HttpUtility.ParseQueryString(segments[^1]);
-                    rid = Convert.ToInt32(qs["$rid"]);
-                    twinVersion = Convert.ToInt32(qs["$version"]);
-                }
-
+                (int rid, int twinVersion) = TopicParser.ParseTopic(topic);
                 string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
 
                 if (topic.StartsWith("$iothub/methods/POST/getRuntimeStats"))
@@ -69,13 +63,13 @@ namespace dtmi_rido_pnp
                     }
                 }
 
-                if (topic.StartsWith("$iothub/twin/res/200"))
-                {
-                    if (pendingGetTwinRequests.TryRemove(rid, out var tcs))
-                    {
-                        tcs.SetResult(msg);
-                    }
-                }
+                //if (topic.StartsWith("$iothub/twin/res/200"))
+                //{
+                //    if (pendingGetTwinRequests.TryRemove(rid, out var tcs))
+                //    {
+                //        tcs.SetResult(msg);
+                //    }
+                //}
 
                 if (topic.StartsWith("$iothub/twin/res/204"))
                 {
@@ -98,8 +92,8 @@ namespace dtmi_rido_pnp
         {
             ArgumentNullException.ThrowIfNull(cs);
             var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
-            await SubscribeToSysTopicsAsync(connection);
             var client = new memmon(connection);
+            await SubscribeToSysTopicsAsync(connection);
             client.initialTwin = await client.GetTwinAsync();
             return client;
         }
@@ -108,7 +102,7 @@ namespace dtmi_rido_pnp
         {
             var subres = await connection.SubscribeAsync(new string[] {
                                                     "$iothub/methods/POST/#",
-                                                    "$iothub/twin/res/#",
+                                                    //"$iothub/twin/res/#",
                                                     "$iothub/twin/PATCH/properties/desired/#"});
 
             subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
@@ -193,17 +187,18 @@ namespace dtmi_rido_pnp
         
         public async Task<string> GetTwinAsync()
         {
-            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid}", string.Empty);
-            if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
-            {
-                pendingGetTwinRequests.TryAdd(lastRid++, tcs);
-            }
-            else
-            {
-                Trace.TraceError($"Error '{puback?.ReasonCode}' publishing twin GET");
-            }
-            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
+            return await getTwinBinder.GetTwinAsync();
+            //var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            //var puback = await _connection.PublishAsync($"$iothub/twin/GET/?$rid={lastRid}", string.Empty);
+            //if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
+            //{
+            //    pendingGetTwinRequests.TryAdd(lastRid++, tcs);
+            //}
+            //else
+            //{
+            //    Trace.TraceError($"Error '{puback?.ReasonCode}' publishing twin GET");
+            //}
+            //return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
         }
 
         
