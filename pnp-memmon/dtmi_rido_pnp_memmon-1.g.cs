@@ -20,16 +20,23 @@ namespace dtmi_rido_pnp
         string initialTwin = string.Empty;
 
         public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
+
+        private GetTwinBinder getTwinBinder;
+        private UpdateTwinBinder updateTwinBinder;
+        private CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> commandBinder;
+
         public Func<WritableProperty<bool>, Task<WritableProperty<bool>>>? OnProperty_enabled_Updated = null;
         public Func<WritableProperty<int>, Task<WritableProperty<int>>>? OnProperty_interval_Updated = null;
-        public Func<Cmd_getRuntimeStats_Request, Task<Cmd_getRuntimeStats_Response>>? OnCommand_getRuntimeStats_Invoked = null;
+        
+        public Func<Cmd_getRuntimeStats_Request, Task<Cmd_getRuntimeStats_Response>>? OnCommand_getRuntimeStats_Invoked 
+        {
+            get => commandBinder.OnCmdDelegate;
+            set => commandBinder.OnCmdDelegate = value;
+        }
 
         public WritableProperty<bool>? Property_enabled;
         public WritableProperty<int>? Property_interval;
         public DateTime Property_started { get; private set; }
-
-        private GetTwinBinder getTwinBinder;
-        private UpdateTwinBinder updateTwinBinder;
 
         private memmon(IMqttConnection c)
         {
@@ -37,6 +44,7 @@ namespace dtmi_rido_pnp
             ConfigureSysTopicsCallbacks(_connection);
             getTwinBinder = new GetTwinBinder(_connection);
             updateTwinBinder = new UpdateTwinBinder(_connection);
+            commandBinder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(_connection, "getRuntimeStats");
         }
 
         void ConfigureSysTopicsCallbacks(IMqttConnection connection)
@@ -47,19 +55,19 @@ namespace dtmi_rido_pnp
                 (int rid, int twinVersion) = TopicParser.ParseTopic(topic);
                 string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
 
-                if (topic.StartsWith("$iothub/methods/POST/getRuntimeStats"))
-                {
-                    Cmd_getRuntimeStats_Request req = new Cmd_getRuntimeStats_Request()
-                    {
-                        DiagnosticsMode = JsonSerializer.Deserialize<DiagnosticsMode>(msg),
-                        _rid = rid
-                    };
-                    if (OnCommand_getRuntimeStats_Invoked != null)
-                    {
-                        var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
-                        _ = _connection.PublishAsync($"$iothub/methods/res/{resp?.Status}/?$rid={rid}", resp);
-                    }
-                }
+                //if (topic.StartsWith("$iothub/methods/POST/getRuntimeStats"))
+                //{
+                //    Cmd_getRuntimeStats_Request req = new Cmd_getRuntimeStats_Request()
+                //    {
+                //        DiagnosticsMode = JsonSerializer.Deserialize<DiagnosticsMode>(msg),
+                //        _rid = rid
+                //    };
+                //    if (OnCommand_getRuntimeStats_Invoked != null)
+                //    {
+                //        var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
+                //        _ = _connection.PublishAsync($"$iothub/methods/res/{resp?.Status}/?$rid={rid}", resp);
+                //    }
+                //}
 
                 //if (topic.StartsWith("$iothub/twin/res/200"))
                 //{
@@ -187,11 +195,8 @@ namespace dtmi_rido_pnp
         public async Task<int> UpdateTwinAsync(object payload) => await updateTwinBinder.SendRequestWaitForResponse(payload);
         
         public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) => await Send_workingSet_Async(workingSet, CancellationToken.None);
-        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken)
-        {
-            return await _connection.PublishAsync(
-                $"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",
+        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken) => 
+            await _connection.PublishAsync($"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",
                 new { workingSet }, cancellationToken);
-        }
     }
 }

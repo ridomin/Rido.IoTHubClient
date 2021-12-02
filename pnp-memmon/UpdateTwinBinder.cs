@@ -16,7 +16,7 @@ namespace pnp_memmon
         {
             pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<int>>();
             this.connection = connection;
-            connection.SubscribeAsync("$iothub/twin/res/#").Wait();
+            _ = connection.SubscribeAsync("$iothub/twin/res/#");
             connection.OnMessage += async m =>
             {
                 var topic = m.ApplicationMessage.Topic;

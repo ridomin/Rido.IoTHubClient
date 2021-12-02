@@ -101,18 +101,18 @@ public class DeviceRunner : BackgroundService
         };
 
         //result.Add("runtime version", System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>()?.FrameworkName ?? "n/a");
-        result.Add("machine name", Environment.MachineName);
-        result.Add("os version", Environment.OSVersion.ToString());
+        result.diagnosticResults.Add("machine name", Environment.MachineName);
+        result.diagnosticResults.Add("os version", Environment.OSVersion.ToString());
         if (req.DiagnosticsMode == DiagnosticsMode.complete)
         {
-            result.Add("this app:", System.Reflection.Assembly.GetExecutingAssembly()?.FullName ?? "");
+            result.diagnosticResults.Add("this app:", System.Reflection.Assembly.GetExecutingAssembly()?.FullName ?? "");
         }
         if (req.DiagnosticsMode == DiagnosticsMode.full)
         {
-            result.Add($"twin receive: ", twinRecCounter.ToString());
-            result.Add("telemetry: ", telemetryCounter.ToString());
-            result.Add("command: ", commandCounter.ToString());
-            result.Add("reconnects: ", reconnectCounter.ToString());
+            result.diagnosticResults.Add($"twin receive: ", twinRecCounter.ToString());
+            result.diagnosticResults.Add("telemetry: ", telemetryCounter.ToString());
+            result.diagnosticResults.Add("command: ", commandCounter.ToString());
+            result.diagnosticResults.Add("reconnects: ", reconnectCounter.ToString());
         }
         return await Task.FromResult(result);
     }
