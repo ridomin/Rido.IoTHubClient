@@ -38,7 +38,7 @@ public class DeviceRunner : BackgroundService
         client = await dtmi_rido_pnp.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("hub"), stoppingToken) ??
             throw new ApplicationException("Error creating MQTT Client");
 
-        client._connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
+        client.connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
         client.Property_enabled_Desired.OnProperty_Updated = Property_enabled_UpdateHandler;
         client.Property_interval_Desired.OnProperty_Updated = Property_interval_UpdateHandler;
         client.Command_getRuntimeResponse_Binder.OnCmdDelegate = Command_getRuntimeStats_Handler;

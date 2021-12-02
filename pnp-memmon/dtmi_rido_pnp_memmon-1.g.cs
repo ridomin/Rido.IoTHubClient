@@ -11,10 +11,10 @@ namespace dtmi_rido_pnp
     public class memmon
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
-        internal IMqttConnection _connection;
+        internal IMqttConnection connection;
         string initialTwin = string.Empty;
 
-        public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
+        public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
 
         private GetTwinBinder getTwinBinder;
         private UpdateTwinBinder updateTwinBinder;
@@ -32,13 +32,13 @@ namespace dtmi_rido_pnp
 
         private memmon(IMqttConnection c)
         {
-            _connection = c;
-            getTwinBinder = new GetTwinBinder(_connection);
-            updateTwinBinder = new UpdateTwinBinder(_connection);
-            telemetryBinder = new TelemetryBinder(_connection, _connection.ConnectionSettings.DeviceId);
-            Property_interval_Desired = new DesiredUpdateTwinBinder<int>(_connection, "interval");
-            Property_enabled_Desired = new DesiredUpdateTwinBinder<bool>(_connection, "enabled");
-            Command_getRuntimeResponse_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(_connection, "getRuntimeStats");
+            connection = c;
+            getTwinBinder = new GetTwinBinder(connection);
+            updateTwinBinder = new UpdateTwinBinder(connection);
+            telemetryBinder = new TelemetryBinder(connection, connection.ConnectionSettings.DeviceId);
+            Property_interval_Desired = new DesiredUpdateTwinBinder<int>(connection, "interval");
+            Property_enabled_Desired = new DesiredUpdateTwinBinder<bool>(connection, "enabled");
+            Command_getRuntimeResponse_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(connection, "getRuntimeStats");
         }
 
         public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)
