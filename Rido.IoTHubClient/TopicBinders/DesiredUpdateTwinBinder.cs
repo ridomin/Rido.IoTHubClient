@@ -1,12 +1,14 @@
 ﻿using Rido.IoTHubClient;
+using System;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
-namespace pnp_memmon
+namespace Rido.IoTHubClient.TopicBinders
 {
     public class DesiredUpdateTwinBinder<T>
     {
-        public Func<WritableProperty<T>, Task<WritableProperty<T>>>? OnProperty_Updated = null;
+        public Func<WritableProperty<T>, Task<WritableProperty<T>>> OnProperty_Updated = null;
         public DesiredUpdateTwinBinder(IMqttConnection connection, string propertyName, string componentName = "")
         {
             _ = connection.SubscribeAsync("$iothub/twin/PATCH/properties/desired/#");
@@ -17,7 +19,7 @@ namespace pnp_memmon
                 if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                 {
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
-                    JsonNode? desired = JsonNode.Parse(msg);
+                    JsonNode desired = JsonNode.Parse(msg);
                     var desiredProperty = desired?[propertyName];
                     if ( desiredProperty != null)
                     {

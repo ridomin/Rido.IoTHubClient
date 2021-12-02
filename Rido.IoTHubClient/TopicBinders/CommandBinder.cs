@@ -6,13 +6,13 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace pnp_memmon
+namespace Rido.IoTHubClient.TopicBinders
 {
     public class CommandBinder<T, TResponse> 
         where T : IBaseCommandRequest, new()
         where TResponse : BaseCommandResponse
     {
-        public Func<T, Task<TResponse>>? OnCmdDelegate { get; set; }
+        public Func<T, Task<TResponse>> OnCmdDelegate { get; set; }
 
         public CommandBinder(IMqttConnection connection, string commandName, string componentName = "")
         {

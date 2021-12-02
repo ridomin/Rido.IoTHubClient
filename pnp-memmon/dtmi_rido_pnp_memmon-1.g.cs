@@ -4,6 +4,7 @@
 using MQTTnet.Client.Publishing;
 using pnp_memmon;
 using Rido.IoTHubClient;
+using Rido.IoTHubClient.TopicBinders;
 
 namespace dtmi_rido_pnp
 {
