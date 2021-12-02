@@ -18,7 +18,6 @@ namespace dtmi_rido_pnp
         const string modelId = "dtmi:rido:pnp:memmon;1";
         internal IMqttConnection _connection;
         string initialTwin = string.Empty;
-        //internal int lastRid;
 
         public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
         public Func<WritableProperty<bool>, Task<WritableProperty<bool>>>? OnProperty_enabled_Updated = null;

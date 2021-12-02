@@ -12,8 +12,6 @@ namespace pnp_memmon
 
         IMqttConnection connection;
 
-        int lastRid = 0;
-
         public UpdateTwinBinder(IMqttConnection connection)
         {
             pendingRequests = new ConcurrentDictionary<int, TaskCompletionSource<int>>();
@@ -38,11 +36,12 @@ namespace pnp_memmon
 
         public async Task<int> SendRequestWaitForResponse(object payload, int timeout = 5)
         {
+            var rid = RidCounter.NextValue();
             var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid}", payload);
+            var puback = await connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={rid}", payload);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
-                pendingRequests.TryAdd(lastRid++, tcs);
+                pendingRequests.TryAdd(rid, tcs);
             }
             else
             {

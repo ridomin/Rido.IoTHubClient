@@ -12,8 +12,6 @@ namespace pnp_memmon
         
         IMqttConnection connection;
 
-        int lastRid =0;
-
         public GetTwinBinder(IMqttConnection conn)
         {
             connection = conn;
@@ -37,11 +35,12 @@ namespace pnp_memmon
 
         public async Task<string> SendRequestWaitForResponse(int timeout = 5)
         {
+            var rid = RidCounter.NextValue();
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.PublishAsync(string.Format($"$iothub/twin/GET/?$rid={lastRid}"), string.Empty);
+            var puback = await connection.PublishAsync(string.Format($"$iothub/twin/GET/?$rid={rid}"), string.Empty);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
-                pendingGetTwinRequests.TryAdd(lastRid++, tcs);
+                pendingGetTwinRequests.TryAdd(rid, tcs);
             }
             else
             {

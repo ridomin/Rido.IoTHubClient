@@ -138,7 +138,7 @@ public class DeviceRunner : BackgroundService
             AppendLineWithPadRight(sb, $"Reconnects: {reconnectCounter}");
             AppendLineWithPadRight(sb, $"Telemetry: {telemetryCounter}");
             AppendLineWithPadRight(sb, $"Twin receive: {twinRecCounter}");
-            AppendLineWithPadRight(sb, $"Twin send: {client?.lastRid}");
+            AppendLineWithPadRight(sb, $"Twin send: {RidCounter.Current}");
             AppendLineWithPadRight(sb, $"Command messages: {commandCounter}");
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, $"WorkingSet: {telemetryWorkingSet.Bytes()}");
