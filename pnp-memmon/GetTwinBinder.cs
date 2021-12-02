@@ -23,7 +23,7 @@ namespace pnp_memmon
                 if (topic.StartsWith("$iothub/twin/res/200"))
                 {
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
-                    (int rid, int twinVersion) = TopicParser.ParseTopic(topic);
+                    (int rid, _) = TopicParser.ParseTopic(topic);
                      if (pendingGetTwinRequests.TryRemove(rid, out var tcs))
                     {
                         tcs.SetResult(msg);

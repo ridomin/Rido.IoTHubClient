@@ -25,17 +25,11 @@ namespace pnp_memmon
 
                 if (topic.StartsWith($"$iothub/methods/POST/{fullCommandName}"))
                 {
-                    (int rid, _) = TopicParser.ParseTopic(topic);
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
-
-                    T req = (T)new T().Deserialize(msg);
-
-                    if (req != null)
-                    {
-                        req._rid = rid;
-                    }
+                    T req = (T)new T().DeserializeBody(msg);
                     if (OnCmdDelegate != null && req != null )
                     {
+                        (int rid, _) = TopicParser.ParseTopic(topic);
                         TResponse response = await OnCmdDelegate.Invoke(req);
                         _ = connection.PublishAsync($"$iothub/methods/res/{response.Status}/?$rid={rid}", response);
                     }

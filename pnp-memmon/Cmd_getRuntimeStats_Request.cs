@@ -13,10 +13,9 @@ public enum DiagnosticsMode
 
 public class Cmd_getRuntimeStats_Request : IBaseCommandRequest
 {
-    public int _rid { get; set; }
     public DiagnosticsMode DiagnosticsMode { get; set; }
 
-    public object Deserialize(string payload)
+    public object DeserializeBody(string payload)
     {
         return new Cmd_getRuntimeStats_Request()
         {
