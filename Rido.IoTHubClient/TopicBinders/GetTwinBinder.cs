@@ -33,7 +33,7 @@ namespace Rido.IoTHubClient.TopicBinders
             };
         }
 
-        public async Task<string> SendRequestWaitForResponse(int timeout = 5)
+        public async Task<string> GetTwinAsync(int timeout = 5)
         {
             var rid = RidCounter.NextValue();
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);

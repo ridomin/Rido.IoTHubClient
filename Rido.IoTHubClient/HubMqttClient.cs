@@ -44,8 +44,8 @@ namespace Rido.IoTHubClient
             commandBinder = new AllCommandsBinder(conn);
         }
 
-        public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-          await Connection.PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
+        //public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
+        //  await Connection.PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
 
         public Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "") => base.SendTelemetryAsync(payload);
 
