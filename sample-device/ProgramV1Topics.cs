@@ -22,14 +22,14 @@ namespace sample_device
 
             conn.OnMqttClientDisconnected += (o, e) => Console.WriteLine(e.DisconnectReason);
 
-                double temp = new Random().NextDouble();
-                await conn.PublishAsync($"device/{conn.ConnectionSettings.DeviceId}/messages/events", new { temp });
-                Console.Write("-> t");
+            double temp = new Random().NextDouble();
+            await conn.PublishAsync($"device/{conn.ConnectionSettings.DeviceId}/messages/events", new { temp });
+            Console.Write("-> t");
 
             var client = await HubMqttClient.CreateAsync(Environment.GetEnvironmentVariable("dps"));
 
             Console.WriteLine();
-            Console.WriteLine(client.ConnectionSettings);
+            Console.WriteLine(client.Connection.ConnectionSettings);
             Console.WriteLine();
 
             await client.SendTelemetryAsync(new { temperature = 21 });
@@ -37,7 +37,7 @@ namespace sample_device
             var t = await client.GetTwinAsync();
             Console.WriteLine("Twin REPLY 1" + t);
 
-            client.OnMqttClientDisconnected += (s, e) =>
+            client.Connection.OnMqttClientDisconnected += (s, e) =>
             {
                 Console.WriteLine("Client Disconnected");
             };
@@ -78,7 +78,7 @@ namespace sample_device
             int missedMessages = 0;
             while (missedMessages < 10)
             {
-                if (client.IsConnected)
+                if (client.Connection.IsConnected)
                 {
                     await client.SendTelemetryAsync(new { temperature = 21 });
                     Console.Write("t");

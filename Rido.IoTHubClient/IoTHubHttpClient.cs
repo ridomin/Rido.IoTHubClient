@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
@@ -11,7 +9,7 @@ namespace Rido.IoTHubClient
     {
         static string js(object o) => System.Text.Json.JsonSerializer.Serialize(o);
 
-        ConnectionSettings cs;
+        readonly ConnectionSettings cs;
         public IoTHubHttpClient(ConnectionSettings settings)
         {
             cs = settings;
@@ -44,7 +42,7 @@ namespace Rido.IoTHubClient
                     throw new NotImplementedException("Http Telemetry not implemented for modules");
                     //urlTelemetry += $"modules/{cs.ModuleId}";
                     //(_, token) = SasAuth.GenerateHubSasCredentials(cs.HostName,  $"{cs.DeviceId}/{cs.ModuleId}", cs.SharedAccessKey, "", cs.SasMinutes);
-                } 
+                }
 
                 urlTelemetry += "/messages/events?api-version=2020-03-13";
 
@@ -71,8 +69,10 @@ namespace Rido.IoTHubClient
 
                 string urlTelemetry = $"https://{cs.HostName}/devices/{deviceId}/messages/events?api-version=2020-03-13";
 
-                var handler = new HttpClientHandler();
-                handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+                var handler = new HttpClientHandler
+                {
+                    SslProtocols = System.Security.Authentication.SslProtocols.Tls12
+                };
                 handler.ClientCertificates.Add(cert);
 
                 return await new HttpClient(handler)

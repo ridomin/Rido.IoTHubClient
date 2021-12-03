@@ -33,7 +33,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ConnectDeviceWithSaSAndModelId()
         {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, "dtmi:rido:test;1", 5);
+            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, CancellationToken.None, "dtmi:rido:test;1", 5);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
@@ -61,7 +61,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task SendTelemetryWithHeaders()
         {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, "dmit:com:example:Thermostat;1", 60);
+            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, CancellationToken.None, "dmit:com:example:Thermostat;1", 60);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
             MqttApplicationMessage msg = new();
             msg.Payload = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { temperature = 432 }));
