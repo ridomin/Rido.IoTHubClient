@@ -2,7 +2,6 @@
 #nullable enable
 
 using MQTTnet.Client.Publishing;
-using pnp_memmon;
 using Rido.IoTHubClient;
 using Rido.IoTHubClient.TopicBinders;
 
@@ -12,7 +11,7 @@ namespace dtmi_rido_pnp
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
         internal IMqttConnection connection;
-        string initialTwin = string.Empty;
+        public string initialTwin = string.Empty;
 
         public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
 
@@ -22,12 +21,9 @@ namespace dtmi_rido_pnp
 
         public DateTime Property_started { get; private set; }
 
-        public WritableProperty<bool>? Property_enabled;
-        public DesiredUpdateTwinBinder<bool> Property_enabled_Desired;
+        public Bound_Property<bool>? Property_enabled;
+        public Bound_Property<int> Property_interval;
 
-        public WritableProperty<int>? Property_interval;
-        public DesiredUpdateTwinBinder<int> Property_interval_Desired;
-        
         public CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> Command_getRuntimeResponse_Binder;
 
         private memmon(IMqttConnection c)
@@ -36,8 +32,8 @@ namespace dtmi_rido_pnp
             getTwinBinder = new GetTwinBinder(connection);
             updateTwinBinder = new UpdateTwinBinder(connection);
             telemetryBinder = new TelemetryBinder(connection, connection.ConnectionSettings.DeviceId);
-            Property_interval_Desired = new DesiredUpdateTwinBinder<int>(connection, "interval");
-            Property_enabled_Desired = new DesiredUpdateTwinBinder<bool>(connection, "enabled");
+            Property_interval = new Bound_Property<int>(connection, "interval");
+            Property_enabled = new Bound_Property<bool>(connection, "enabled");
             Command_getRuntimeResponse_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(connection, "getRuntimeStats");
         }
 
@@ -48,36 +44,6 @@ namespace dtmi_rido_pnp
             var client = new memmon(connection);
             client.initialTwin = await client.GetTwinAsync();
             return client;
-        }
-
-        public async Task InitProperty_enabled_Async(bool defaultEnabled)
-        {
-            Property_enabled = WritableProperty<bool>.InitFromTwin(initialTwin, "enabled", defaultEnabled);
-            if (Property_enabled_Desired.OnProperty_Updated != null && (Property_enabled.DesiredVersion > 1))
-            {
-                var ack = await Property_enabled_Desired.OnProperty_Updated.Invoke(Property_enabled);
-                _ = UpdateTwinAsync(ack.ToAck());
-                Property_enabled = ack;
-            }
-            else
-            {
-                _ = UpdateTwinAsync(Property_enabled.ToAck());
-            }
-        }
-
-        public async Task InitProperty_interval_Async(int defaultInterval)
-        {
-            Property_interval = WritableProperty<int>.InitFromTwin(initialTwin, "interval", defaultInterval);
-            if (Property_interval_Desired.OnProperty_Updated != null && (Property_interval.DesiredVersion > 1))
-            {
-                var ack = await Property_interval_Desired.OnProperty_Updated.Invoke(Property_interval);
-                _ = UpdateTwinAsync(ack.ToAck());
-                Property_interval = ack;
-            }
-            else
-            {
-                _ = UpdateTwinAsync(Property_interval.ToAck());
-            }
         }
 
         public async Task<int> Report_started_Async(DateTime started) => await UpdateTwinAsync(new { started });
