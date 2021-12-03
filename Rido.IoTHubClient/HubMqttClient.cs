@@ -9,14 +9,14 @@ namespace Rido.IoTHubClient
     {
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
 
-        AllCommandsBinder commandBinder;
+        readonly AllCommandsBinder commandBinder;
         public Func<CommandRequest, Task<CommandResponse>> OnCommand
         {
             get => commandBinder.OnCmdDelegate;
             set => commandBinder.OnCmdDelegate = value;
         }
 
-        DesiredUpdateBinder desiredUpdate;
+        readonly DesiredUpdateBinder desiredUpdate;
         public Func<PropertyReceived, Task<WritablePropertyAck>> OnPropertyChange
         {
             get => desiredUpdate.OnProperty_Updated;
