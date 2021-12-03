@@ -1,9 +1,7 @@
 ﻿using MQTTnet.Client.Publishing;
-using Rido.IoTHubClient;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient.TopicBinders

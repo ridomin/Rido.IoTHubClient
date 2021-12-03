@@ -1,8 +1,8 @@
-using System.Text;
-using System.Diagnostics;
-using Rido.IoTHubClient;
 using dtmi_rido_pnp;
 using Humanizer;
+using Rido.IoTHubClient;
+using System.Diagnostics;
+using System.Text;
 
 namespace pnp_memmon;
 

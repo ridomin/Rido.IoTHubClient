@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading;
@@ -129,7 +128,7 @@ namespace Rido.IoTHubClient
             return connAck;
         }
 
-        private async  Task<MqttClientConnectResult> ConnectWithCertAsync(CancellationToken cancellationToken)
+        private async Task<MqttClientConnectResult> ConnectWithCertAsync(CancellationToken cancellationToken)
         {
             var dcs = ConnectionSettings;
             var segments = dcs.X509Key.Split('|');
@@ -200,24 +199,24 @@ namespace Rido.IoTHubClient
             CloseAsync().Wait();
             ConnectAsync(CancellationToken.None).Wait();
             _ = SubscribeAsync(subscribedTopics.ToArray<string>());
-            
+
             Trace.TraceWarning($"Refreshed Result: {mqttClient.IsConnected}");
             reconnecting = false;
             timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
         }
 
-        public async Task<MqttClientSubscribeResult> SubscribeAsync(string topic) => await SubscribeAsync(new string [] {topic});
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string topic) => await SubscribeAsync(new string[] { topic });
 
         public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics)
         {
             var subBuilder = new MqttClientSubscribeOptionsBuilder();
-            foreach(string topic in topics.Except(subscribedTopics))
+            foreach (string topic in topics.Except(subscribedTopics))
             {
-               subBuilder.WithTopicFilter(topic, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce);
-               subscribedTopics.Add(topic);
+                subBuilder.WithTopicFilter(topic, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce);
+                subscribedTopics.Add(topic);
             }
 
-            if (subBuilder.Build().TopicFilters.Count>0)
+            if (subBuilder.Build().TopicFilters.Count > 0)
             {
                 return await mqttClient.SubscribeAsync(subBuilder.Build());
             }
@@ -231,7 +230,7 @@ namespace Rido.IoTHubClient
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload) => await PublishAsync(topic, payload, CancellationToken.None);
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
         {
-            while (!IsConnected && reconnecting )
+            while (!IsConnected && reconnecting)
             {
                 Trace.TraceWarning(" !! waiting 100 ms to publish ");
                 await Task.Delay(100);
@@ -278,7 +277,7 @@ namespace Rido.IoTHubClient
             }
         }
 
-        
+
 
         public void Dispose()
         {

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
-    public  class BasicHubClient
+    public class BasicHubClient
     {
         public IMqttConnection Connection;
         public string InitialTwin = string.Empty;

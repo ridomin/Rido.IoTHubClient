@@ -42,7 +42,7 @@ namespace Rido.IoTHubClient
                     throw new NotImplementedException("Http Telemetry not implemented for modules");
                     //urlTelemetry += $"modules/{cs.ModuleId}";
                     //(_, token) = SasAuth.GenerateHubSasCredentials(cs.HostName,  $"{cs.DeviceId}/{cs.ModuleId}", cs.SharedAccessKey, "", cs.SasMinutes);
-                } 
+                }
 
                 urlTelemetry += "/messages/events?api-version=2020-03-13";
 

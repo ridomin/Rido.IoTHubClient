@@ -1,5 +1,4 @@
 ﻿using MQTTnet.Client.Publishing;
-using Rido.IoTHubClient;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -25,7 +24,7 @@ namespace Rido.IoTHubClient.TopicBinders
                 {
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                     (int rid, _) = TopicParser.ParseTopic(topic);
-                     if (pendingGetTwinRequests.TryRemove(rid, out var tcs))
+                    if (pendingGetTwinRequests.TryRemove(rid, out var tcs))
                     {
                         tcs.SetResult(msg);
                     }

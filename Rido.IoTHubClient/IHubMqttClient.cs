@@ -1,5 +1,4 @@
-﻿using MQTTnet;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient

@@ -1,14 +1,10 @@
-﻿using Rido.IoTHubClient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient.TopicBinders
 {
-    public class CommandBinder<T, TResponse> 
+    public class CommandBinder<T, TResponse>
         where T : IBaseCommandRequest, new()
         where TResponse : BaseCommandResponse
     {
@@ -27,7 +23,7 @@ namespace Rido.IoTHubClient.TopicBinders
                 {
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                     T req = (T)new T().DeserializeBody(msg);
-                    if (OnCmdDelegate != null && req != null )
+                    if (OnCmdDelegate != null && req != null)
                     {
                         (int rid, _) = TopicParser.ParseTopic(topic);
                         TResponse response = await OnCmdDelegate.Invoke(req);

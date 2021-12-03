@@ -2,7 +2,6 @@
 using MQTTnet.Client;
 using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Options;
-using MQTTnet.Diagnostics;
 using MQTTnet.Diagnostics.Logger;
 using System;
 using System.Collections.Generic;

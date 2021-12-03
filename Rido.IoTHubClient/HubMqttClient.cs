@@ -131,8 +131,8 @@ namespace Rido.IoTHubClient
                int twinVersion = 0;
                if (e.ApplicationMessage.Topic.Contains("?"))
                {
-                    // parse qs to extract the rid
-                    var qs = HttpUtility.ParseQueryString(segments[^1]);
+                   // parse qs to extract the rid
+                   var qs = HttpUtility.ParseQueryString(segments[^1]);
                    rid = Convert.ToInt32(qs["$rid"]);
                    twinVersion = Convert.ToInt32(qs["$version"]);
                }

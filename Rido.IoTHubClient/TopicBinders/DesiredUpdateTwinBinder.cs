@@ -1,5 +1,4 @@
-﻿using Rido.IoTHubClient;
-using System;
+﻿using System;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -21,7 +20,7 @@ namespace Rido.IoTHubClient.TopicBinders
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                     JsonNode desired = JsonNode.Parse(msg);
                     var desiredProperty = desired?[propertyName];
-                    if ( desiredProperty != null)
+                    if (desiredProperty != null)
                     {
                         if (OnProperty_Updated != null)
                         {
