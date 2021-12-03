@@ -37,10 +37,10 @@ namespace Rido.IoTHubClient.Tests
                 HostName = hubName, 
                 Auth = "X509", 
                 X509Key = "testdevice.pfx|1234" });
-            Assert.True(client.IsConnected);
+            Assert.True(client.Connection.IsConnected);
             var t = await client.GetTwinAsync();
             Assert.StartsWith("{", t);
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -48,8 +48,8 @@ namespace Rido.IoTHubClient.Tests
         {
             var client = await HubMqttClient.CreateAsync(
                 new ConnectionSettings() { HostName = hubName, DeviceId = device.Id, SharedAccessKey = device.Authentication.SymmetricKey.PrimaryKey });
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -59,8 +59,8 @@ namespace Rido.IoTHubClient.Tests
                 new ConnectionSettings() { HostName = hubName, DeviceId = device.Id, SharedAccessKey = device.Authentication.SymmetricKey.PrimaryKey });
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
             Assert.Equal(PubResult.Success, puback);
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -72,8 +72,8 @@ namespace Rido.IoTHubClient.Tests
 
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
             Assert.Equal(PubResult.Success, puback);
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -91,8 +91,8 @@ namespace Rido.IoTHubClient.Tests
 
             var puback = await client.SendTelemetryAsync(new { temp = 2 }, "comp1");
             Assert.Equal(PubResult.Success, puback);
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -102,8 +102,8 @@ namespace Rido.IoTHubClient.Tests
             IHubMqttClient client = await HubMqttClient.CreateAsync(new ConnectionSettings { HostName = hubName, Auth = "X509", X509Key = "xd01_xmod01.pfx|1234" });
             var puback = await client.SendTelemetryAsync(new { temp = 2 });
             Assert.Equal(PubResult.Success, puback);
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -120,8 +120,8 @@ namespace Rido.IoTHubClient.Tests
 
             var puback = await client.SendTelemetryAsync(new { temp = 2 }, "comp1");
             Assert.Equal(PubResult.Success, puback);
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -133,10 +133,10 @@ namespace Rido.IoTHubClient.Tests
                     DeviceId =device.Id, 
                     SharedAccessKey = device.Authentication.SymmetricKey.PrimaryKey});
 
-            Assert.True(client.IsConnected);
+            Assert.True(client.Connection.IsConnected);
             var puback = await client.SendTelemetryAsync(new { temp = 2 }, "mycomponent");
             Assert.Equal(PubResult.Success, puback);
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -151,7 +151,7 @@ namespace Rido.IoTHubClient.Tests
             var t = await client.GetTwinAsync();
             output.WriteLine(t);
             Assert.StartsWith("{", t);
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -172,7 +172,7 @@ namespace Rido.IoTHubClient.Tests
             var twin = await rm.GetTwinAsync(deviceId);
             Assert.Contains(tick.ToString(), twin.ToJson());
             output.WriteLine(twin.ToJson());
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -218,7 +218,7 @@ namespace Rido.IoTHubClient.Tests
             };
             Assert.Equal(JsonSerializer.Serialize(expAck), updatedProp.ToJson());
 
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -258,7 +258,7 @@ namespace Rido.IoTHubClient.Tests
             };
             Assert.Equal(JsonSerializer.Serialize(expAck), updatedProp.ToJson());
 
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
 
@@ -291,7 +291,7 @@ namespace Rido.IoTHubClient.Tests
             await Task.Delay(1000);
             Assert.True(commandInvoked);
             Assert.Equal("{\"myResponse\":\"ok\"}", dmRes.GetPayloadAsJson());
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -306,7 +306,7 @@ namespace Rido.IoTHubClient.Tests
 
             var deviceRecord = await rm.GetTwinAsync(device.Id);
             Assert.Equal(modelId, deviceRecord.ModelId);
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -319,10 +319,10 @@ namespace Rido.IoTHubClient.Tests
                 X509Key = "testdevice.pfx|1234",
                 ModelId = modelId });
 
-            Assert.True(client.IsConnected);
+            Assert.True(client.Connection.IsConnected);
             var deviceRecord = await rm.GetTwinAsync("testdevice");
             Assert.Equal(modelId, deviceRecord.ModelId);
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -335,8 +335,8 @@ namespace Rido.IoTHubClient.Tests
                     DeviceId = device.Id, 
                     ModuleId = module.Id, 
                     SharedAccessKey = module.Authentication.SymmetricKey.PrimaryKey });
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -352,10 +352,10 @@ namespace Rido.IoTHubClient.Tests
                 SharedAccessKey =  module.Authentication.SymmetricKey.PrimaryKey,
                 ModelId = modelId});
 
-            Assert.True(client.IsConnected);
+            Assert.True(client.Connection.IsConnected);
             var twin = await rm.GetTwinAsync(module.DeviceId, module.Id);
             Assert.Equal(modelId, twin.ModelId);
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -365,8 +365,8 @@ namespace Rido.IoTHubClient.Tests
             IHubMqttClient client = await HubMqttClient.CreateAsync(
                 ConnectionSettings.FromConnectionString(
                     $"HostName={hubName};DeviceId={module.DeviceId};ModuleId={module.Id};SharedAccessKey={module.Authentication.SymmetricKey.PrimaryKey}"));
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -377,10 +377,10 @@ namespace Rido.IoTHubClient.Tests
             IHubMqttClient client = await HubMqttClient.CreateAsync(
                 ConnectionSettings.FromConnectionString(
                 $"HostName={hubName};DeviceId={module.DeviceId};ModuleId={module.Id};SharedAccessKey={module.Authentication.SymmetricKey.PrimaryKey};ModelId={modelId}"));
-            Assert.True(client.IsConnected);
+            Assert.True(client.Connection.IsConnected);
             var twin = await rm.GetTwinAsync(module.DeviceId, module.Id);
             Assert.Equal(modelId, twin.ModelId);
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -388,8 +388,8 @@ namespace Rido.IoTHubClient.Tests
         {
             await GetOrCreateModuleAsync("xd01", "xmod01", true);
             IHubMqttClient client = await HubMqttClient.CreateAsync(new ConnectionSettings { HostName = hubName, Auth = "X509", X509Key = "xd01_xmod01.pfx|1234" });
-            Assert.True(client.IsConnected);
-            await client.CloseAsync();
+            Assert.True(client.Connection.IsConnected);
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -403,11 +403,11 @@ namespace Rido.IoTHubClient.Tests
                 X509Key = "xd01_xmod01.pfx|1234",
                 ModelId = modelId});
 
-            Assert.True(client.IsConnected);
+            Assert.True(client.Connection.IsConnected);
 
             var moduleTwin = await rm.GetTwinAsync(module.DeviceId, module.Id);
             Assert.Equal(modelId, moduleTwin.ModelId);
-            await client.CloseAsync();
+            await client.Connection.CloseAsync();
         }
 
         [Fact]
@@ -415,11 +415,11 @@ namespace Rido.IoTHubClient.Tests
         {
             var device = await GetOrCreateDeviceAsync("fakeDevice");
             IHubMqttClient client1 = await HubMqttClient.CreateAsync(new ConnectionSettings { HostName = hubName, DeviceId = device.Id, SharedAccessKey = device.Authentication.SymmetricKey.PrimaryKey });
-            Assert.True(client1.IsConnected);
+            Assert.True(client1.Connection.IsConnected);
             bool hasDisconnected = false;
-            client1.OnMqttClientDisconnected += (o, e) => hasDisconnected = true;
+            client1.Connection.OnMqttClientDisconnected += (o, e) => hasDisconnected = true;
             IHubMqttClient client2 = await HubMqttClient.CreateAsync(new ConnectionSettings { HostName = hubName, DeviceId = device.Id, SharedAccessKey = device.Authentication.SymmetricKey.PrimaryKey });
-            Assert.True(client2.IsConnected);
+            Assert.True(client2.Connection.IsConnected);
             await Task.Delay(300);
             Assert.True(hasDisconnected);
         }

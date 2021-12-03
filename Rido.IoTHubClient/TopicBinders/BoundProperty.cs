@@ -8,7 +8,7 @@ namespace Rido.IoTHubClient.TopicBinders
         public WritableProperty<T> PropertyValue;
         readonly string propertyName;
         readonly UpdateTwinBinder updateTwin;
-        readonly DesiredUpdateTwinBinder<T> desiredBinder;
+        readonly DesiredUpdatePropertyBinder<T> desiredBinder;
 
         public Func<WritableProperty<T>, Task<WritableProperty<T>>> OnProperty_Updated
         {
@@ -19,7 +19,7 @@ namespace Rido.IoTHubClient.TopicBinders
         {
             propertyName = name;
             PropertyValue = new WritableProperty<T>(name);
-            desiredBinder = new DesiredUpdateTwinBinder<T>(connection, name);
+            desiredBinder = new DesiredUpdatePropertyBinder<T>(connection, name);
             updateTwin = new UpdateTwinBinder(connection);
         }
 

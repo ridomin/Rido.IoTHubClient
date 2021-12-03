@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient.TopicBinders
 {
-    public class DesiredUpdateTwinBinder<T>
+    public class DesiredUpdatePropertyBinder<T>
     {
         public Func<WritableProperty<T>, Task<WritableProperty<T>>> OnProperty_Updated = null;
-        public DesiredUpdateTwinBinder(IMqttConnection connection, string propertyName, string componentName = "")
+        public DesiredUpdatePropertyBinder(IMqttConnection connection, string propertyName, string componentName = "")
         {
             _ = connection.SubscribeAsync("$iothub/twin/PATCH/properties/desired/#");
             UpdateTwinBinder updateTwin = new UpdateTwinBinder(connection);
