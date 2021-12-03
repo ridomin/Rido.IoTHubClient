@@ -26,13 +26,11 @@ namespace Rido.IoTHubClient
         IMqttConnection IHubMqttClient.Connection => base.Connection;
 
         private bool disposedValue;
-
-        public static async Task<IHubMqttClient> CreateAsync(string hostname, string deviceId, string deviceKey) =>
-            await CreateAsync(new ConnectionSettings { HostName = hostname, DeviceId = deviceId, SharedAccessKey = deviceKey }, CancellationToken.None);
-        public static async Task<IHubMqttClient> CreateAsync(string cs) => await CreateAsync(ConnectionSettings.FromConnectionString(cs), CancellationToken.None);
-        public static async Task<IHubMqttClient> CreateAsync(string cs, CancellationToken cancellationToken) => await CreateAsync(ConnectionSettings.FromConnectionString(cs), cancellationToken);
-        public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs) => await CreateAsync(cs, CancellationToken.None);
-        public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs, CancellationToken cancellationToken)
+        
+        public static async Task<IHubMqttClient> CreateAsync(string cs, CancellationToken cancellationToken = default) => 
+            await CreateAsync(ConnectionSettings.FromConnectionString(cs), cancellationToken);
+        
+        public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs, CancellationToken cancellationToken = default)
         {
             var mqttConnection = await HubMqttConnection.CreateAsync(cs, cancellationToken);
             var hubClient = new HubMqttClient(mqttConnection);
