@@ -205,9 +205,9 @@ namespace Rido.IoTHubClient
             timerTokenRenew = new Timer(ReconnectWithToken, null, (dcs.SasMinutes - 1) * 60 * 1000, 0);
         }
 
-        public async Task<MqttClientSubscribeResult> SubscribeAsync(string topic) => await SubscribeAsync(new string[] { topic });
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string topic, CancellationToken cancellationToken = default) => await SubscribeAsync(new string[] { topic }, cancellationToken);
 
-        public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics)
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics, CancellationToken cancellationToken = default)
         {
             var subBuilder = new MqttClientSubscribeOptionsBuilder();
             foreach (string topic in topics.Except(subscribedTopics))
@@ -215,10 +215,10 @@ namespace Rido.IoTHubClient
                 subBuilder.WithTopicFilter(topic, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce);
                 subscribedTopics.Add(topic);
             }
-
+            
             if (subBuilder.Build().TopicFilters.Count > 0)
             {
-                return await mqttClient.SubscribeAsync(subBuilder.Build());
+                return await mqttClient.SubscribeAsync(subBuilder.Build(), cancellationToken);
             }
             else
             {
