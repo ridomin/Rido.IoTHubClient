@@ -5,6 +5,7 @@ using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using MQTTnet.Diagnostics.Logger;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security;
@@ -29,7 +30,7 @@ namespace Rido.IoTHubClient
         bool disposedValue;
         static Timer timerTokenRenew;
 
-        static string[] subscribedTopics;
+        HashSet<string> subscribedTopics = new HashSet<string>();
 
         private HubMqttConnection(ConnectionSettings cs)
         {
@@ -66,7 +67,7 @@ namespace Rido.IoTHubClient
                         Trace.TraceWarning($"*** Reconnecting in {ConnectionSettings.RetryInterval} s.. ");
                         await Task.Delay(ConnectionSettings.RetryInterval * 1000);
                         await mqttClient.ReconnectAsync();
-                        await SubscribeAsync(subscribedTopics);
+                        await SubscribeAsync(subscribedTopics.ToArray<string>());
                     }
                     catch (Exception ex)
                     {
@@ -199,7 +200,7 @@ namespace Rido.IoTHubClient
 
             CloseAsync().Wait();
             ConnectAsync(CancellationToken.None).Wait();
-            SubscribeAsync(subscribedTopics).Wait();
+            _ = SubscribeAsync(subscribedTopics.ToArray<string>());
             
             Trace.TraceWarning($"Refreshed Result: {mqttClient.IsConnected}");
             reconnecting = false;
@@ -210,10 +211,22 @@ namespace Rido.IoTHubClient
 
         public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics)
         {
-            subscribedTopics = topics;
             var subBuilder = new MqttClientSubscribeOptionsBuilder();
-            topics.ToList().ForEach(t => subBuilder.WithTopicFilter(t, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce));
-            return await mqttClient.SubscribeAsync(subBuilder.Build());
+            foreach(string topic in topics.Except(subscribedTopics))
+            {
+               subBuilder.WithTopicFilter(topic, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce);
+               subscribedTopics.Add(topic);
+            }
+
+            if (subBuilder.Build().TopicFilters.Count>0)
+            {
+                return await mqttClient.SubscribeAsync(subBuilder.Build());
+            }
+            else
+            {
+                return new MqttClientSubscribeResult();
+            }
+            //topics.ToList().ForEach(t => subBuilder.WithTopicFilter(t, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce));
         }
 
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload) => await PublishAsync(topic, payload, CancellationToken.None);
