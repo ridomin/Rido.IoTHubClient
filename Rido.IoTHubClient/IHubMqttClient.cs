@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
 {
-    public interface IHubMqttClient  
+    public interface IHubMqttClient
     {
         IMqttConnection Connection { get; }
         Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "");

@@ -10,14 +10,14 @@ namespace Rido.IoTHubClient
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
 
         AllCommandsBinder commandBinder;
-        public Func<CommandRequest, Task<CommandResponse>> OnCommand 
+        public Func<CommandRequest, Task<CommandResponse>> OnCommand
         {
             get => commandBinder.OnCmdDelegate;
             set => commandBinder.OnCmdDelegate = value;
         }
-        
+
         DesiredUpdateBinder desiredUpdate;
-        public Func<PropertyReceived, Task<WritablePropertyAck>> OnPropertyChange 
+        public Func<PropertyReceived, Task<WritablePropertyAck>> OnPropertyChange
         {
             get => desiredUpdate.OnProperty_Updated;
             set => desiredUpdate.OnProperty_Updated = value;
@@ -26,10 +26,10 @@ namespace Rido.IoTHubClient
         IMqttConnection IHubMqttClient.Connection => base.Connection;
 
         private bool disposedValue;
-        
-        public static async Task<IHubMqttClient> CreateAsync(string cs, CancellationToken cancellationToken = default) => 
+
+        public static async Task<IHubMqttClient> CreateAsync(string cs, CancellationToken cancellationToken = default) =>
             await CreateAsync(ConnectionSettings.FromConnectionString(cs), cancellationToken);
-        
+
         public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs, CancellationToken cancellationToken = default)
         {
             var mqttConnection = await HubMqttConnection.CreateAsync(cs, cancellationToken);

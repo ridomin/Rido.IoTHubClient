@@ -215,7 +215,7 @@ namespace Rido.IoTHubClient
                 subBuilder.WithTopicFilter(topic, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce);
                 subscribedTopics.Add(topic);
             }
-            
+
             if (subBuilder.Build().TopicFilters.Count > 0)
             {
                 return await mqttClient.SubscribeAsync(subBuilder.Build(), cancellationToken);

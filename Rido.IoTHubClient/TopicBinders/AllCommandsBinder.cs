@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient.TopicBinders
 {
-    public  class AllCommandsBinder
+    public class AllCommandsBinder
     {
         public Func<CommandRequest, Task<CommandResponse>> OnCmdDelegate { get; set; }
 
@@ -19,7 +18,7 @@ namespace Rido.IoTHubClient.TopicBinders
                 if (topic.StartsWith($"$iothub/methods/POST/"))
                 {
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
-                    
+
                     if (OnCmdDelegate != null)
                     {
                         (int rid, _) = TopicParser.ParseTopic(topic);
