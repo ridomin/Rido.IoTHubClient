@@ -6,10 +6,9 @@ namespace Rido.IoTHubClient.TopicBinders
     public class Bound_Property<T>
     {
         public WritableProperty<T> PropertyValue;
-        
-        string propertyName;
-        UpdateTwinBinder updateTwin;
-        DesiredUpdateTwinBinder<T> desiredBinder;
+        readonly string propertyName;
+        readonly UpdateTwinBinder updateTwin;
+        readonly DesiredUpdateTwinBinder<T> desiredBinder;
 
         public Func<WritableProperty<T>, Task<WritableProperty<T>>> OnProperty_Updated
         {

@@ -10,7 +10,7 @@ public class DeviceRunner : BackgroundService
 {
     private readonly ILogger<DeviceRunner> _logger;
     private readonly IConfiguration _configuration;
-    private Timer? screenRefresher;
+    private Timer screenRefresher;
     readonly Stopwatch clock = Stopwatch.StartNew();
 
     double telemetryWorkingSet = 0;
@@ -20,11 +20,10 @@ public class DeviceRunner : BackgroundService
     int twinRecCounter = 0;
     int reconnectCounter = 0;
 
-
-    dtmi_rido_pnp.memmon? client;
-
     const bool default_enabled = true;
     const int default_interval = 8;
+
+    dtmi_rido_pnp.memmon client;
 
     public DeviceRunner(ILogger<DeviceRunner> logger, IConfiguration configuration)
     {
@@ -38,7 +37,7 @@ public class DeviceRunner : BackgroundService
         client = await dtmi_rido_pnp.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("hub"), stoppingToken) ??
             throw new ApplicationException("Error creating MQTT Client");
 
-        client.connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
+        client.Connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
 
         client.Property_enabled.OnProperty_Updated = Property_enabled_UpdateHandler;
         client.Property_interval.OnProperty_Updated = Property_interval_UpdateHandler;
@@ -46,8 +45,8 @@ public class DeviceRunner : BackgroundService
 
         _ = await client.Report_started_Async(DateTime.Now);
 
-        await client.Property_enabled.InitPropertyAsync(client.initialTwin, default_enabled);
-        await client.Property_interval.InitPropertyAsync(client.initialTwin, default_interval);
+        await client.Property_enabled.InitPropertyAsync(client.InitialTwin, default_enabled);
+        await client.Property_interval.InitPropertyAsync(client.InitialTwin, default_interval);
 
 
         screenRefresher = new Timer(RefreshScreen, this, 1000, 0);
@@ -120,14 +119,14 @@ public class DeviceRunner : BackgroundService
         return await Task.FromResult(result);
     }
 
-    private void RefreshScreen(object? state)
+    private void RefreshScreen(object state)
     {
         string RenderData()
         {
-            void AppendLineWithPadRight(StringBuilder sb, string? s) => sb.AppendLine(s?.PadRight(Console.BufferWidth));
+            void AppendLineWithPadRight(StringBuilder sb, string s) => sb.AppendLine(s?.PadRight(Console.BufferWidth));
 
-            string? enabled_value = client?.Property_enabled?.PropertyValue.Value.ToString();
-            string? interval_value = client?.Property_interval.PropertyValue?.Value.ToString();
+            string enabled_value = client?.Property_enabled?.PropertyValue.Value.ToString();
+            string interval_value = client?.Property_interval.PropertyValue?.Value.ToString();
             StringBuilder sb = new();
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, client?.ConnectionSettings?.HostName);

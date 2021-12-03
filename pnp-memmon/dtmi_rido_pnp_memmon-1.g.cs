@@ -7,54 +7,35 @@ using Rido.IoTHubClient.TopicBinders;
 
 namespace dtmi_rido_pnp
 {
-    public class memmon
+    public class memmon : BasicHubClient
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
-        internal IMqttConnection connection;
-        public string initialTwin = string.Empty;
-
-        public ConnectionSettings ConnectionSettings => connection.ConnectionSettings;
-
-        private GetTwinBinder getTwinBinder;
-        private UpdateTwinBinder updateTwinBinder;
-        private TelemetryBinder telemetryBinder;
 
         public DateTime Property_started { get; private set; }
 
-        public Bound_Property<bool>? Property_enabled;
+        public Bound_Property<bool> Property_enabled;
         public Bound_Property<int> Property_interval;
-
         public CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> Command_getRuntimeStats_Binder;
 
-        private memmon(IMqttConnection c)
+        private memmon(IMqttConnection c) : base(c)
         {
-            connection = c;
-            getTwinBinder = new GetTwinBinder(connection);
-            updateTwinBinder = new UpdateTwinBinder(connection);
-            telemetryBinder = new TelemetryBinder(connection, connection.ConnectionSettings.DeviceId);
-
-            Property_interval = new Bound_Property<int>(connection, "interval");
-            Property_enabled = new Bound_Property<bool>(connection, "enabled");
-            Command_getRuntimeStats_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(connection, "getRuntimeStats");
+            Property_interval = new Bound_Property<int>(Connection, "interval");
+            Property_enabled = new Bound_Property<bool>(Connection, "enabled");
+            Command_getRuntimeStats_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(Connection, "getRuntimeStats");
         }
 
-        public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)
+        public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken = default(CancellationToken))
         {
             ArgumentNullException.ThrowIfNull(cs);
             var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
             var client = new memmon(connection);
-            client.initialTwin = await client.GetTwinAsync();
+            client.InitialTwin = await client.GetTwinAsync();
             return client;
         }
 
         public async Task<int> Report_started_Async(DateTime started) => await UpdateTwinAsync(new { started });
         
-        public async Task<string> GetTwinAsync() => await getTwinBinder.SendRequestWaitForResponse();
-
-        public async Task<int> UpdateTwinAsync(object payload) => await updateTwinBinder.SendRequestWaitForResponse(payload);
-        
-        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) => await Send_workingSet_Async(workingSet, CancellationToken.None);
-        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken) => 
-            await telemetryBinder.SendTelemetry(new { workingSet }, cancellationToken);
+        public async Task<PubResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken = default(CancellationToken)) => 
+            await base.SendTelemetryAsync(new { workingSet });
     }
 }

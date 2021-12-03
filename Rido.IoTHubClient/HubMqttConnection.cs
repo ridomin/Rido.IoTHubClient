@@ -29,8 +29,7 @@ namespace Rido.IoTHubClient
         static bool reconnecting = false;
         bool disposedValue;
         static Timer timerTokenRenew;
-
-        HashSet<string> subscribedTopics = new HashSet<string>();
+        readonly HashSet<string> subscribedTopics = new HashSet<string>();
 
         private HubMqttConnection(ConnectionSettings cs)
         {

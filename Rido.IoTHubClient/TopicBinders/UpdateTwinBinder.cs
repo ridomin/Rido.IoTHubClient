@@ -10,9 +10,8 @@ namespace Rido.IoTHubClient.TopicBinders
 {
     public class UpdateTwinBinder
     {
-        ConcurrentDictionary<int, TaskCompletionSource<int>> pendingRequests;
-
-        IMqttConnection connection;
+        readonly ConcurrentDictionary<int, TaskCompletionSource<int>> pendingRequests;
+        readonly IMqttConnection connection;
 
         public UpdateTwinBinder(IMqttConnection connection)
         {

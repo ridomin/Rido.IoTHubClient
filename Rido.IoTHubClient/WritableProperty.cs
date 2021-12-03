@@ -8,8 +8,8 @@ namespace Rido.IoTHubClient
 {
     public class WritableProperty<T> // where T : struct
     {
-        string propName;
-        string compName;
+        readonly string propName;
+        readonly string compName;
         public WritableProperty(string name) : this(name, null) { }
 
         public WritableProperty(string name, string component)
@@ -27,7 +27,7 @@ namespace Rido.IoTHubClient
         [JsonPropertyName("ac")]
         public int Status { get; set; }
         [JsonPropertyName("value")]
-        public T Value { get; set; } = default(T);
+        public T Value { get; set; } = default;
 
         public static WritableProperty<T> InitFromTwin(string twinJson, string propName, T defaultValue) => InitFromTwin(twinJson, propName, null, defaultValue);
         public static WritableProperty<T> InitFromTwin(string twinJson, string propName, string componentName, T defaultValue)
@@ -39,7 +39,7 @@ namespace Rido.IoTHubClient
             WritableProperty<T> result = new WritableProperty<T>(propName, componentName) { DesiredVersion = desiredVersion };
 
             bool desiredFound = false;
-            T desired_Prop = default(T);
+            T desired_Prop = default;
             result.DesiredVersion = desiredVersion;
             if (!string.IsNullOrEmpty(componentName))
             {
@@ -61,7 +61,7 @@ namespace Rido.IoTHubClient
             }
 
             bool reportedFound = false;
-            T reported_Prop = default(T);
+            T reported_Prop = default;
             int reported_Prop_version = 0;
             int reported_Prop_status = 001;
             string reported_Prop_description = String.Empty;
@@ -149,8 +149,10 @@ namespace Rido.IoTHubClient
             }
             else
             {
-                var dict = new Dictionary<string, Dictionary<string, object>>();
-                dict.Add(compName, new Dictionary<string, object>());
+                Dictionary<string, Dictionary<string, object>> dict = new Dictionary<string, Dictionary<string, object>>
+                {
+                    { compName, new Dictionary<string, object>() }
+                };
                 dict[compName].Add("__t", "c");
                 dict[compName].Add(propName, this);
                 return JsonSerializer.Serialize(dict);
