@@ -24,7 +24,7 @@ namespace dtmi_rido_pnp
         public Bound_Property<bool>? Property_enabled;
         public Bound_Property<int> Property_interval;
 
-        public CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> Command_getRuntimeResponse_Binder;
+        public CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> Command_getRuntimeStats_Binder;
 
         private memmon(IMqttConnection c)
         {
@@ -32,9 +32,10 @@ namespace dtmi_rido_pnp
             getTwinBinder = new GetTwinBinder(connection);
             updateTwinBinder = new UpdateTwinBinder(connection);
             telemetryBinder = new TelemetryBinder(connection, connection.ConnectionSettings.DeviceId);
+
             Property_interval = new Bound_Property<int>(connection, "interval");
             Property_enabled = new Bound_Property<bool>(connection, "enabled");
-            Command_getRuntimeResponse_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(connection, "getRuntimeStats");
+            Command_getRuntimeStats_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(connection, "getRuntimeStats");
         }
 
         public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)

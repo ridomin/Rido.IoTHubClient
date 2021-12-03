@@ -6,10 +6,10 @@ namespace Rido.IoTHubClient.TopicBinders
     public class Bound_Property<T>
     {
         public WritableProperty<T> PropertyValue;
-        public UpdateTwinBinder updateTwin;
-
-        DesiredUpdateTwinBinder<T> desiredBinder;
+        
         string propertyName;
+        UpdateTwinBinder updateTwin;
+        DesiredUpdateTwinBinder<T> desiredBinder;
 
         public Func<WritableProperty<T>, Task<WritableProperty<T>>> OnProperty_Updated
         {
@@ -23,6 +23,8 @@ namespace Rido.IoTHubClient.TopicBinders
             desiredBinder = new DesiredUpdateTwinBinder<T>(connection, name);
             updateTwin = new UpdateTwinBinder(connection);
         }
+
+        public async Task UpdateTwinAsync() => await updateTwin.SendRequestWaitForResponse(this.PropertyValue.ToAck());
 
         public async Task InitPropertyAsync(string twin, T defaultValue)
         {

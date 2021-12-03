@@ -42,14 +42,13 @@ public class DeviceRunner : BackgroundService
 
         client.Property_enabled.OnProperty_Updated = Property_enabled_UpdateHandler;
         client.Property_interval.OnProperty_Updated = Property_interval_UpdateHandler;
-        client.Command_getRuntimeResponse_Binder.OnCmdDelegate = Command_getRuntimeStats_Handler;
+        client.Command_getRuntimeStats_Binder.OnCmdDelegate = Command_getRuntimeStats_Handler;
 
         _ = await client.Report_started_Async(DateTime.Now);
 
         await client.Property_enabled.InitPropertyAsync(client.initialTwin, default_enabled);
         await client.Property_interval.InitPropertyAsync(client.initialTwin, default_interval);
 
-        
 
         screenRefresher = new Timer(RefreshScreen, this, 1000, 0);
 
