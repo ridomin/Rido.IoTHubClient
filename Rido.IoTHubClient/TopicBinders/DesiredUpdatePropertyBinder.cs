@@ -46,7 +46,7 @@ namespace Rido.IoTHubClient.TopicBinders
                             var ack = await OnProperty_Updated(property);
                             if (ack != null)
                             {
-                                _ = updateTwin.UpdateTwinAsync(ack);
+                                _ = updateTwin.UpdateTwinAsync(ack.ToAck());
                             }
                         }
                     }
