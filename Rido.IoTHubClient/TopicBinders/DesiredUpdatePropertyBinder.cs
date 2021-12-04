@@ -19,7 +19,21 @@ namespace Rido.IoTHubClient.TopicBinders
                 {
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                     JsonNode desired = JsonNode.Parse(msg);
-                    var desiredProperty = desired?[propertyName];
+                    JsonNode desiredProperty = null;
+                    if (string.IsNullOrEmpty(componentName))
+                    {
+                      desiredProperty = desired?[propertyName];
+                    } 
+                    else
+                    {
+                        if (desired[componentName] != null &&
+                            desired[componentName][propertyName] != null &&
+                            desired[componentName]["__t"] != null &&
+                            desired[componentName]["__t"].GetValue<string>() == "c")
+
+                        desiredProperty = desired?[componentName][propertyName];
+                    }
+                    
                     if (desiredProperty != null)
                     {
                         if (OnProperty_Updated != null)

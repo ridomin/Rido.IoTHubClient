@@ -6,11 +6,11 @@ using System.Text.Json.Serialization;
 
 namespace Rido.IoTHubClient
 {
-    public class WritableProperty<T> // where T : struct
+    public class WritableProperty<T>
     {
         readonly string propName;
         readonly string compName;
-        public WritableProperty(string name) : this(name, null) { }
+        public WritableProperty(string name) : this(name, "") { }
 
         public WritableProperty(string name, string component)
         {

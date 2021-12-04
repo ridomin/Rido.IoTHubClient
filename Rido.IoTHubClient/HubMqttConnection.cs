@@ -257,7 +257,6 @@ namespace Rido.IoTHubClient
                     {
                         Trace.TraceError(pubRes.ReasonCode + pubRes.ReasonString);
                     }
-                    //Trace.TraceInformation($"-> {topic} {message.Payload?.Length} Bytes {pubRes.ReasonCode}");
                     return pubRes;
                 }
                 catch (Exception ex)

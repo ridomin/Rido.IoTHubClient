@@ -12,15 +12,16 @@ namespace Rido.IoTHubClient.TopicBinders
 
         public Func<WritableProperty<T>, Task<WritableProperty<T>>> OnProperty_Updated
         {
+            get => desiredBinder.OnProperty_Updated;
             set => desiredBinder.OnProperty_Updated = value;
         }
 
-        public Bound_Property(IMqttConnection connection, string name)
+        public Bound_Property(IMqttConnection connection, string name, string componentName = "")
         {
             propertyName = name;
-            PropertyValue = new WritableProperty<T>(name);
-            desiredBinder = new DesiredUpdatePropertyBinder<T>(connection, name);
             updateTwin = new UpdateTwinBinder(connection);
+            PropertyValue = new WritableProperty<T>(name, componentName);
+            desiredBinder = new DesiredUpdatePropertyBinder<T>(connection, name, componentName);
         }
 
         public async Task UpdateTwinAsync() => await updateTwin.UpdateTwinAsync(this.PropertyValue.ToAck());
