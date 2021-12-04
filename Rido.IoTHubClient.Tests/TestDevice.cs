@@ -17,8 +17,8 @@ namespace Rido.IoTHubClient.Tests
         Action<string> twin_cb;
         Action<int> patch_cb;
 
-        public Func<WritableProperty<int>, Task<WritableProperty<int>>> OnProperty_interval_Updated = null;
-        public WritableProperty<int> Property_interval { get; set; }
+        public Func<PropertyAck<int>, Task<PropertyAck<int>>> OnProperty_interval_Updated = null;
+        public PropertyAck<int> Property_interval { get; set; }
 
         private TestDevice(IMqttConnection conn)
         {
@@ -66,7 +66,7 @@ namespace Rido.IoTHubClient.Tests
             {
                 if (OnProperty_interval_Updated != null)
                 {
-                    var intervalProperty = new WritableProperty<int>("interval")
+                    var intervalProperty = new PropertyAck<int>("interval")
                     {
                         Value = Convert.ToInt32(desired?["interval"]?.GetValue<int>()),
                         Version = desired?["$version"]?.GetValue<int>() ?? 0
@@ -123,7 +123,7 @@ namespace Rido.IoTHubClient.Tests
         public async Task Init()
         {
             var twin = await GetTwinAsync();
-            Property_interval = WritableProperty<int>.InitFromTwin(twin, "interval", DefaultInterval);
+            Property_interval = PropertyAck<int>.InitFromTwin(twin, "interval", DefaultInterval);
             if (OnProperty_interval_Updated != null && Property_interval.DesiredVersion > 1)
             {
                 var ack = await OnProperty_interval_Updated?.Invoke(Property_interval);

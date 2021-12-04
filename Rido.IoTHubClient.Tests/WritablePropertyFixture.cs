@@ -17,7 +17,7 @@ namespace Rido.IoTHubClient.Tests
                 desired = new Dictionary<string, object>() { { "$version", 1 } },
             });
 
-            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", 0.2);
+            PropertyAck<double> twinProp = PropertyAck<double>.InitFromTwin(twin, "myProp", 0.2);
             Assert.Equal(0.2, twinProp.Value);
             Assert.Equal(0, twinProp.Version);
             Assert.Equal(201, twinProp.Status);
@@ -40,7 +40,7 @@ namespace Rido.IoTHubClient.Tests
                 desired = new Dictionary<string, object>() { { "$version", 1 } },
             });
 
-            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", 0.2);
+            PropertyAck<double> twinProp = PropertyAck<double>.InitFromTwin(twin, "myProp", 0.2);
             Assert.Equal(4.3, twinProp.Value);
             Assert.Equal(1, twinProp.Version);
             Assert.Equal(201, twinProp.Status);
@@ -55,7 +55,7 @@ namespace Rido.IoTHubClient.Tests
                 desired = new Dictionary<string, object>() { { "$version", 2 }, { "myProp", 3.1 } },
             });
 
-            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", 0.2);
+            PropertyAck<double> twinProp = PropertyAck<double>.InitFromTwin(twin, "myProp", 0.2);
             Assert.Equal(3.1, twinProp.Value);
             Assert.Equal(2, twinProp.DesiredVersion);
         }
@@ -63,7 +63,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public void AckDouble()
         {
-            var wp = new WritableProperty<double>("aDouble")
+            var wp = new PropertyAck<double>("aDouble")
             {
                 Description = "updated",
                 Status = 200,
@@ -87,7 +87,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public void AckDateTime()
         {
-            var wp = new WritableProperty<DateTime>("aDateTime")
+            var wp = new PropertyAck<DateTime>("aDateTime")
             {
                 Value = new DateTime(2011, 11, 10, 8, 31, 12),
                 Version = 3,
@@ -111,7 +111,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public void AckBool()
         {
-            var wp = new WritableProperty<bool>("aBoolean")
+            var wp = new PropertyAck<bool>("aBoolean")
             {
                 Value = false,
                 Version = 3,
@@ -136,7 +136,7 @@ namespace Rido.IoTHubClient.Tests
         public void AckComplexOject()
         {
             var aComplexObj = new AComplexObj() { AIntProp = 1, AStringProp = "a" };
-            var prop = new WritableProperty<AComplexObj>("aComplexObj")
+            var prop = new PropertyAck<AComplexObj>("aComplexObj")
             {
                 Version = 3,
                 Value = aComplexObj,
@@ -163,7 +163,7 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public void AckDoubleInComponent()
         {
-            var wp = new WritableProperty<double>("aDouble", "inAComp")
+            var wp = new PropertyAck<double>("aDouble", "inAComp")
             {
                 Version = 4,
                 Status = 200,
@@ -210,7 +210,7 @@ namespace Rido.IoTHubClient.Tests
                     }
                 }
             });
-            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            PropertyAck<double> twinProp = PropertyAck<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
             Assert.Equal(3.4, twinProp.Value);
             Assert.Null(twinProp.Description);
             Assert.Equal(0, twinProp.Status);
@@ -249,7 +249,7 @@ namespace Rido.IoTHubClient.Tests
             });
 
 
-            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            PropertyAck<double> twinProp = PropertyAck<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
             Assert.Equal(3.4, twinProp.Value);
             Assert.Equal("desc", twinProp.Description);
             Assert.Equal(200, twinProp.Status);
@@ -285,7 +285,7 @@ namespace Rido.IoTHubClient.Tests
                 }
             });
 
-            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            PropertyAck<double> twinProp = PropertyAck<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
             Assert.Equal(0.2, twinProp.Value);
             Assert.Equal("Init from default value", twinProp.Description);
             Assert.Equal(201, twinProp.Status);
@@ -313,7 +313,7 @@ namespace Rido.IoTHubClient.Tests
                 desired = new Dictionary<string, object>() { { "$version", 1 } },
             });
 
-            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            PropertyAck<double> twinProp = PropertyAck<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
             Assert.Equal(4.3, twinProp.Value);
             Assert.Equal(1, twinProp.Version);
             Assert.Equal(201, twinProp.Status);
@@ -339,7 +339,7 @@ namespace Rido.IoTHubClient.Tests
                 desired = new Dictionary<string, object>() { { "$version", 1 } },
             });
 
-            WritableProperty<double> twinProp = WritableProperty<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
+            PropertyAck<double> twinProp = PropertyAck<double>.InitFromTwin(twin, "myProp", "myComp", 0.2);
             Assert.Equal(0.2, twinProp.Value);
             Assert.Equal(0, twinProp.Version);
             Assert.Equal(201, twinProp.Status);

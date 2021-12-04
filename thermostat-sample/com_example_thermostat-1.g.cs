@@ -19,10 +19,10 @@ namespace com_example
         int lastRid;
         public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
 
-        public Func<WritableProperty<double>, Task<WritableProperty<double>>> OnProperty_targetTemperature_Updated = null;
+        public Func<PropertyAck<double>, Task<PropertyAck<double>>> OnProperty_targetTemperature_Updated = null;
         public Func<Cmd_getMaxMinReport_Request, Task<Cmd_getMaxMinReport_Response>> OnCommand_getMaxMinReport_Invoked = null;
 
-        public WritableProperty<double> Property_targetTemperature;
+        public PropertyAck<double> Property_targetTemperature;
 
         ConcurrentDictionary<int, TaskCompletionSource<string>> pendingGetTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<string>>();
         ConcurrentDictionary<int, TaskCompletionSource<int>> pendingUpdateTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<int>>();
@@ -56,7 +56,7 @@ namespace com_example
         public async Task InitTwinProperty_targetTemperature_Async(double defaultTargetTemp)
         {
             var twin = await GetTwinAsync();
-            Property_targetTemperature = WritableProperty<double>.InitFromTwin(twin, "targetTemperature", defaultTargetTemp);
+            Property_targetTemperature = PropertyAck<double>.InitFromTwin(twin, "targetTemperature", defaultTargetTemp);
             var ack = await OnProperty_targetTemperature_Updated?.Invoke(Property_targetTemperature);
             _ = await UpdateTwinAsync(ack.ToAck());
         }
@@ -156,11 +156,11 @@ namespace com_example
         public async Task<MqttClientPublishResult> Send_temperature(double temperature) => 
             await _connection.PublishAsync($"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",new { temperature });
         
-        private async Task<WritableProperty<double>> Invoke_targetTemperature_Callback(JsonNode desired)
+        private async Task<PropertyAck<double>> Invoke_targetTemperature_Callback(JsonNode desired)
         {
             if (desired?["targetTemperature"] != null)
             {
-                var targetTemperatureProperty = new WritableProperty<double>("targetTemperature")
+                var targetTemperatureProperty = new PropertyAck<double>("targetTemperature")
                 {
                     Value = Convert.ToDouble(desired?["targetTemperature"]?.GetValue<double>()),
                     DesiredVersion = desired["$version"].GetValue<int>()

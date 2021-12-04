@@ -10,15 +10,16 @@ namespace dtmi_rido_pnp_sample
     {
         const string modelId = "dtmi:rido:pnp:sample:memmon;1";
 
-        public DateTime Property_memMon_started { get; private set; }
-        public Bound_Property<bool> Property_memMon_enabled;
-        public Bound_Property<int> Property_memMon_interval;
+        public ReadOnlyProperty<DateTime> Property_memMon_started { get; private set; }
+        public WritableProperty<bool> Property_memMon_enabled;
+        public WritableProperty<int> Property_memMon_interval;
         public CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> Command_getRuntimeStats_Binder;
 
         private memmon(IMqttConnection c) : base(c)
         {
-            Property_memMon_enabled = new Bound_Property<bool>(c, "enabled", "memMon");
-            Property_memMon_interval = new Bound_Property<int>(c, "interval", "memMon");
+            Property_memMon_started = new ReadOnlyProperty<DateTime>(c, "started", "memMon");
+            Property_memMon_enabled = new WritableProperty<bool>(c, "enabled", "memMon");
+            Property_memMon_interval = new WritableProperty<int>(c, "interval", "memMon");
             Command_getRuntimeStats_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(c, "getRuntimeStats", "memMon");
         }
 
@@ -30,20 +31,6 @@ namespace dtmi_rido_pnp_sample
             client.InitialTwin = await client.GetTwinAsync();
             return client;
         }
-
-        public async Task<int> Report_memMon_started_Async(DateTime started)
-        {
-            var compProp = new
-            {
-                memMon = new
-                {
-                    __t = "c",
-                    started
-                }
-            };
-            return await base.UpdateTwinAsync(compProp);
-        }
-        
         public async Task<PubResult> Send_memMon_workingSet_Async(double workingSet, CancellationToken cancellationToken =default) => 
             await base.SendTelemetryAsync(new { workingSet }, "memMon", cancellationToken);
         

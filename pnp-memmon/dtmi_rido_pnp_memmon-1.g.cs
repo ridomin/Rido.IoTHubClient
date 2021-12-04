@@ -10,10 +10,9 @@ namespace dtmi_rido_pnp
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
 
-        public DateTime Property_started { get; private set; }
-
-        public Bound_Property<bool> Property_enabled;
-        public Bound_Property<int> Property_interval;
+        public ReadOnlyProperty<DateTime> Property_started { get; private set; }
+        public WritableProperty<bool> Property_enabled;
+        public WritableProperty<int> Property_interval;
         public CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> Command_getRuntimeStats_Binder;
 
         public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken = default(CancellationToken))
@@ -27,12 +26,11 @@ namespace dtmi_rido_pnp
 
         private memmon(IMqttConnection c) : base(c)
         {
-            Property_interval = new Bound_Property<int>(Connection, "interval");
-            Property_enabled = new Bound_Property<bool>(Connection, "enabled");
+            Property_started = new ReadOnlyProperty<DateTime>(Connection, "started");
+            Property_interval = new WritableProperty<int>(Connection, "interval");
+            Property_enabled = new WritableProperty<bool>(Connection, "enabled");
             Command_getRuntimeStats_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(Connection, "getRuntimeStats");
         }
-
-        public async Task<int> Report_started_Async(DateTime started) => await UpdateTwinAsync(new { started });
         
         public async Task<PubResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken = default) => 
             await base.SendTelemetryAsync(new { workingSet }, cancellationToken: cancellationToken);

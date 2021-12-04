@@ -66,7 +66,7 @@ namespace Rido.IoTHubClient.Tests
             var td = await TestDevice.CreateTestDevice($"HostName={hubName};DeviceId={deviceId};SharedAccessKey={device.Authentication.SymmetricKey.PrimaryKey}");
             td.OnProperty_interval_Updated = async m =>
             {
-                return await Task.FromResult(new WritableProperty<int>("interval")
+                return await Task.FromResult(new PropertyAck<int>("interval")
                 {
                     Version = m.Version,
                     Value = m.Value,
@@ -95,7 +95,7 @@ namespace Rido.IoTHubClient.Tests
             var td = await TestDevice.CreateTestDevice($"HostName={hubName};DeviceId={deviceId};SharedAccessKey={device.Authentication.SymmetricKey.PrimaryKey}");
             td.OnProperty_interval_Updated = async m =>
             {
-                return await Task.FromResult(new WritableProperty<int>("interval")
+                return await Task.FromResult(new PropertyAck<int>("interval")
                 {
                     Version = m.Version,
                     Value = m.Value,

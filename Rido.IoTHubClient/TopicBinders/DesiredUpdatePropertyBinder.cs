@@ -7,7 +7,7 @@ namespace Rido.IoTHubClient.TopicBinders
 {
     public class DesiredUpdatePropertyBinder<T>
     {
-        public Func<WritableProperty<T>, Task<WritableProperty<T>>> OnProperty_Updated = null;
+        public Func<PropertyAck<T>, Task<PropertyAck<T>>> OnProperty_Updated = null;
         public DesiredUpdatePropertyBinder(IMqttConnection connection, string propertyName, string componentName = "")
         {
             _ = connection.SubscribeAsync("$iothub/twin/PATCH/properties/desired/#");
@@ -38,7 +38,7 @@ namespace Rido.IoTHubClient.TopicBinders
                     {
                         if (OnProperty_Updated != null)
                         {
-                            var property = new WritableProperty<T>(propertyName, componentName)
+                            var property = new PropertyAck<T>(propertyName, componentName)
                             {
                                 Value = desiredProperty.GetValue<T>(),
                                 Version = desired?["$version"]?.GetValue<int>() ?? 0
