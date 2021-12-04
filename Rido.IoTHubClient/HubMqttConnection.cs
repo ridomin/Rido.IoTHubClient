@@ -79,8 +79,7 @@ namespace Rido.IoTHubClient
             });
         }
 
-        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs) => await CreateAsync(dcs, CancellationToken.None);
-        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs, CancellationToken cancellationToken)
+        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings dcs, CancellationToken cancellationToken = default)
         {
             await ProvisionIfNeeded(dcs);
             var connection = new HubMqttConnection(dcs);
@@ -114,11 +113,11 @@ namespace Rido.IoTHubClient
             MqttClientConnectResult connAck;
             if (string.IsNullOrEmpty(dcs.ModuleId))
             {
-                connAck = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, cancellationToken, dcs.ModelId, dcs.SasMinutes);
+                connAck = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes, cancellationToken);
             }
             else
             {
-                connAck = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, cancellationToken, dcs.ModelId, dcs.SasMinutes);
+                connAck = await mqttClient.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.ModuleId, dcs.SharedAccessKey, dcs.ModelId, dcs.SasMinutes, cancellationToken);
             }
 
             if (connAck?.ResultCode == MqttClientConnectResultCode.Success)
@@ -146,7 +145,7 @@ namespace Rido.IoTHubClient
                 dcs.ModuleId = segmentsId[1];
 
             }
-            return await mqttClient.ConnectWithX509Async(dcs.HostName, cert, cancellationToken, dcs.ModelId);
+            return await mqttClient.ConnectWithX509Async(dcs.HostName, cert, dcs.ModelId, cancellationToken);
         }
 
         private static async Task ProvisionIfNeeded(ConnectionSettings dcs)
@@ -224,11 +223,9 @@ namespace Rido.IoTHubClient
             {
                 return new MqttClientSubscribeResult();
             }
-            //topics.ToList().ForEach(t => subBuilder.WithTopicFilter(t, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce));
         }
 
-        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload) => await PublishAsync(topic, payload, CancellationToken.None);
-        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
+        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken = default)
         {
             while (!IsConnected && reconnecting)
             {
@@ -276,8 +273,6 @@ namespace Rido.IoTHubClient
                 return new MqttClientPublishResult() { ReasonCode = MqttClientPublishReasonCode.UnspecifiedError };
             }
         }
-
-
 
         public void Dispose()
         {

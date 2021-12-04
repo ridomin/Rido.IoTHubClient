@@ -29,7 +29,7 @@ namespace Rido.IoTHubClient.TopicBinders
                         });
                         if (ack != null)
                         {
-                            _ = updateTwin.SendRequestWaitForResponse(ack.ToAck());
+                            _ = updateTwin.UpdateTwinAsync(ack.ToAck());
                         }
                     }
                 }

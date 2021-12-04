@@ -7,15 +7,16 @@ namespace Rido.IoTHubClient.TopicBinders
     {
         readonly IMqttConnection connection;
         readonly string deviceId;
-        readonly string component;
+        string componentName;
         public TelemetryBinder(IMqttConnection connection, string component = "")
         {
             this.connection = connection;
             this.deviceId = connection.ConnectionSettings.DeviceId;
-            this.component = component;
+            this.componentName = component;
         }
-        public async Task<PubResult> SendTelemetryAsync(object payload, CancellationToken cancellationToken = default)
+        public async Task<PubResult> SendTelemetryAsync(object payload, string component = "", CancellationToken cancellationToken = default)
         {
+            this.componentName = component;
             string topic = $"devices/{deviceId}";
 
             if (!string.IsNullOrEmpty(connection.ConnectionSettings.ModuleId))
@@ -24,9 +25,9 @@ namespace Rido.IoTHubClient.TopicBinders
             }
             topic += "/messages/events/";
 
-            if (!string.IsNullOrEmpty(component))
+            if (!string.IsNullOrEmpty(componentName))
             {
-                topic += $"$.sub={component}";
+                topic += $"$.sub={componentName}";
             }
             var pubAck = await connection.PublishAsync(topic, payload, cancellationToken);
             var pubResult = (PubResult)pubAck.ReasonCode;

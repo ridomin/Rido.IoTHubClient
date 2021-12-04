@@ -22,10 +22,7 @@ namespace Rido.IoTHubClient
             get => desiredUpdate.OnProperty_Updated;
             set => desiredUpdate.OnProperty_Updated = value;
         }
-
         IMqttConnection IHubMqttClient.Connection => base.Connection;
-
-        private bool disposedValue;
 
         public static async Task<IHubMqttClient> CreateAsync(string cs, CancellationToken cancellationToken = default) =>
             await CreateAsync(ConnectionSettings.FromConnectionString(cs), cancellationToken);
@@ -33,22 +30,17 @@ namespace Rido.IoTHubClient
         public static async Task<IHubMqttClient> CreateAsync(ConnectionSettings cs, CancellationToken cancellationToken = default)
         {
             var mqttConnection = await HubMqttConnection.CreateAsync(cs, cancellationToken);
-            var hubClient = new HubMqttClient(mqttConnection);
-            mqttConnection.OnMqttClientDisconnected += (o, e) => hubClient.OnMqttClientDisconnected?.Invoke(o, e);
-            return hubClient;
+            return new HubMqttClient(mqttConnection);
         }
 
         private HubMqttClient(IMqttConnection conn) : base(conn)
         {
+            conn.OnMqttClientDisconnected += (o, e) => OnMqttClientDisconnected?.Invoke(o, e);
             desiredUpdate = new DesiredUpdateBinder(conn);
             commandBinder = new AllCommandsBinder(conn);
         }
 
-        //public async Task CommandResponseAsync(string rid, string cmdName, string status, object payload) =>
-        //  await Connection.PublishAsync($"$iothub/methods/res/{status}/?$rid={rid}", payload);
-
-        public Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "") => base.SendTelemetryAsync(payload);
-
+        private bool disposedValue;
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)

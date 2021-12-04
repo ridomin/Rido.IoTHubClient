@@ -23,7 +23,7 @@ namespace Rido.IoTHubClient.TopicBinders
             updateTwin = new UpdateTwinBinder(connection);
         }
 
-        public async Task UpdateTwinAsync() => await updateTwin.SendRequestWaitForResponse(this.PropertyValue.ToAck());
+        public async Task UpdateTwinAsync() => await updateTwin.UpdateTwinAsync(this.PropertyValue.ToAck());
 
         public async Task InitPropertyAsync(string twin, T defaultValue)
         {
@@ -31,12 +31,12 @@ namespace Rido.IoTHubClient.TopicBinders
             if (desiredBinder.OnProperty_Updated != null && (PropertyValue.DesiredVersion > 1))
             {
                 var ack = await desiredBinder.OnProperty_Updated.Invoke(PropertyValue);
-                _ = updateTwin.SendRequestWaitForResponse(ack.ToAck());
+                _ = updateTwin.UpdateTwinAsync(ack.ToAck());
                 PropertyValue = ack;
             }
             else
             {
-                _ = updateTwin.SendRequestWaitForResponse(PropertyValue.ToAck());
+                _ = updateTwin.UpdateTwinAsync(PropertyValue.ToAck());
             }
         }
     }

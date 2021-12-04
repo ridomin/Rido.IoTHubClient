@@ -34,7 +34,7 @@ namespace dtmi_rido_pnp
 
         public async Task<int> Report_started_Async(DateTime started) => await UpdateTwinAsync(new { started });
         
-        public async Task<PubResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken = default(CancellationToken)) => 
-            await base.SendTelemetryAsync(new { workingSet });
+        public async Task<PubResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken = default) => 
+            await base.SendTelemetryAsync(new { workingSet }, cancellationToken: cancellationToken);
     }
 }
