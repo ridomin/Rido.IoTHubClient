@@ -13,6 +13,7 @@ namespace dtmi_rido_pnp
         public ReadOnlyProperty<DateTime> Property_started { get; private set; }
         public WritableProperty<bool> Property_enabled;
         public WritableProperty<int> Property_interval;
+        public TelemetryBinder<double> Telemetry_workingSet;
         public CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> Command_getRuntimeStats_Binder;
 
         public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken = default(CancellationToken))
@@ -29,10 +30,8 @@ namespace dtmi_rido_pnp
             Property_started = new ReadOnlyProperty<DateTime>(Connection, "started");
             Property_interval = new WritableProperty<int>(Connection, "interval");
             Property_enabled = new WritableProperty<bool>(Connection, "enabled");
+            Telemetry_workingSet = new TelemetryBinder<double>(Connection, "workingSet");
             Command_getRuntimeStats_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(Connection, "getRuntimeStats");
         }
-        
-        public async Task<PubResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken = default) => 
-            await base.SendTelemetryAsync(new { workingSet }, cancellationToken: cancellationToken);
     }
 }

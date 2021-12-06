@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
@@ -23,10 +24,10 @@ namespace Rido.IoTHubClient
             this.component = component;
         }
 
-        public async Task UpdateTwinPropertyAsync(T newValue)
+        public async Task UpdateTwinPropertyAsync(T newValue, CancellationToken cancellationToken = default)
         {
             PropertyValue = newValue;
-            Version = await updateTwin.UpdateTwinAsync(ToJson());
+            Version = await updateTwin.UpdateTwinAsync(ToJson(), cancellationToken);
         }
 
         string ToJson()

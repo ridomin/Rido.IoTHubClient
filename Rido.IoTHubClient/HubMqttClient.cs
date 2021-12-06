@@ -1,5 +1,6 @@
 ﻿using Rido.IoTHubClient.TopicBinders;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,9 +8,12 @@ namespace Rido.IoTHubClient
 {
     public class HubMqttClient : BasicHubClient, IHubMqttClient
     {
+        IMqttConnection IHubMqttClient.Connection => base.Connection;
         public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected;
 
         readonly AllCommandsBinder commandBinder;
+        readonly TelemetryBinder<object> telemetryBinder;
+
         public Func<CommandRequest, Task<CommandResponse>> OnCommand
         {
             get => commandBinder.OnCmdDelegate;
@@ -22,7 +26,6 @@ namespace Rido.IoTHubClient
             get => desiredUpdate.OnProperty_Updated;
             set => desiredUpdate.OnProperty_Updated = value;
         }
-        IMqttConnection IHubMqttClient.Connection => base.Connection;
 
         public static async Task<IHubMqttClient> CreateAsync(string cs, CancellationToken cancellationToken = default) =>
             await CreateAsync(ConnectionSettings.FromConnectionString(cs), cancellationToken);
@@ -38,6 +41,25 @@ namespace Rido.IoTHubClient
             conn.OnMqttClientDisconnected += (o, e) => OnMqttClientDisconnected?.Invoke(o, e);
             desiredUpdate = new DesiredUpdateBinder(conn);
             commandBinder = new AllCommandsBinder(conn);
+            telemetryBinder = new TelemetryBinder<object>(conn, "");
+        }
+
+        public Task<PubResult> SendTelemetryAsync(object payload, CancellationToken cancellationToken = default)
+        {
+            return telemetryBinder.SendTelemetryAsync(payload, cancellationToken);
+        }
+
+        public Task<PubResult> SendTelemetryAsync(object payload, string componentName = "", CancellationToken cancellationToken = default)
+        {
+            return telemetryBinder.SendTelemetryAsync(payload, componentName, cancellationToken);
+        }
+
+        public Task<PubResult> SendTelemetryAsync(object payload, string name, string componentName = "", CancellationToken cancellationToken = default)
+        {
+            Dictionary<string, object> namedPayload = new Dictionary<string, object>();
+            namedPayload.Add(name, payload);
+            return telemetryBinder.SendTelemetryAsync(namedPayload, componentName, cancellationToken);
+
         }
 
         private bool disposedValue;
@@ -59,5 +81,7 @@ namespace Rido.IoTHubClient
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
+      
     }
 }

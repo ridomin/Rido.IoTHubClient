@@ -37,15 +37,16 @@ public class DeviceRunner : BackgroundService
         client = await dtmi_rido_pnp_sample.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("dps"), stoppingToken) ??
             throw new ApplicationException("Error creating MQTT Client");
         _logger.LogWarning("Connected");
+
         client.Connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
 
         client.Property_memMon_enabled.OnProperty_Updated = Property_memMon_enabled_UpdateHandler;
         client.Property_memMon_interval.OnProperty_Updated = Property_memMon_interval_UpdateHandler;
         client.Command_getRuntimeStats_Binder.OnCmdDelegate = Command_memMon_getRuntimeStats_Handler;
         
-        await client.Property_memMon_enabled.InitPropertyAsync(client.InitialTwin, default_enabled);
-        await client.Property_memMon_interval.InitPropertyAsync(client.InitialTwin, default_interval);
-        await client.Property_memMon_started.UpdateTwinPropertyAsync(DateTime.Now);
+        await client.Property_memMon_enabled.InitPropertyAsync(client.InitialTwin, default_enabled, stoppingToken);
+        await client.Property_memMon_interval.InitPropertyAsync(client.InitialTwin, default_interval, stoppingToken);
+        await client.Property_memMon_started.UpdateTwinPropertyAsync(DateTime.Now, stoppingToken);
 
         screenRefresher = new Timer(RefreshScreen, this, 1000, 0);
 
@@ -54,11 +55,10 @@ public class DeviceRunner : BackgroundService
             if (client?.Property_memMon_enabled?.PropertyValue.Value == true)
             {
                 telemetryWorkingSet = Environment.WorkingSet;
-                await client.Send_memMon_workingSet_Async(telemetryWorkingSet, stoppingToken);
+                await client.Telemetry_memMon_workingSet.SendTelemetryAsync(telemetryWorkingSet, stoppingToken);
                 telemetryCounter++;
             }
-            var interval = client?.Property_memMon_interval?.PropertyValue.Value;
-            await Task.Delay(interval.HasValue ? interval.Value * 1000 : 1000, stoppingToken);
+            await Task.Delay(client.Property_memMon_interval.PropertyValue.Value, stoppingToken);
         }
     }
 

@@ -13,6 +13,7 @@ namespace dtmi_rido_pnp_sample
         public ReadOnlyProperty<DateTime> Property_memMon_started { get; private set; }
         public WritableProperty<bool> Property_memMon_enabled;
         public WritableProperty<int> Property_memMon_interval;
+        public TelemetryBinder<double> Telemetry_memMon_workingSet;
         public CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response> Command_getRuntimeStats_Binder;
 
         private memmon(IMqttConnection c) : base(c)
@@ -20,6 +21,7 @@ namespace dtmi_rido_pnp_sample
             Property_memMon_started = new ReadOnlyProperty<DateTime>(c, "started", "memMon");
             Property_memMon_enabled = new WritableProperty<bool>(c, "enabled", "memMon");
             Property_memMon_interval = new WritableProperty<int>(c, "interval", "memMon");
+            Telemetry_memMon_workingSet = new TelemetryBinder<double>(c, "workingSet", "memMon");
             Command_getRuntimeStats_Binder = new CommandBinder<Cmd_getRuntimeStats_Request, Cmd_getRuntimeStats_Response>(c, "getRuntimeStats", "memMon");
         }
 
@@ -31,8 +33,5 @@ namespace dtmi_rido_pnp_sample
             client.InitialTwin = await client.GetTwinAsync();
             return client;
         }
-        public async Task<PubResult> Send_memMon_workingSet_Async(double workingSet, CancellationToken cancellationToken =default) => 
-            await base.SendTelemetryAsync(new { workingSet }, "memMon", cancellationToken);
-        
     }
 }

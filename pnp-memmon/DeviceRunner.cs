@@ -55,7 +55,7 @@ public class DeviceRunner : BackgroundService
             if (client?.Property_enabled?.PropertyValue.Value == true)
             {
                 telemetryWorkingSet = Environment.WorkingSet;
-                await client.Send_workingSet_Async(telemetryWorkingSet, stoppingToken);
+                await client.Telemetry_workingSet.SendTelemetryAsync(telemetryWorkingSet, stoppingToken);
                 telemetryCounter++;
             }
             var interval = client?.Property_interval.PropertyValue?.Value;

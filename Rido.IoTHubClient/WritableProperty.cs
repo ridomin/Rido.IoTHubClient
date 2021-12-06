@@ -1,5 +1,6 @@
 ﻿using Rido.IoTHubClient.TopicBinders;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
@@ -29,13 +30,13 @@ namespace Rido.IoTHubClient
 
         public async Task UpdateTwinAsync() => await updateTwin.UpdateTwinAsync(this.PropertyValue.ToAck());
 
-        public async Task InitPropertyAsync(string twin, T defaultValue)
+        public async Task InitPropertyAsync(string twin, T defaultValue, CancellationToken cancellationToken = default)
         {
             PropertyValue = PropertyAck<T>.InitFromTwin(twin, propertyName, componentName, defaultValue);
             if (desiredBinder.OnProperty_Updated != null && (PropertyValue.DesiredVersion > 1))
             {
                 var ack = await desiredBinder.OnProperty_Updated.Invoke(PropertyValue);
-                _ = updateTwin.UpdateTwinAsync(ack.ToAck());
+                _ = updateTwin.UpdateTwinAsync(ack.ToAck(), cancellationToken);
                 PropertyValue = ack;
             }
             else
