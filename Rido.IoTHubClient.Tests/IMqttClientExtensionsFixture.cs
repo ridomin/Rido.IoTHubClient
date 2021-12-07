@@ -33,35 +33,35 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ConnectDeviceWithSaSAndModelId()
         {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, CancellationToken.None, "dtmi:rido:test;1", 5);
+            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, "dtmi:rido:test;1", 5, CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
         public async Task ConnectModuleWithSaS()
         {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, CancellationToken.None, String.Empty);
+            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, String.Empty, cancellationToken: CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
         public async Task ConnectModuleWithSaSAndModelId()
         {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, CancellationToken.None, "dtmi:rido:module;1");
+            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, "m1", DefaultKey, "dtmi:rido:module;1", cancellationToken: CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
         public async Task ConnectDeviceWithCert()
         {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"), CancellationToken.None);
+            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"), cancellationToken: CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
         public async Task SendTelemetryWithHeaders()
         {
-            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, CancellationToken.None, "dmit:com:example:Thermostat;1", 60);
+            var connack = await mqttClient.ConnectWithSasAsync(hostname, deviceId, DefaultKey, "dmit:com:example:Thermostat;1", 60, CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
             MqttApplicationMessage msg = new();
             msg.Payload = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { temperature = 432 }));
@@ -73,21 +73,21 @@ namespace Rido.IoTHubClient.Tests
         [Fact]
         public async Task ConnectDeviceWithCertAndModelID()
         {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"), CancellationToken.None,"dtmi:rido:device;1");
+            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("testdevice.pfx", "1234"), "dtmi:rido:device;1", CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
         public async Task ConnectModuleWithCert()
         {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), CancellationToken.None);
+            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), cancellationToken: CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 
         [Fact]
         public async Task ConnectModuleWithCertAndModelId()
         {
-            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), CancellationToken.None, "dtmi:rido:module;1");
+            var connack = await mqttClient.ConnectWithX509Async(hostname, new X509Certificate("xd01_xmod01.pfx", "1234"), "dtmi:rido:module;1", CancellationToken.None);
             Assert.Equal(MqttClientConnectResultCode.Success, connack.ResultCode);
         }
 

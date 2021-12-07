@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient
@@ -6,11 +7,12 @@ namespace Rido.IoTHubClient
     public interface IHubMqttClient
     {
         IMqttConnection Connection { get; }
-        Task<PubResult> SendTelemetryAsync(object payload, string dtdlComponentname = "");
-        Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
-        Task CommandResponseAsync(string rid, string cmdName, string status, object payload);
-        Task<string> GetTwinAsync();
+        public Task<PubResult> SendTelemetryAsync(object payload, CancellationToken cancellationToken = default);
+        public Task<PubResult> SendTelemetryAsync(object payload, string componentName, CancellationToken cancellationToken = default);
+        Task<PubResult> SendTelemetryAsync(object payload, string name, string componentName, CancellationToken cancellationToken = default);
+        Task<string> GetTwinAsync(CancellationToken cancellationToken = default);
+        Task<int> UpdateTwinAsync(object payload, CancellationToken cancellationToken = default);
         Func<PropertyReceived, Task<WritablePropertyAck>> OnPropertyChange { get; set; }
-        Task<int> UpdateTwinAsync(object payload);
+        Func<CommandRequest, Task<CommandResponse>> OnCommand { get; set; }
     }
 }

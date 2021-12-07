@@ -73,11 +73,11 @@ public class DeviceRunner : BackgroundService
         };
     }
 
-    async Task<WritableProperty<double>> OnProperty_targetTemperatue_Handler(WritableProperty<double> prop)
+    async Task<PropertyAck<double>> OnProperty_targetTemperatue_Handler(PropertyAck<double> prop)
     {
         Console.WriteLine("\n<- w: targetTemperature received " + prop.Value);
         _ = AdjustTempInStepsAsync(prop);
-        return await Task.FromResult(new WritableProperty<double>("targetTemperature")
+        return await Task.FromResult(new PropertyAck<double>("targetTemperature")
         {
             Version = prop.Version,
             Value = prop.Value,
@@ -86,7 +86,7 @@ public class DeviceRunner : BackgroundService
         });
     }
 
-    async Task AdjustTempInStepsAsync(WritableProperty<double> prop)
+    async Task AdjustTempInStepsAsync(PropertyAck<double> prop)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(prop);
@@ -95,7 +95,7 @@ public class DeviceRunner : BackgroundService
         double step = (prop.Value - temperature) / 5d;
         for (int i = 1; i <= 5; i++)
         {
-            await client.UpdateTwinAsync(new WritableProperty<double>("targetTemperature")
+            await client.UpdateTwinAsync(new PropertyAck<double>("targetTemperature")
             {
                 Status = 202,
                 Version = prop.Version,

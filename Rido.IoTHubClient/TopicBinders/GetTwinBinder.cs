@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rido.IoTHubClient.TopicBinders
@@ -33,11 +34,11 @@ namespace Rido.IoTHubClient.TopicBinders
             };
         }
 
-        public async Task<string> SendRequestWaitForResponse(int timeout = 5)
+        public async Task<string> GetTwinAsync(CancellationToken cancellationToken = default)
         {
             var rid = RidCounter.NextValue();
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var puback = await connection.PublishAsync(string.Format($"$iothub/twin/GET/?$rid={rid}"), string.Empty);
+            var puback = await connection.PublishAsync(string.Format($"$iothub/twin/GET/?$rid={rid}"), string.Empty, cancellationToken);
             if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 pendingGetTwinRequests.TryAdd(rid, tcs);
@@ -46,7 +47,7 @@ namespace Rido.IoTHubClient.TopicBinders
             {
                 Trace.TraceError($"Error '{puback?.ReasonCode}' publishing twin GET");
             }
-            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(timeout));
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
         }
 
     }

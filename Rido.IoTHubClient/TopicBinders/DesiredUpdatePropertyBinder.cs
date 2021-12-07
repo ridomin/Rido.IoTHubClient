@@ -7,7 +7,7 @@ namespace Rido.IoTHubClient.TopicBinders
 {
     public class DesiredUpdatePropertyBinder<T>
     {
-        public Func<WritableProperty<T>, Task<WritableProperty<T>>> OnProperty_Updated = null;
+        public Func<PropertyAck<T>, Task<PropertyAck<T>>> OnProperty_Updated = null;
         public DesiredUpdatePropertyBinder(IMqttConnection connection, string propertyName, string componentName = "")
         {
             _ = connection.SubscribeAsync("$iothub/twin/PATCH/properties/desired/#");
@@ -19,12 +19,26 @@ namespace Rido.IoTHubClient.TopicBinders
                 {
                     string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                     JsonNode desired = JsonNode.Parse(msg);
-                    var desiredProperty = desired?[propertyName];
+                    JsonNode desiredProperty = null;
+                    if (string.IsNullOrEmpty(componentName))
+                    {
+                      desiredProperty = desired?[propertyName];
+                    } 
+                    else
+                    {
+                        if (desired[componentName] != null &&
+                            desired[componentName][propertyName] != null &&
+                            desired[componentName]["__t"] != null &&
+                            desired[componentName]["__t"].GetValue<string>() == "c")
+
+                        desiredProperty = desired?[componentName][propertyName];
+                    }
+                    
                     if (desiredProperty != null)
                     {
                         if (OnProperty_Updated != null)
                         {
-                            var property = new WritableProperty<T>(propertyName, componentName)
+                            var property = new PropertyAck<T>(propertyName, componentName)
                             {
                                 Value = desiredProperty.GetValue<T>(),
                                 Version = desired?["$version"]?.GetValue<int>() ?? 0
@@ -32,7 +46,7 @@ namespace Rido.IoTHubClient.TopicBinders
                             var ack = await OnProperty_Updated(property);
                             if (ack != null)
                             {
-                                _ = updateTwin.SendRequestWaitForResponse(ack);
+                                _ = updateTwin.UpdateTwinAsync(ack.ToAck());
                             }
                         }
                     }
