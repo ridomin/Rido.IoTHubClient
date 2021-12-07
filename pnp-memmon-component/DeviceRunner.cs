@@ -33,10 +33,10 @@ public class DeviceRunner : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogWarning("Connecting..");
+        //_logger.LogWarning("Connecting..");
         client = await dtmi_rido_pnp_sample.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("dps"), stoppingToken) ??
             throw new ApplicationException("Error creating MQTT Client");
-        _logger.LogWarning("Connected");
+        //_logger.LogWarning("Connected");
 
         client.Connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
 
@@ -58,7 +58,7 @@ public class DeviceRunner : BackgroundService
                 await client.Telemetry_memMon_workingSet.SendTelemetryAsync(telemetryWorkingSet, stoppingToken);
                 telemetryCounter++;
             }
-            await Task.Delay(client.Property_memMon_interval.PropertyValue.Value, stoppingToken);
+            await Task.Delay(client.Property_memMon_interval.PropertyValue.Value * 1000, stoppingToken);
         }
     }
 
@@ -100,7 +100,6 @@ public class DeviceRunner : BackgroundService
             Status = 200
         };
 
-        //result.Add("runtime version", System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>()?.FrameworkName ?? "n/a");
         result.diagnosticResults.Add("machine name", Environment.MachineName);
         result.diagnosticResults.Add("os version", Environment.OSVersion.ToString());
         if (req.DiagnosticsMode == DiagnosticsMode.complete)
@@ -110,6 +109,7 @@ public class DeviceRunner : BackgroundService
         if (req.DiagnosticsMode == DiagnosticsMode.full)
         {
             result.diagnosticResults.Add($"twin receive: ", twinRecCounter.ToString());
+            result.diagnosticResults.Add($"twin sends: ", RidCounter.Current.ToString());
             result.diagnosticResults.Add("telemetry: ", telemetryCounter.ToString());
             result.diagnosticResults.Add("command: ", commandCounter.ToString());
             result.diagnosticResults.Add("reconnects: ", reconnectCounter.ToString());
@@ -121,7 +121,7 @@ public class DeviceRunner : BackgroundService
     {
         string RenderData()
         {
-            void AppendLineWithPadRight(StringBuilder sb, string s) => sb.AppendLine(s?.PadRight(Console.BufferWidth));
+            void AppendLineWithPadRight(StringBuilder sb, string s) => sb.AppendLine(s?.PadRight(Console.BufferWidth-1));
 
             string enabled_value = client?.Property_memMon_enabled?.PropertyValue.Value.ToString();
             string interval_value = client?.Property_memMon_interval?.PropertyValue.Value.ToString();
