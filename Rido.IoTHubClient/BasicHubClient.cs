@@ -19,7 +19,7 @@ namespace Rido.IoTHubClient
             Connection = c;
             GetTwinBinder = new GetTwinBinder(Connection);
             UpdateTwinBinder = new UpdateTwinBinder(Connection);
-            TelemetryBinder = new TelemetryBinder(Connection, Connection.ConnectionSettings.DeviceId);
+            TelemetryBinder = new TelemetryBinder(Connection);
         }
 
         public async Task<string> GetTwinAsync() => await GetTwinBinder.SendRequestWaitForResponse();
