@@ -23,13 +23,13 @@ namespace Rido.IoTHubClient.Tests
         public async Task ProvisionWithCert()
         {
             var dpsRes = await DpsClient.ProvisionWithCertAsync("0ne003861C6", "testdevice.pfx", "1234");
-            Assert.Equal("rido.azure-devices.net", dpsRes.registrationState.assignedHub);
+            Assert.Equal("ridox.azure-devices.net", dpsRes.registrationState.assignedHub);
         }
         [Fact]
         public async Task ProvisionWithCertPnP()
         {
             var dpsRes = await DpsClient.ProvisionWithCertAsync("0ne003861C6", "testdevice.pfx", "1234", "dtmi:test:dps;1");
-            Assert.Equal("rido.azure-devices.net", dpsRes.registrationState.assignedHub);
+            Assert.Equal("ridox.azure-devices.net", dpsRes.registrationState.assignedHub);
         }
     }
 }
