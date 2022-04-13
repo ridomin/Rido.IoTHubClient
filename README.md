@@ -1,3 +1,5 @@
+# Deprecated in favor of [Rido.IoTClient](/ridomin/Rido.IoTClient)
+
 # Rido.IoTHubClient
 
 Minimalistic device client to interact with Azure IoT Hub based on [MQTTNet](https://github.com/chkr1011/MQTTnet)
