@@ -1,4 +1,4 @@
-# Deprecated in favor of [Rido.IoTClient](/ridomin/Rido.IoTClient)
+# Deprecated in favor of [Rido.IoTClient](https://github.com/ridomin/Rido.IoTClient)
 
 # Rido.IoTHubClient
 
